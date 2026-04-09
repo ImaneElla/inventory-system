@@ -1,13 +1,13 @@
-package com.imane.inventorybackend;
+package com.imane.inventorysystem;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class InventoryBackendApplication {
+public class InventorySystemApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(InventoryBackendApplication.class, args);
+		SpringApplication.run(InventorySystemApplication.class, args);
 	}
 
 }

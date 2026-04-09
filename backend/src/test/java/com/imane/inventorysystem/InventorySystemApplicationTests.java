@@ -1,10 +1,10 @@
-package com.imane.inventorybackend;
+package com.imane.inventorysystem;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class InventoryBackendApplicationTests {
+class InventorySystemApplicationTests {
 
 	@Test
 	void contextLoads() {
