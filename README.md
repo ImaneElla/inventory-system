@@ -121,6 +121,7 @@ Handles day-to-day operations:
 |---|---|---|
 | id | INT (PK) | Primary key |
 | username | VARCHAR | Username |
+| email | VARCHAR | example.gmail.com |
 | password | VARCHAR | Hashed password |
 | role | ENUM | `ADMIN` / `MANAGER` |
 
@@ -234,6 +235,8 @@ cd inventory-system
 cd backend
 # Configure your DB credentials in src/main/resources/application.properties
 mvn spring-boot:run
+# OR
+.\mvnw spring-boot:run
 ```
 
 ### 3. Frontend Setup
