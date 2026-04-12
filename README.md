@@ -64,7 +64,7 @@ This system allows businesses to:
 - Fields: name, quantity, price
 - Search & filter products
 
-### 📥📤 3. Stock Movements
+### 📤 3. Stock Movements
 - **Stock IN** — record incoming inventory
 - **Stock OUT** — record outgoing inventory
 - Full movement history log
