@@ -125,6 +125,9 @@ Handles day-to-day operations:
 | password | VARCHAR | Hashed password |
 | role | ENUM | `ADMIN` / `MANAGER` |
 
+## 🖼️ Schema Overview
+![Database Schema](./docs/Diagram(ERD).png)
+
 ---
 
 ## 🏗️ Project Architecture
