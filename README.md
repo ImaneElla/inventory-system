@@ -228,7 +228,7 @@ USER
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/inventory-system.git
+git clone https://github.com/ImaneElla/inventory-system.git
 cd inventory-system
 ```
 
