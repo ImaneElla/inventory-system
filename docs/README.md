@@ -3,7 +3,7 @@
 This folder contains the technical documentation for the system's database structure.
 
 ## 🖼️ Schema Overview
-![Database Schema](./Diagram.png)
+![Database Schema](./Diagram(ERD).png)
 
 ## 📋 Table Descriptions
 - **Users**: Handles authentication and roles (Admin/Manager).
