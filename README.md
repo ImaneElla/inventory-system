@@ -148,10 +148,11 @@ Handles day-to-day operations:
 inventory-backend/
 │
 ├── src/main/java/com/inventory/
-│   ├── controller/        # REST API endpoints
+│   ├── controller/  
+│   │   └── AuthController.java # REST endpoints
 │   ├── service/           # Business logic
 │   ├── repository/        # DB access (JPA)
-│   ├── model/             # Entity classes (tables)
+│   ├── entity/            # Entity classes (tables)
 │   ├── dto/               # Data Transfer Objects
 │   ├── config/            # Security, CORS, configs
 │   ├── exception/         # Error handling
