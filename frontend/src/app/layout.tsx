@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "Inventory Management",
   description: "Inventory Management System - IMN",
   icons: {
-    icon:"/logo.png",
-
-    
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 

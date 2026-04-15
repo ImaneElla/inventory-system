@@ -30,10 +30,12 @@ export default function RegisterPage() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (parsed.userName) setUserName(parsed.userName);
         if (parsed.email) setEmail(parsed.email);
         if (parsed.role) setRole(parsed.role);
         if (parsed.password) setPassword(parsed.password);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         console.error("Failed to parse cached register state.");
       }
@@ -116,6 +118,7 @@ export default function RegisterPage() {
               onClick={() => fileRef.current?.click()}
               className="w-14 h-14 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
             </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
@@ -126,12 +129,12 @@ export default function RegisterPage() {
           </div>
 
           {/* Role toggle */}
-          <div className="flex bg-primary/5 border border-primary/10 rounded-xl overflow-hidden mb-4 p-1 duration-500">
+          <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-4 p-1 duration-500">
             {(["MANAGER", "ADMIN"] as const).map(r => (
               <button
                 key={r}
                 onClick={() => setRole(r)}
-                className={`flex-1 py-2 text-[13px] font-medium rounded-lg transition-all border-none cursor-pointer duration-500 ${role === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-all border-none cursor-pointer duration-500 ${role === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
               >
                 {r.charAt(0) + r.slice(1).toLowerCase()}
               </button>
@@ -181,7 +184,7 @@ export default function RegisterPage() {
             </label>
           </div>
 
-          <button className={submitBtnStyle} onClick={handleRegister}>Create account</button>
+          <button className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30" onClick={handleRegister}>Create account</button>
         </div>
       </motion.div>
 
