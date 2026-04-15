@@ -79,7 +79,7 @@ public class AuthController {
         // Simple login check by email and password
         return userRepository.findByEmail(loginRequest.getEmail())
                 .filter(user -> user.getPassword().equals(loginRequest.getPassword()))
-                .map(user -> ResponseEntity.ok("Login successful! Welcome " + user.getUsername()))
+                .map(user -> ResponseEntity.ok("Login successful ! Welcome " + user.getUsername()))
                 .orElse(ResponseEntity.status(401).body("Invalid email or password"));
     }
 }

@@ -162,15 +162,23 @@ body {
   z-index: -1;
 }
 
-/* Scrollbar styling for the right panel */
-::-webkit-scrollbar {
-  display: none;
+/* Hide scrollbar globally */
+html, body {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
+
+/* Scrollbar utility class */
+.no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.register-panel::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar {
   display: none;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+}
