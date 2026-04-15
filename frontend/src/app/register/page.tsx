@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle, submitBtnStyle } from "@/components/AuthComponents";
@@ -18,6 +18,32 @@ export default function RegisterPage() {
   const [terms, setTerms] = useState(true);
   const [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // Reverse auth guard logic: prevent logged in users from viewing register form
+    if (localStorage.getItem("auth") === "true") {
+      router.replace("/dashboard");
+    }
+
+    // Attempt to pull user data safely out of sessionStorage if they navigated away
+    const stored = sessionStorage.getItem("registerState");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.userName) setUserName(parsed.userName);
+        if (parsed.email) setEmail(parsed.email);
+        if (parsed.role) setRole(parsed.role);
+        if (parsed.password) setPassword(parsed.password);
+      } catch (e) {
+        console.error("Failed to parse cached register state.");
+      }
+    }
+  }, [router]);
+
+  // Hook to instantly mirror user typing to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem("registerState", JSON.stringify({ userName, email, role, password }));
+  }, [userName, email, role, password]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -56,7 +82,9 @@ export default function RegisterPage() {
       
       if (response.ok) {
         showToast(message); 
-        setTimeout(() => router.push("/dashboard"), 1500);
+        localStorage.setItem("auth", "true");
+        sessionStorage.removeItem("registerState"); // Cleanup
+        setTimeout(() => router.replace("/dashboard"), 1500);
       } else {
         showToast(message || "Failed to create account");
       }

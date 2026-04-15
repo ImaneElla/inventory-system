@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle, submitBtnStyle } from "@/components/AuthComponents";
@@ -11,6 +11,12 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    if (localStorage.getItem("auth") === "true") {
+      router.replace("/dashboard");
+    }
+  }, [router]);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -31,7 +37,8 @@ export default function LoginPage() {
       
       if (response.ok) {
         showToast(message);
-        setTimeout(() => router.push("/dashboard"), 1500);
+        localStorage.setItem("auth", "true"); // Issue token
+        setTimeout(() => router.replace("/dashboard"), 1500); // Use replace safely
       } else {
         showToast(message || "Invalid credentials");
       }
