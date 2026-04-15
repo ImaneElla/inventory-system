@@ -13,7 +13,7 @@ export function LeftPanel({ showBack, onBack }: { showBack?: boolean; onBack?: (
       </div>
 
       {/* Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/30 to-[#0a1e50]/60" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/30 to-primary/60" />
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-6 pt-6">
@@ -55,15 +55,15 @@ export function LeftPanel({ showBack, onBack }: { showBack?: boolean; onBack?: (
 export function OAuthModal({ provider, onClose }: { provider: string; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white/80 backdrop-blur-2xl border border-white/50 rounded-2xl p-8 w-full max-w-sm text-center shadow-2xl">
-        <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Connecting to {provider}</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          You'll be redirected to {provider} to sign in securely
+      <div className="bg-card/80 backdrop-blur-2xl border border-border/50 rounded-2xl p-8 w-full max-w-sm text-center shadow-2xl">
+        <div className="w-10 h-10 border-4 border-muted border-t-primary rounded-full animate-spin mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-foreground mb-2">Connecting to {provider}</h3>
+        <p className="text-sm text-muted-foreground mb-6">
+          You&apos;ll be redirected to {provider} to sign in securely
         </p>
         <button
           onClick={onClose}
-          className="px-6 py-2 text-sm text-gray-600 bg-transparent border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          className="px-6 py-2 text-sm text-muted-foreground bg-transparent border border-border rounded-lg hover:bg-accent transition-colors"
         >
           Cancel
         </button>
@@ -72,6 +72,6 @@ export function OAuthModal({ provider, onClose }: { provider: string; onClose: (
   );
 }
 
-export const inputStyle = "w-full bg-white/50 border border-slate-200 rounded-md px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all backdrop-blur-sm";
+export const inputStyle = "w-full bg-card/50 border border-border rounded-md px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all backdrop-blur-sm";
 
-export const submitBtnStyle = "inline-flex w-full items-center justify-center rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 text-white hover:bg-blue-600/90 h-10 px-4 py-2 mb-4 shadow-sm";
+export const submitBtnStyle = "inline-flex w-full items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mb-4 shadow-sm";

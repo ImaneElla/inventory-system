@@ -7,18 +7,18 @@ export default function Terms() {
     const router = useRouter();
     return (  
         <div className="login-wrapper">
-            <div className="flex flex-col w-full max-w-[860px] max-h-[90vh] bg-white/60 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-[0_24px_60px_rgba(30,60,120,0.15)] overflow-y-auto m-4 p-8 md:p-12">
+            <div className="flex flex-col w-full max-w-[860px] max-h-[90vh] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl shadow-2xl overflow-y-auto m-4 p-8 md:p-12">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-1.5 bg-transparent border-none text-blue-600 font-semibold cursor-pointer mb-8 text-sm hover:text-blue-700 transition-colors p-0"
+                    className="flex items-center gap-1.5 bg-transparent border-none text-primary font-semibold cursor-pointer mb-8 text-sm hover:text-primary/80 transition-colors p-0"
                 >
                     <ArrowLeft size={16} /> Back
                 </button>
-                <h1 className="text-3xl font-bold text-gray-900 mb-3 tracking-tight tracking-tight">Terms and Conditions</h1>
-                <p className="text-gray-500 text-base mb-10 leading-relaxed">
+                <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">Terms and Conditions</h1>
+                <p className="text-muted-foreground text-base mb-10 leading-relaxed">
                     Welcome to the Inventory Management System! By accessing or using our website, you agree to comply with and be bound by the following terms and conditions of use. Please read them carefully.  
                 </p>
-                <div className="whitespace-pre-wrap text-sm text-gray-600 leading-loose">
+                <div className="whitespace-pre-wrap text-sm text-muted-foreground leading-loose">
         1. Acceptance of Terms: By accessing or using the Inventory Management System, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must not use our website.
 
 2. User Responsibilities: You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account. You agree to use the system only for lawful purposes and in accordance with these terms.
