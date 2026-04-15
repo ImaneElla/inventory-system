@@ -44,7 +44,7 @@ body {
   position: absolute;
   inset: -20px; /* Slight negative inset prevents blur clipping at edges */
   background: url('/login-bg.jpg') center/cover no-repeat;
-  filter: blur(4px);
+  filter: blur(10px);
   z-index: -2;
 }
 
