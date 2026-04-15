@@ -8,8 +8,7 @@ import { motion } from "framer-motion";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
@@ -31,7 +30,7 @@ export default function RegisterPage() {
 
   const handleRegister = () => {
     if (!terms) { showToast("Please accept the Terms & Conditions"); return; }
-    if (!email || !password || !firstName) { showToast("Please fill in all required fields"); return; }
+    if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
     showToast("Account created successfully!");
   };
 
@@ -57,7 +56,7 @@ export default function RegisterPage() {
               onClick={() => fileRef.current?.click()}
               className="w-14 h-14 rounded-full bg-blue-50/50 border-2 border-dashed border-blue-200 flex items-center justify-center text-blue-600 text-xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-blue-100/50 transition-colors"
             >
-              {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (firstName ? firstName.charAt(0).toUpperCase() : "?")}
+              {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
             </div>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
             <div className="text-xs text-gray-400 leading-snug">
@@ -83,7 +82,7 @@ export default function RegisterPage() {
           <div className="flex flex-col sm:flex-row gap-3 mb-3">
             <div className="relative flex-1 ">
               <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" />
-              <input className={`${inputStyle} pl-10`} type="text" placeholder="Full name" value={firstName} onChange={e => setFirstName(e.target.value)} />
+              <input className={`${inputStyle} pl-10 text-black/70`} type="text" placeholder="Full name" value={userName} onChange={e => setUserName(e.target.value)} />
             </div>
            
           </div>
@@ -91,14 +90,14 @@ export default function RegisterPage() {
           {/* Email */}
           <div className="mb-3 relative">
             <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" />
-            <input className={`${inputStyle} pl-10`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            <input className={`${inputStyle} pl-10 text-black/70`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
           </div>
 
           {/* Password */}
           <div className="mb-4 relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" />
             <input
-              className={`${inputStyle} pl-10 pr-10`}
+              className={`${inputStyle} pl-10 pr-10 text-black/70`}
               type={showPwd ? "text" : "password"}
               placeholder="Enter your password"
               value={password}

@@ -41,14 +41,14 @@ export default function LoginPage() {
           {/* Email */}
           <div className="mb-4 relative">
             <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" />
-            <input className={`${inputStyle} pl-10`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            <input className={`${inputStyle} pl-10 text-black/70`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
           </div>
 
           {/* Password */}
           <div className="mb-8 relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-black" />
             <input
-              className={`${inputStyle} pl-10 pr-10`}
+              className={`${inputStyle} pl-10 pr-10 text-black/70`}
               type={showPwd ? "text" : "password"}
               placeholder="Password"
               value={password}
