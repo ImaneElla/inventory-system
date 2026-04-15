@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [role, setRole] = useState<"MANAGER" | "ADMIN">("MANAGER");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [terms, setTerms] = useState(true);
   const [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -25,13 +26,44 @@ export default function RegisterPage() {
 
   const handleAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) setAvatarUrl(URL.createObjectURL(file));
+    if (file) {
+      setAvatarUrl(URL.createObjectURL(file));
+      setAvatarFile(file);
+    }
   };
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (!terms) { showToast("Please accept the Terms & Conditions"); return; }
     if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
-    showToast("Account created successfully!");
+    showToast("Creating account...");
+    
+    try {
+      const formData = new FormData();
+      formData.append("userName", userName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("role", role);
+      if (avatarFile) {
+        formData.append("image", avatarFile);
+      }
+
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        body: formData
+      });
+      
+      const message = await response.text();
+      
+      if (response.ok) {
+        showToast(message); 
+        setTimeout(() => router.push("/dashboard"), 1500);
+      } else {
+        showToast(message || "Failed to create account");
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      showToast("Failed to connect to the server");
+    }
   };
 
   return (
@@ -127,7 +159,7 @@ export default function RegisterPage() {
       </motion.div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg top-[auto]">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
         </div>
       )}

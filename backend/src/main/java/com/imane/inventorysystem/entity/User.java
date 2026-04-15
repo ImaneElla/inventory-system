@@ -24,7 +24,13 @@ public class User {
     @Column(nullable = false)
     private String password;
 
+    // Added to store the path of the profile picture
+    @Column(nullable = true)
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+
 }

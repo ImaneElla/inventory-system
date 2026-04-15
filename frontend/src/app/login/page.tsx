@@ -17,9 +17,28 @@ export default function LoginPage() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) { showToast("Please fill in all fields"); return; }
     showToast("Logging in…");
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const message = await response.text();
+      
+      if (response.ok) {
+        showToast(message);
+        setTimeout(() => router.push("/dashboard"), 1500);
+      } else {
+        showToast(message || "Invalid credentials");
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+       showToast("Failed to connect to the server");
+    }
   };
 
   return (
@@ -64,7 +83,7 @@ export default function LoginPage() {
       </motion.div>
 
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg top-[auto]">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
         </div>
       )}
