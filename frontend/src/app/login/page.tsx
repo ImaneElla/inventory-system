@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { LeftPanel, inputStyle} from "@/components/AuthComponents";
+import { LeftPanel, inputStyle } from "@/components/AuthComponents";
+import SplashSuccess from "@/components/SplashSuccess"; 
 import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [toast, setToast] = useState("");
+  const [isLoginDone, setIsLoginDone] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem("auth") === "true") {
@@ -37,42 +39,41 @@ export default function LoginPage() {
       const message = await response.text();
       
       if (response.ok) {
-        showToast(message);
-        localStorage.setItem("auth", "true"); // Issue token
-        setTimeout(() => router.replace("/dashboard"), 1500); // Use replace safely
+        showToast("Login Successful!");
+        localStorage.setItem("auth", "true");
+        setIsLoginDone(true); 
       } else {
         showToast(message || "Invalid credentials");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-       showToast("Failed to connect to the server");
+      showToast("Failed to connect to the server");
     }
   };
 
   return (
-    <div className="login-wrapper">
+    <div className="login-wrapper relative min-h-screen flex items-center justify-center">
+      {isLoginDone && <SplashSuccess />}
+
       <motion.div 
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full max-w-[860px] min-h-[480px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col  md:flex-row m-4"
+        className="flex w-full max-w-[860px] min-h-[480px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 z-10"
       >
         <LeftPanel />
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 text-center">
           <Logo className="w-16 h-16" />
-          <h1 className="text-3xl text-foreground mb-2 tracking-tight font-bold ">Welcome back</h1>
+          <h1 className="text-3xl text-foreground mb-2 tracking-tight font-bold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mb-8">
             No account?{" "}
             <span onClick={() => router.push("/register")} className="text-primary font-medium cursor-pointer hover:underline">Create one</span>
           </p>
 
-          {/* Email */}
           <div className="mb-4 relative">
             <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
             <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
           </div>
 
-          {/* Password */}
           <div className="mb-8 relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
             <input
@@ -83,19 +84,24 @@ export default function LoginPage() {
               onChange={e => setPassword(e.target.value)}
             />
             <button 
-            onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center">
+              onClick={() => setShowPwd(v => !v)} 
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center"
+            >
               {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
           <button 
-          className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30"
-          type="button"
-          onClick={handleLogin}>Log in</button>
+            className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30"
+            type="button"
+            onClick={handleLogin}
+          >
+            Log in
+          </button>
         </div>
       </motion.div>
 
-      {toast && (
+      {toast && !isLoginDone && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
         </div>
