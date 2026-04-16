@@ -103,19 +103,19 @@ export default function RegisterPage() {
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full max-w-[860px] min-h-[540px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 "
+        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[860px] md:min-h-[480px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 "
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
-        <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
-          <Logo className="w-16 h-16" />
+        <div className="flex-1 p-8 md:p-4 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
+          <Logo className="w-14 h-14" />
           <h1 className="text-3xl font-semibold text-foreground mb-2 tracking-tight text-center">Create an account</h1>
-          <p className="text-sm text-muted-foreground mb-6 text-center">
+          <p className="text-sm text-muted-foreground mb-4 text-center">
             Already have an account?{" "}
             <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
           </p>
 
           {/* Avatar */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-1">
             <div
               onClick={() => fileRef.current?.click()}
               className="w-14 h-14 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
@@ -131,7 +131,7 @@ export default function RegisterPage() {
           </div>
 
           {/* Role toggle */}
-          <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-4 p-1 duration-500">
+          <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-2 p-1 w-80 mx-auto duration-500">
             {(["MANAGER", "ADMIN"] as const).map(r => (
               <button
                 key={r}
