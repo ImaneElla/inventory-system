@@ -115,7 +115,7 @@ export default function RegisterPage() {
           </p>
 
           {/* Avatar */}
-          <div className="flex items-center gap-4 mb-1">
+          <div className="flex items-center gap-4 mb-1 mx-auto">
             <div
               onClick={() => fileRef.current?.click()}
               className="w-14 h-14 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
