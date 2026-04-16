@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle, submitBtnStyle } from "@/components/AuthComponents";
+import { Logo } from "@/components/logo/logo";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -106,8 +107,9 @@ export default function RegisterPage() {
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
-          <h1 className="text-3xl font-semibold text-foreground mb-2 tracking-tight">Create an account</h1>
-          <p className="text-sm text-muted-foreground mb-6">
+          <Logo className="w-16 h-16" />
+          <h1 className="text-3xl font-semibold text-foreground mb-2 tracking-tight text-center">Create an account</h1>
+          <p className="text-sm text-muted-foreground mb-6 text-center">
             Already have an account?{" "}
             <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
           </p>

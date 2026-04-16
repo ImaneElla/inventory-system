@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle} from "@/components/AuthComponents";
+import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 
 export default function LoginPage() {
@@ -58,13 +59,7 @@ export default function LoginPage() {
       >
         <LeftPanel />
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 text-center">
-        <svg 
-            viewBox="-51.2 -51.2 614.4 614.4" 
-            className="w-16 h-16 text-blue-600 mx-auto mb-4" 
-            fill="currentColor"
-          >
-            <path d="M509.202,179.961l-89.051-133.57c-3.146-4.718-8.433-7.434-13.891-7.434H105.738c-5.561,0-10.802,2.801-13.891,7.434 L2.795,179.961c-4.204,6.3-3.624,14.732,1.456,20.403l239.312,267.139c6.605,7.374,18.242,7.401,24.872,0l239.312-267.139 C512.74,194.789,513.481,186.373,509.202,179.961z M382.168,72.348l-30.925,82.469l-61.852-82.469H382.168z M322.784,172.525 h-133.57l66.785-89.046L322.784,172.525z M222.605,72.348l-61.851,82.469l-30.926-82.469H222.605z M101.548,92.034l30.183,80.492 H47.884L101.548,92.034z M54.059,205.918h90.194l64.937,173.17L54.059,205.918z M255.998,408.809l-76.081-202.891H332.08 L255.998,408.809z M302.806,379.087l64.937-173.17h90.194L302.806,379.087z M380.264,172.526l30.185-80.492l53.664,80.492H380.264 z" />
-          </svg>
+          <Logo className="w-16 h-16" />
           <h1 className="text-3xl text-foreground mb-2 tracking-tight font-bold ">Welcome back</h1>
           <p className="text-sm text-muted-foreground mb-8">
             No account?{" "}
