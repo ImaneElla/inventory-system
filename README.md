@@ -252,10 +252,18 @@ mvn spring-boot:run
 
 ### 3. Frontend Setup
 
+#### Using **npm**:
 ```bash
 cd frontend
 npm install
 npm run dev
+```
+
+#### Using **Bun**:
+```bash
+cd frontend
+bun install
+bun dev
 ```
 
 ### 4. Access the app
