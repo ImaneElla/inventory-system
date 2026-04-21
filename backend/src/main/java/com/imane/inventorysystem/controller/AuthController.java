@@ -1,22 +1,26 @@
 package com.imane.inventorysystem.controller;
 
-import com.imane.inventorysystem.entity.User;
-import com.imane.inventorysystem.entity.Role;
-import com.imane.inventorysystem.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.imane.inventorysystem.entity.Role;
+import com.imane.inventorysystem.entity.User;
+import com.imane.inventorysystem.repository.UserRepository;
+
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000") // Connect to your Next.js app
 public class AuthController {
 
     @Autowired
@@ -42,7 +46,9 @@ public class AuthController {
             // 2. Handle Image Upload (Optional)
             String fileName = null;
             if (image != null && !image.isEmpty()) {
+
                 // Create directory if it doesn't exist
+                
                 Path uploadPath = Paths.get(UPLOAD_DIR);
                 if (!Files.exists(uploadPath)) {
                     Files.createDirectories(uploadPath);
@@ -57,7 +63,7 @@ public class AuthController {
             // 3. Create User Object
             User user = new User();
             user.setEmail(email);
-            user.setPassword(password); // Note: You should use BCrypt for security later!
+            user.setPassword(password); 
             user.setRole(Role.valueOf(role.toUpperCase()));
             user.setImageUrl(fileName); // Save the name/path of the photo
             
@@ -76,7 +82,9 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginRequest) {
+
         // Simple login check by email and password
+
         return userRepository.findByEmail(loginRequest.getEmail())
                 .filter(user -> user.getPassword().equals(loginRequest.getPassword()))
                 .map(user -> ResponseEntity.ok("Login successful ! Welcome " + user.getUsername()))
