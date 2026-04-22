@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://img.icons8.com/fluency/96/inventory-flow.png" alt="Logo" width="96" height="96" />
-  <h1>📦 Inventory Management System</h1>
+  <img src="./frontend/src/app/icon.svg" alt="IMN Logo" width="96" height="96" />
+  <h1> Inventory Management System</h1>
   <p><b>A professional-grade, AI-powered full-stack solution for modern business logistics.</b></p>
 
 [![Next.js](https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
@@ -32,7 +32,7 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 ## 🚀 Tech Stack
 
 ### 💻 Core Infrastructure
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,framer,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,framermotion,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
@@ -44,41 +44,49 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 ---
 
 ## ✨ Key Features
-<br/>
 
 <details open>
 <summary><b>📊 Enterprise Dashboard</b></summary>
-<br/>
+
 Real-time operational overview with high-level metrics:
+
 - **Total Analytics:** Instant visibility into products, sales, and net profit.
 - **Dynamic Visuals:** Interactive charts using Chart.js for trend analysis.
 - **Critical Alerts:** Automated low-stock detection to prevent inventory gaps.
 - **Smart Insights:** AI-driven panel for inventory optimization.
+
 </details>
 
 <details>
 <summary><b>📦 Advanced Product & Stock Control</b></summary>
-<br/>
-- **Full CRUD Operations:** Specialized management of product lifecycle.
+
+Full-lifecycle management of inventory:
+
+- **Full CRUD Operations:** Specialized management of product catalogs.
 - **Movement Tracking:** Granular logs for every "Stock IN" and "Stock OUT" event.
 - **Real-time Deductions:** Automatic inventory adjustments upon sale confirmation.
+
 </details>
 
 <details>
 <summary><b>🔐 Security & Access Control (RBAC)</b></summary>
-<br/>
+
 Implemented a multi-tier authorization system using **Spring Security** and **JWT**:
+
 - **Admin:** Full system control, user management, and sensitive report access.
 - **Manager:** Operational access limited to daily stock and sales management.
 - **Stateless Auth:** Secure token-based authentication for scalable performance.
+
 </details>
 
 <details>
 <summary><b>🤖 AI-Powered Intelligence</b></summary>
-<br/>
+
 Leveraging predictive logic to assist in decision making:
+
 - **Restock Forecasting:** Identifies high-velocity items nearing depletion.
 - **Performance Analysis:** Flags underperforming products to optimize shelf space.
+
 </details>
 
 ---
