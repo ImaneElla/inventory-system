@@ -7,6 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-007ACC?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-007ACC?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC-007ACC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 <p>
   <a href="#-key-features">Features</a> •
@@ -212,9 +213,9 @@ frontend/
 
 <div align="center">
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/imaneellaouzi/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://imane-ellaouzi.vercel.app/)
-[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:emanellaouzi.05@gmail.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-007ACC?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/imaneellaouzi/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-007ACC?style=for-the-badge&logo=vercel&logoColor=white)](https://imane-ellaouzi.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-007ACC?style=for-the-badge&logo=gmail&logoColor=white)](mailto:emanellaouzi.05@gmail.com)
 
 **Built with ❤️ for professional efficiency.**
 </div>
