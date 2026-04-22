@@ -3,9 +3,9 @@
   <h1> Inventory Management System</h1>
   <p><b>A professional-grade, AI-powered full-stack solution for modern business logistics.</b></p>
 
-[![Next.js](https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15+-007ACC?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-007ACC?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-007ACC?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 <p>
@@ -32,7 +32,10 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 ## 🚀 Tech Stack
 
 ### 💻 Core Infrastructure
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,framermotion,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
+
+<div align="center">
+
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
@@ -40,6 +43,8 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 | **Backend** | Java 17+, Spring Boot 3, Spring Security, JPA/Hibernate |
 | **Database** | PostgreSQL (Relational persistence) |
 | **Tools** | Maven, Bun, Postman, Git |
+
+</div>
 
 ---
 
