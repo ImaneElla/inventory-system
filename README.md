@@ -1,120 +1,104 @@
-# 📦 Inventory Management System
+<div align="center">
+  <img src="https://img.icons8.com/fluency/96/inventory-flow.png" alt="Logo" width="96" height="96" />
+  <h1>📦 Inventory Management System</h1>
+  <p><b>A professional-grade, AI-powered full-stack solution for modern business logistics.</b></p>
 
-> A full-stack inventory management web application built with **Next.js** and **Spring Boot**, designed to help businesses track products, manage stock movements, record sales, and gain AI-powered insights.
+[![Next.js](https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
+<p>
+  <a href="#-key-features">Features</a> •
+  <a href="#-tech-stack">Tech Stack</a> •
+  <a href="#-system-architecture">Architecture</a> •
+  <a href="#-getting-started">Getting Started</a>
+</p>
+</div>
 
 ---
 
 ## 🧠 Overview
 
-This system allows businesses to:
+In modern commerce, data is the difference between profit and loss. This **Inventory Management System** is engineered to bridge that gap. Built with a robust **Spring Boot** micro-service architecture and a high-performance **Next.js** frontend, it transforms raw inventory data into actionable AI-powered insights.
 
-- Track products and available quantities
-- Record stock entries and exits
-- Avoid stockouts or overstocking
-- Analyze sales and profits
-- Get AI-powered restocking suggestions
-
----
-
-## 🎯 Objectives
-
-- Automate inventory management
-- Reduce human errors
-- Support data-driven decision making
+- **Automate** tracking of thousands of SKUs across multiple categories.
+- **Optimize** stock levels with intelligent restocking suggestions.
+- **Secure** sensitive business data with enterprise-grade JWT authentication.
+- **Visualize** sales performance through real-time dynamic dashboards.
 
 ---
 
 ## 🚀 Tech Stack
 
-### 🎨 Frontend
-| Technology | Purpose |
-|---|---|
-| Next.js | React framework |
-| TypeScript | Type safety |
-| Tailwind CSS | Styling |
-| shadcn/ui | UI components |
-| Framer Motion | Animations |
-| Chart.js | Data visualization |
+### 💻 Core Infrastructure
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,framer,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
 
-### ⚙️ Backend
-| Technology | Purpose |
+| Layer | Technologies |
 |---|---|
-| Java + Spring Boot | REST API server |
-| Spring Security + JWT | Authentication & authorization |
-| Spring Data JPA (Hibernate) | ORM / data access |
-| PostgreSQL | Relational database |
-| Postman | API testing |
+| **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS, Framer Motion, Chart.js |
+| **Backend** | Java 17+, Spring Boot 3, Spring Security, JPA/Hibernate |
+| **Database** | PostgreSQL (Relational persistence) |
+| **Tools** | Maven, Bun, Postman, Git |
 
 ---
 
-## 🧩 Features
+## ✨ Key Features
+<br/>
 
-### 📊 1. Dashboard
-- Total products overview
-- Total sales count
-- Net profit summary
-- Low stock alerts
-- Sales & profit charts (Chart.js)
-- AI insights panel
-- Global search
-- Best-selling products analysis
+<details open>
+<summary><b>📊 Enterprise Dashboard</b></summary>
+<br/>
+Real-time operational overview with high-level metrics:
+- **Total Analytics:** Instant visibility into products, sales, and net profit.
+- **Dynamic Visuals:** Interactive charts using Chart.js for trend analysis.
+- **Critical Alerts:** Automated low-stock detection to prevent inventory gaps.
+- **Smart Insights:** AI-driven panel for inventory optimization.
+</details>
 
-### 📦 2. Product Management
+<details>
+<summary><b>📦 Advanced Product & Stock Control</b></summary>
+<br/>
+- **Full CRUD Operations:** Specialized management of product lifecycle.
+- **Movement Tracking:** Granular logs for every "Stock IN" and "Stock OUT" event.
+- **Real-time Deductions:** Automatic inventory adjustments upon sale confirmation.
+</details>
 
-- Add / Edit / Delete products
-- Fields: name, quantity, price
-- Search & filter products
+<details>
+<summary><b>🔐 Security & Access Control (RBAC)</b></summary>
+<br/>
+Implemented a multi-tier authorization system using **Spring Security** and **JWT**:
+- **Admin:** Full system control, user management, and sensitive report access.
+- **Manager:** Operational access limited to daily stock and sales management.
+- **Stateless Auth:** Secure token-based authentication for scalable performance.
+</details>
 
-### 📤 3. Stock Movements
-
-- **Stock IN** — record incoming inventory
-- **Stock OUT** — record outgoing inventory
-- Full movement history log
-
-### 🛒 4. Sales
-
-- Record sales transactions
-- Automatic stock deduction
-- Profit calculation per sale
-- Select products from list
-- Input quantity → see total in real time
-- Confirm and save sale
-
-### 🤖 5. AI Insights
-
-- Smart suggestions:
-  - Products that need restocking
-  - Low-performing products
-- Demand forecasting
-
-### 📊 6. Reports
-
-- Sales reports
-- Profit reports
-- Product reports
-- Export to **PDF** and **Excel**
+<details>
+<summary><b>🤖 AI-Powered Intelligence</b></summary>
+<br/>
+Leveraging predictive logic to assist in decision making:
+- **Restock Forecasting:** Identifies high-velocity items nearing depletion.
+- **Performance Analysis:** Flags underperforming products to optimize shelf space.
+</details>
 
 ---
 
-## 🔐 Access Control
+## 🛡️ Technical Deep Dive
 
-Two roles with different permissions:
+### 🔑 Security Architecture
+The application employs a stateless **JWT (JSON Web Token)** authentication strategy.
+- **Password Hashing:** BCrypt for secure credential storage.
+- **CORS Configuration:** Strictly defined origins for frontend communication.
+- **Granular Permissions:** Method-level security annotations in the Spring backend.
 
-| Feature | Admin | Manager |
-|---|---|---|
-| User Management | ✅ | ❌ |
-| Products | ✅ | ✅ |
-| Sales | ✅ | ✅ |
-| Reports | ✅ | ❌ |
-| AI Insights | ✅ | ❌ |
-
-### 👤 Manager Role
-Handles day-to-day operations:
-- ✅ View Dashboard
-- ✅ Manage Products (CRUD)
-- ✅ Record Sales
-- ✅ Auto stock updates
-- ❌ Cannot access Reports or User Management
+### 🏗️ System Architecture
+```mermaid
+graph TD
+    User((User)) -->|HTTPS| Frontend[Next.js App Router]
+    Frontend -->|REST API + JWT| Backend[Spring Boot 3]
+    Backend -->|JPA/Hibernate| DB[(PostgreSQL)]
+    Backend -->|Internal Logic| AI[Demand Forecasting Logic]
+```
 
 ---
 
@@ -141,134 +125,83 @@ Handles day-to-day operations:
 ```
 📁 inventory-system/
 │
-├── 🟢 backend/          → Spring Boot
-│
-├── 🟣 frontend/         → Next.js
-│
-└── README.md
+├── 🟢 backend/          # Java Spring Boot REST API
+├── 🟣 frontend/         # Next.js 15+ Frontend
+└── 📄 README.md         # Documentation
 ```
 
-### 🔵 Backend Structure
+### 📁 Technical Blueprint
+
+<details>
+<summary><b>Backend Structure (Spring Boot)</b></summary>
 
 ```
-inventory-backend/
-│
+backend/
 ├── src/main/java/com/inventory/
-│   ├── controller/        # REST API endpoints
-│   ├── service/           # Business logic
-│   ├── repository/        # DB access (JPA)
-│   ├── model/             # Entity classes (tables)
-│   ├── dto/               # Data Transfer Objects
-│   ├── config/            # Security, CORS, configs
-│   ├── exception/         # Error handling
-│   └── InventoryApplication.java
-│
-├── src/main/resources/
-│   └── application.properties
-│
-└── pom.xml
+│   ├── controller/        # RESTful API Endpoints
+│   ├── service/           # Business Logic Layer
+│   ├── repository/        # Data Access Layer (JPA)
+│   ├── model/             # Database Entities
+│   ├── dto/               # Type-safe Data Transfer
+│   └── config/            # Security & Bean Configs
+└── pom.xml                # Dependency Management
 ```
+</details>
 
-### 🟣 Frontend Structure
+<details>
+<summary><b>Frontend Structure (Next.js)</b></summary>
 
 ```
-inventory-frontend/
-│
-├── app/                   # Next.js app router
-│
-├── components/
-│   ├── dashboard/
-│   ├── products/
-│   ├── sales/
-│   └── ui/                # shadcn/ui components
-│
-├── services/
-│   └── api.ts             # Backend API calls
-│
-├── hooks/
-├── lib/
-│   └── utils.ts
-├── types/
-├── styles/
-└── public/
+frontend/
+├── app/                   # Next.js App Router (Pages & Layouts)
+├── components/            # Atomic UI & Section Components
+├── services/              # API Communication (Axios/Fetch)
+├── hooks/                 # Custom React Logic
+└── types/                 # TypeScript Interfaces
 ```
-
----
-
-## 🔗 Communication Flow
-
-```
-USER
- │
- ▼
-Next.js (Frontend)
- │
- ▼  API Request (REST + JWT)
- │
- ▼
-Spring Boot (Backend)
- │
- ▼
-PostgreSQL (Database)
- │
- ▼
-Spring Boot
- │
- ▼
-Next.js
- │
- ▼
-USER
-```
+</details>
 
 ---
 
 ## ⚙️ Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
+- **Java:** 17+
+- **Node.js:** 18+ (Bun recommended)
+- **Database:** PostgreSQL 14+
 
-- Node.js 18+
-- Java 17+
-- PostgreSQL 14+
-- Maven
+### 🚀 Quick Start
 
-### 1. Clone the repository
+1. **Clone & Navigate**
+   ```bash
+   git clone https://github.com/ImaneElla/inventory-system.git
+   cd inventory-system
+   ```
 
-```bash
-git clone https://github.com/your-username/inventory-system.git
-git clone https://github.com/ImaneElla/inventory-system.git
-cd inventory-system
-```
+2. **Initialize Database**
+   Create a database named `inventory_db` in PostgreSQL and update `backend/src/main/resources/application.properties` with your credentials.
 
-### 2. Backend Setup
+3. **Launch Backend**
+   ```bash
+   cd backend
+   mvn spring-boot:run
+   ```
 
-```bash
-cd backend
-# Configure your DB credentials in src/main/resources/application.properties
-mvn spring-boot:run
-# OR
-.\mvnw spring-boot:run
-```
+4. **Launch Frontend**
+   ```bash
+   cd frontend
+   bun install && bun dev
+   ```
 
-### 3. Frontend Setup
+---
 
-#### Using **npm**:
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## 📬 Contact & Links
 
-#### Using **Bun**:
-```bash
-cd frontend
-bun install
-bun dev
-```
+<div align="center">
 
-### 4. Access the app
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/imaneellaouzi/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://imane-ellaouzi.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:emanellaouzi.05@gmail.com)
 
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
+**Built with ❤️ for professional efficiency.**
+</div>
