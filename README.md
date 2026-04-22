@@ -1,13 +1,12 @@
 <div align="center">
-  <img src="https://img.icons8.com/fluency/96/inventory-flow.png" alt="Logo" width="96" height="96" />
-  <h1>📦 Inventory Management System</h1>
+  <img src="./frontend/src/app/icon.svg" alt="IMN Logo" width="96" height="96" />
+  <h1> Inventory Management System</h1>
   <p><b>A professional-grade, AI-powered full-stack solution for modern business logistics.</b></p>
 
-[![Next.js](https://img.shields.io/badge/Next.js-15+-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15+-007ACC?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4+-007ACC?style=for-the-badge&logo=spring-boot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-007ACC?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-
 <p>
   <a href="#-key-features">Features</a> •
   <a href="#-tech-stack">Tech Stack</a> •
@@ -32,7 +31,10 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 ## 🚀 Tech Stack
 
 ### 💻 Core Infrastructure
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,framer,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
+
+<div align="center">
+
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
@@ -41,44 +43,54 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 | **Database** | PostgreSQL (Relational persistence) |
 | **Tools** | Maven, Bun, Postman, Git |
 
+</div>
+
 ---
 
 ## ✨ Key Features
-<br/>
 
 <details open>
 <summary><b>📊 Enterprise Dashboard</b></summary>
-<br/>
+
 Real-time operational overview with high-level metrics:
+
 - **Total Analytics:** Instant visibility into products, sales, and net profit.
 - **Dynamic Visuals:** Interactive charts using Chart.js for trend analysis.
 - **Critical Alerts:** Automated low-stock detection to prevent inventory gaps.
 - **Smart Insights:** AI-driven panel for inventory optimization.
+
 </details>
 
 <details>
 <summary><b>📦 Advanced Product & Stock Control</b></summary>
-<br/>
-- **Full CRUD Operations:** Specialized management of product lifecycle.
+
+Full-lifecycle management of inventory:
+
+- **Full CRUD Operations:** Specialized management of product catalogs.
 - **Movement Tracking:** Granular logs for every "Stock IN" and "Stock OUT" event.
 - **Real-time Deductions:** Automatic inventory adjustments upon sale confirmation.
+
 </details>
 
 <details>
 <summary><b>🔐 Security & Access Control (RBAC)</b></summary>
-<br/>
+
 Implemented a multi-tier authorization system using **Spring Security** and **JWT**:
+
 - **Admin:** Full system control, user management, and sensitive report access.
 - **Manager:** Operational access limited to daily stock and sales management.
 - **Stateless Auth:** Secure token-based authentication for scalable performance.
+
 </details>
 
 <details>
 <summary><b>🤖 AI-Powered Intelligence</b></summary>
-<br/>
+
 Leveraging predictive logic to assist in decision making:
+
 - **Restock Forecasting:** Identifies high-velocity items nearing depletion.
 - **Performance Analysis:** Flags underperforming products to optimize shelf space.
+
 </details>
 
 ---
@@ -132,8 +144,7 @@ graph TD
 
 ### 📁 Technical Blueprint
 
-<details>
-<summary><b>Backend Structure (Spring Boot)</b></summary>
+<b>Backend Structure (Spring Boot)</b>
 
 ```
 backend/
@@ -146,10 +157,7 @@ backend/
 │   └── config/            # Security & Bean Configs
 └── pom.xml                # Dependency Management
 ```
-</details>
-
-<details>
-<summary><b>Frontend Structure (Next.js)</b></summary>
+<b>Frontend Structure (Next.js)</b>
 
 ```
 frontend/
@@ -159,7 +167,6 @@ frontend/
 ├── hooks/                 # Custom React Logic
 └── types/                 # TypeScript Interfaces
 ```
-</details>
 
 ---
 
@@ -199,9 +206,9 @@ frontend/
 
 <div align="center">
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/imaneellaouzi/)
-[![Portfolio](https://img.shields.io/badge/Portfolio-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://imane-ellaouzi.vercel.app/)
-[![Email](https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white)](mailto:emanellaouzi.05@gmail.com)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-007ACC?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/imaneellaouzi/)
+[![Portfolio](https://img.shields.io/badge/Portfolio-007ACC?style=for-the-badge&logo=vercel&logoColor=white)](https://imane-ellaouzi.vercel.app/)
+[![Email](https://img.shields.io/badge/Email-007ACC?style=for-the-badge&logo=gmail&logoColor=white)](mailto:emanellaouzi.05@gmail.com)
 
 **Built with ❤️ for professional efficiency.**
 </div>
