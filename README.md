@@ -144,8 +144,7 @@ graph TD
 
 ### 📁 Technical Blueprint
 
-<details>
-<summary><b>Backend Structure (Spring Boot)</b></summary>
+<b>Backend Structure (Spring Boot)</b>
 
 ```
 backend/
@@ -158,10 +157,7 @@ backend/
 │   └── config/            # Security & Bean Configs
 └── pom.xml                # Dependency Management
 ```
-</details>
-
-<details>
-<summary><b>Frontend Structure (Next.js)</b></summary>
+<b>Frontend Structure (Next.js)</b>
 
 ```
 frontend/
@@ -171,7 +167,6 @@ frontend/
 ├── hooks/                 # Custom React Logic
 └── types/                 # TypeScript Interfaces
 ```
-</details>
 
 ---
 
