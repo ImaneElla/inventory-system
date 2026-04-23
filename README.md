@@ -137,9 +137,9 @@ graph TD
 ```
 📁 inventory-system/
 │
-├── 🟢 backend/          # Java Spring Boot REST API
-├── 🟣 frontend/         # Next.js 15+ Frontend
-└── 📄 README.md         # Documentation
+├──  backend/          # Java Spring Boot REST API
+├──  frontend/         # Next.js 15+ Frontend
+└──  README.md         # Documentation
 ```
 
 ### 📁 Technical Blueprint
