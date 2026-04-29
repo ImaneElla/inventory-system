@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle, submitBtnStyle } from "@/components/AuthComponents";
 import { Logo } from "@/components/logo/logo";
-import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function RegisterPage() {
@@ -18,6 +17,8 @@ export default function RegisterPage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [terms, setTerms] = useState(true);
   const [toast, setToast] = useState("");
+  const [step, setStep] = useState(1);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -108,91 +109,177 @@ export default function RegisterPage() {
         <LeftPanel showBack onBack={() => router.push("/login")} />
         <div className="flex-1 p-8 md:p-4 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
           <Logo className="w-14 h-14" />
-          <h1 className="text-3xl font-semibold text-foreground mb-2 tracking-tight text-center">Create an account</h1>
-          <p className="text-sm text-muted-foreground mb-4 text-center">
-            Already have an account?{" "}
-            <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
-          </p>
+          <h1 className="text-3xl font-semibold text-foreground mb-6 tracking-tight text-center">Create an account</h1>
 
-          {/* Avatar */}
-          <div className="flex items-center gap-4 mb-1 mx-auto">
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="w-14 h-14 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
+          {step === 1 ? (
+            <motion.div 
+              key="step1"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col w-full"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
-            <div className="text-xs text-muted-foreground leading-snug">
-              <strong className="block text-foreground text-[13px]">Profile Picture</strong>
-              Optional — click to upload
-            </div>
-          </div>
+              {/* Role toggle */}
+              <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-4 p-1 w-80 mx-auto duration-500">
+                {(["MANAGER", "ADMIN"] as const).map(r => (
+                  <button
+                    key={r}
+                    onClick={() => setRole(r)}
+                    className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-all border-none cursor-pointer duration-500 ${role === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+                  >
+                    {r.charAt(0) + r.slice(1).toLowerCase()}
+                  </button>
+                ))}
+              </div>
 
-          {/* Role toggle */}
-          <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-2 p-1 w-80 mx-auto duration-500">
-            {(["MANAGER", "ADMIN"] as const).map(r => (
-              <button
-                key={r}
-                onClick={() => setRole(r)}
-                className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-all border-none cursor-pointer duration-500 ${role === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
+              {/* Name row */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                <div className="relative flex-1 ">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
+                  <input className={`${inputStyle} pl-10 text-foreground`} type="text" placeholder="Full name" value={userName} onChange={e => setUserName(e.target.value)} />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="mb-4 relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
+                <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+
+              {/* Password */}
+              <div className="mb-6 relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
+                <input
+                  className={`${inputStyle} pl-10 pr-10 text-foreground`}
+                  type={showPwd ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center">
+                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              <button 
+                className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30 cursor-pointer" 
+                onClick={() => {
+                  if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
+                  setStep(2);
+                }}
               >
-                {r.charAt(0) + r.slice(1).toLowerCase()}
+                Next
               </button>
-            ))}
-          </div>
+              
+              <p className="text-sm text-muted-foreground mt-6 text-center">
+                Already have an account?{" "}
+                <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="step2"
+              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+              className="flex flex-col w-full"
+            >
+              {/* Avatar */}
+              <div className="flex flex-col items-center gap-4 mb-8 mx-auto mt-2">
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  className="w-24 h-24 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-3xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
+                </div>
+                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
+                <div className="text-center text-sm text-muted-foreground leading-snug">
+                  <strong className="block text-foreground text-base mb-1">Profile Picture</strong>
+                  Optional — click to upload or skip this
+                </div>
+              </div>
 
-          {/* Name row */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-3">
-            <div className="relative flex-1 ">
-              <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-              <input className={`${inputStyle} pl-10 text-foreground`} type="text" placeholder="Full name" value={userName} onChange={e => setUserName(e.target.value)} />
-            </div>
-          </div>
+              {/* Terms */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <input 
+                  type="checkbox" 
+                  id="terms" 
+                  checked={terms} 
+                  onChange={e => setTerms(e.target.checked)} 
+                  className="w-4 h-4 accent-primary cursor-pointer rounded border-border" 
+                />
+                <label htmlFor="terms" className="text-[13px] text-muted-foreground cursor-pointer">
+                  I agree to the <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="text-primary no-underline hover:underline">Terms &amp; Conditions</span>
+                </label>
+              </div>
 
-          {/* Email */}
-          <div className="mb-3 relative">
-            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-            <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-          </div>
-
-          {/* Password */}
-          <div className="mb-4 relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-            <input
-              className={`${inputStyle} pl-10 pr-10 text-foreground`}
-              type={showPwd ? "text" : "password"}
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <button onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center">
-              {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-
-          {/* Terms */}
-          <div className="flex items-center gap-2 mb-6">
-            <input 
-              type="checkbox" 
-              id="terms" 
-              checked={terms} 
-              onChange={e => setTerms(e.target.checked)} 
-              className="w-4 h-4 accent-primary cursor-pointer rounded border-border" 
-            />
-            <label htmlFor="terms" className="text-[13px] text-muted-foreground cursor-pointer">
-              I agree to the <Link href="/terms" className="text-primary no-underline hover:underline">Terms &amp; Conditions</Link>
-            </label>
-          </div>
-
-          <button className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30" onClick={handleRegister}>Create account</button>
+              <div className="flex gap-3 w-full max-w-xs mx-auto mb-6">
+                <button 
+                  className="flex-1 text-foreground py-3 rounded-full font-medium transition-colors duration-200 border border-border bg-card hover:bg-secondary hover:text-secondary-foreground cursor-pointer" 
+                  onClick={() => setStep(1)}
+                >
+                  Back
+                </button>
+                <button 
+                  className={`flex-2 py-3 rounded-full font-medium transition-all duration-200 shadow-lg ${terms ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-primary/30 cursor-pointer' : 'bg-primary/50 text-primary-foreground/50 cursor-not-allowed shadow-none'}`} 
+                  onClick={handleRegister}
+                  disabled={!terms}
+                >
+                  Create account
+                </button>
+              </div>
+              
+              <p className="text-sm text-muted-foreground text-center">
+                Already have an account?{" "}
+                <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
+              </p>
+            </motion.div>
+          )}
         </div>
       </motion.div>
 
       {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
+        </div>
+      )}
+
+      {/* Terms & Conditions Modal */}
+      {showTermsModal && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card w-full max-w-lg rounded-2xl border border-border shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+          >
+            <div className="p-6 overflow-y-auto flex-1">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Terms &amp; Conditions</h2>
+              <div className="text-sm text-muted-foreground space-y-4">
+                <p>Welcome to our application. By registering, you agree to the following terms:</p>
+                <div>
+                  <strong className="text-foreground block mb-1">1. Account Responsibilities</strong>
+                  You are responsible for maintaining the confidentiality of your login credentials and for any activities that occur under your account.
+                </div>
+                <div>
+                  <strong className="text-foreground block mb-1">2. Acceptable Use</strong>
+                  You agree not to use the service for any unlawful activities or in a way that could damage, disable, or impair our systems.
+                </div>
+                <div>
+                  <strong className="text-foreground block mb-1">3. Data Privacy</strong>
+                  We respect your privacy and will handle your data in accordance with our Privacy Policy.
+                </div>
+                <div>
+                  <strong className="text-foreground block mb-1">4. Termination</strong>
+                  We reserve the right to suspend or terminate accounts that violate these terms without prior notice.
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-border flex justify-end bg-card/50">
+              <button 
+                onClick={() => setShowTermsModal(false)}
+                className="bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+              >
+                Close
+              </button>
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

@@ -2,18 +2,17 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo/logo";
-
 export default function Dashboard() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     // Auth Guard: If no token exists, immediately kick to login
-    if (localStorage.getItem("auth") !== "true") {
-      router.replace("/login");
-    } else {
+    if (localStorage.getItem("auth") === "true") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setAuthorized(true);
+    } else {
+      router.replace("/login");
     }
   }, [router]);
 

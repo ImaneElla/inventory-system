@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle } from "@/components/AuthComponents";
-import SplashSuccess from "@/components/SplashSuccess"; 
 import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 
@@ -52,7 +51,6 @@ export default function LoginPage() {
 
   return (
     <div className="login-wrapper relative min-h-screen flex items-center justify-center">
-      {isLoginDone && <SplashSuccess />}
 
       <motion.div 
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
@@ -92,7 +90,7 @@ export default function LoginPage() {
           </div>
 
           <button 
-            className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30"
+            className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30 cursor-pointer"
             type="button"
             onClick={handleLogin}
           >
