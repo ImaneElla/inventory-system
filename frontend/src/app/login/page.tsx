@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [toast, setToast] = useState("");
-  const [isLoginDone, setIsLoginDone] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem("auth") === "true") {
@@ -27,7 +26,7 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     if (!email || !password) { showToast("Please fill in all fields"); return; }
-    showToast("Logging in…");
+    
     try {
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
@@ -40,7 +39,7 @@ export default function LoginPage() {
       if (response.ok) {
         showToast("Login Successful!");
         localStorage.setItem("auth", "true");
-        setIsLoginDone(true); 
+        setTimeout(() => router.replace("/dashboard"), 1500);
       } else {
         showToast(message || "Invalid credentials");
       }
@@ -99,7 +98,7 @@ export default function LoginPage() {
         </div>
       </motion.div>
 
-      {toast && !isLoginDone && (
+      {toast && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
         </div>
