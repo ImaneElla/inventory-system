@@ -107,7 +107,7 @@ The application employs a stateless **JWT (JSON Web Token)** authentication stra
 ```mermaid
 graph TD
     User((User)) -->|HTTPS| Frontend[Next.js App Router]
-    Frontend -->|REST API + JWT| Backend[Spring Boot 3]
+    Frontend -->|REST API | Backend[Spring Boot 3]
     Backend -->|JPA/Hibernate| DB[(PostgreSQL)]
     Backend -->|Internal Logic| AI[Demand Forecasting Logic]
 ```
