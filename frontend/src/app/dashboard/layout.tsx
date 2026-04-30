@@ -1,0 +1,30 @@
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
+import SidebarApp from "@/components/SidebarApp";
+
+export default function DashboardLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <TooltipProvider>
+      <SidebarProvider>
+        <SidebarApp />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <div className="flex-1">
+              <span className="text-sm font-medium text-muted-foreground">Dashboard Overview</span>
+            </div>
+          </header>
+          <main className="flex flex-1 flex-col gap-4 p-6 bg-muted/20">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
+  );
+}

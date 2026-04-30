@@ -27,12 +27,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-  <html lang="en">
-      <body className="min-h-screen bg-background antialiased font-sans">
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background antialiased font-sans`}>
         <Providers>
-          <main className="relative flex flex-col h-screen">
-            {children}
-          </main>
+          {children}
         </Providers>
       </body>
     </html>
