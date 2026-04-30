@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle } from "@/components/AuthComponents";
 import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -88,13 +89,13 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <button 
-            className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30 cursor-pointer"
-            type="button"
+          <Button 
+            className="w-60 mx-auto"
+            size="lg"
             onClick={handleLogin}
           >
             Log in
-          </button>
+          </Button>
         </div>
       </motion.div>
 

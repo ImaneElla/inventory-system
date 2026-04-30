@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo/logo";
+import { Button } from "@/components/ui/button";
 export default function Dashboard() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
@@ -33,12 +34,13 @@ export default function Dashboard() {
         <p className="text-muted-foreground mb-8">
           Welcome to your secure Inventory Management portal. You have successfully authenticated!
         </p>
-        <button
+        <Button
           onClick={handleSignOut}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 px-6 rounded-lg transition-all"
+          variant="outline"
+          className="px-8"
         >
           Sign Out
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -2,9 +2,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
-import { LeftPanel, inputStyle, submitBtnStyle } from "@/components/AuthComponents";
+import { LeftPanel, inputStyle } from "@/components/AuthComponents";
 import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -159,15 +160,16 @@ export default function RegisterPage() {
                 </button>
               </div>
 
-              <button 
-                className="w-60 mx-auto bg-primary text-primary-foreground py-3 rounded-full font-medium hover:bg-primary/90 transition-colors duration-200 shadow-lg hover:shadow-primary/30 cursor-pointer" 
+              <Button 
+                className="w-60 mx-auto cursor-pointer" 
+                size="lg"
                 onClick={() => {
                   if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
                   setStep(2);
                 }}
               >
                 Next
-              </button>
+              </Button>
               
               <p className="text-sm text-muted-foreground mt-6 text-center">
                 Already have an account?{" "}
@@ -210,20 +212,21 @@ export default function RegisterPage() {
                 </label>
               </div>
 
-              <div className="flex gap-3 w-full max-w-xs mx-auto mb-6">
-                <button 
-                  className="flex-1 text-foreground py-3 rounded-full font-medium transition-colors duration-200 border border-border bg-card hover:bg-secondary hover:text-secondary-foreground cursor-pointer" 
+              <div className="flex gap-3 w-full max-w-xs mx-auto mb-6 cursor-pointer">
+                <Button 
+                  variant="outline"
+                  className="flex-1" 
                   onClick={() => setStep(1)}
                 >
                   Back
-                </button>
-                <button 
-                  className={`flex-2 py-3 rounded-full font-medium transition-all duration-200 shadow-lg ${terms ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-primary/30 cursor-pointer' : 'bg-primary/50 text-primary-foreground/50 cursor-not-allowed shadow-none'}`} 
-                  onClick={handleRegister}
+                </Button>
+                <Button 
+                  className="flex-2"
                   disabled={!terms}
+                  onClick={handleRegister}
                 >
                   Create account
-                </button>
+                </Button>
               </div>
               
               <p className="text-sm text-muted-foreground text-center">
@@ -272,12 +275,12 @@ export default function RegisterPage() {
               </div>
             </div>
             <div className="p-4 border-t border-border flex justify-end bg-card/50">
-              <button 
+              <Button 
                 onClick={() => setShowTermsModal(false)}
-                className="bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium hover:bg-primary/90 transition-colors shadow-sm"
+                className="px-8"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </motion.div>
         </div>
