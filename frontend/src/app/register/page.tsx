@@ -109,7 +109,9 @@ export default function RegisterPage() {
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         <div className="flex-1 p-8 md:p-4 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
-          <Logo className="w-14 h-14" />
+          <div className="flex justify-center mb-4">
+            <Logo className="w-14 h-14" />
+          </div>
           <h1 className="text-3xl font-semibold text-foreground mb-6 tracking-tight text-center">Create an account</h1>
 
           {step === 1 ? (

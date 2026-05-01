@@ -60,7 +60,9 @@ export default function LoginPage() {
       >
         <LeftPanel />
         <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 text-center">
-          <Logo className="w-16 h-16" />
+          <div className="flex justify-center mb-4">
+            <Logo className="w-16 h-16" />
+          </div>
           <h1 className="text-3xl text-foreground mb-2 tracking-tight font-bold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mb-8">
             No account?{" "}
