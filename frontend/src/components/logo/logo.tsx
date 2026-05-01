@@ -4,7 +4,7 @@ export function Logo({ className = "w-16 h-16" }: { className?: string }) {
   return (
     <svg 
       viewBox="0 0 512 512" 
-      className={`${className} mx-auto mb-4`}
+      className={className}
       xmlns="http://www.w3.org/2000/svg"
     >
       <polygon style={{fill:"#60A5FA"}} points="97.409,61.893 255.999,61.893 149.583,193.179 "></polygon>
