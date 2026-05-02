@@ -49,26 +49,30 @@ To suggest a new feature:
     ```bash
     git checkout -b my-feature
     ```
+    
 4.  **Build and Run the project**:
+   
     **Prerequisites**: Java 21+, Maven, Bun (or Node.js).
+    
      **Backend**: 
         ```bash
         cd backend
         ./mvnw spring-boot:run
         ```
+    
      **Frontend**:
         ```bash
         cd frontend
         bun install
         bun run dev
         ```
-5.  **Make your changes** and commit them.
-6.  **Push your branch**:
+6.  **Make your changes** and commit them.
+7.  **Push your branch**:
     ```bash
     git push origin my-feature
     ```
-7.  **Open a Pull Request (PR)** against the `main` branch.
-8.  Respond to review comments and update your PR as needed.
+8.  **Open a Pull Request (PR)** against the `main` branch.
+9.  Respond to review comments and update your PR as needed.
 
 ---
 
