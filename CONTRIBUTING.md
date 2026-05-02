@@ -2,18 +2,18 @@
 
 Thank you for your interest in contributing! We welcome contributions from everyone. This document outlines the guidelines for how to contribute effectively and respectfully.
 
-## 📌 Types of Contributions We Welcome
+## Types of Contributions We Welcome
 
 We appreciate various kinds of contributions, including but not limited to:
 
-*   🛠️ **Code contributions** (bug fixes, performance improvements, new features)
-*   🐞 **Bug reports**
-*   💡 **Feature suggestions**
-*   📚 **Improving documentation**
+*    **Code contributions** (bug fixes, performance improvements, new features)
+*    **Bug reports**
+*    **Feature suggestions**
+*    **Improving documentation**
 
 ---
 
-## 🐛 How to Report Bugs
+##  How to Report Bugs
 
 When reporting a bug, please include the following:
 *   A clear and descriptive title
@@ -35,7 +35,7 @@ To suggest a new feature:
 
 ---
 
-## 🔧 How to Contribute Code
+##  How to Contribute Code
 
 ### Step-by-Step Process
 
@@ -50,13 +50,13 @@ To suggest a new feature:
     git checkout -b my-feature
     ```
 4.  **Build and Run the project**:
-    *   **Prerequisites**: Java 21+, Maven, Bun (or Node.js).
-    *   **Backend**: 
+    **Prerequisites**: Java 21+, Maven, Bun (or Node.js).
+     **Backend**: 
         ```bash
         cd backend
         ./mvnw spring-boot:run
         ```
-    *   **Frontend**:
+     **Frontend**:
         ```bash
         cd frontend
         bun install
@@ -72,7 +72,7 @@ To suggest a new feature:
 
 ---
 
-## 🧹 Coding Style & Guidelines
+##  Coding Style & Guidelines
 
 *   Follow existing code conventions.
 *   Run linters/formatters before committing.
@@ -81,7 +81,7 @@ To suggest a new feature:
 
 ---
 
-## ✅ Commit Message Guidelines
+##  Commit Message Guidelines
 
 Use the following format:
 `<type> <short summary>`
