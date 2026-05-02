@@ -114,7 +114,7 @@ export default function SidebarApp() {
           "flex flex-row items-center min-h-[60px]",
           isCollapsed
             ? "px-1.5 justify-center flex-col gap-2 py-3"
-            : "px-4 py-4 justify-between"
+            : "px-4 py-4"
         )}
       >
         {/* Logo + Brand */}
@@ -128,13 +128,6 @@ export default function SidebarApp() {
             </span>
           )}
         </div>
-        {/* Toggle — always visible */}
-        <SidebarTrigger
-          className={cn(
-            "text-[#1c1c1e]/40 hover:text-[#1c1c1e]/70 hover:bg-black/5 transition-all rounded-lg",
-            isCollapsed ? "w-8 h-8" : ""
-          )}
-        />
       </SidebarHeader>
 
       {!isCollapsed && <SidebarSeparator className="mx-4 opacity-[0.08]" />}

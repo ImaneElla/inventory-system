@@ -20,6 +20,7 @@ export default function RegisterPage() {
   const [toast, setToast] = useState("");
   const [step, setStep] = useState(1);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -33,14 +34,12 @@ export default function RegisterPage() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (parsed.userName) setUserName(parsed.userName);
         if (parsed.email) setEmail(parsed.email);
         if (parsed.role) setRole(parsed.role);
         if (parsed.password) setPassword(parsed.password);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        console.error("Failed to parse cached register state.");
+        console.error("Failed to parse cached register state:", e);
       }
     }
   }, [router]);
@@ -66,6 +65,8 @@ export default function RegisterPage() {
   const handleRegister = async () => {
     if (!terms) { showToast("Please accept the Terms & Conditions"); return; }
     if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
+    
+    setIsLoading(true);
     showToast("Creating account...");
     
     try {
@@ -93,9 +94,11 @@ export default function RegisterPage() {
       } else {
         showToast(message || "Failed to create account");
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      console.error("Registration error:", error);
       showToast("Failed to connect to the server");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -219,6 +222,7 @@ export default function RegisterPage() {
                   variant="outline"
                   className="flex-1" 
                   onClick={() => setStep(1)}
+                  disabled={isLoading}
                 >
                   Back
                 </Button>
@@ -226,6 +230,7 @@ export default function RegisterPage() {
                   className="flex-2"
                   disabled={!terms}
                   onClick={handleRegister}
+                  isLoading={isLoading}
                 >
                   Create account
                 </Button>

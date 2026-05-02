@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState("");
 
   useEffect(() => {
@@ -28,6 +30,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     if (!email || !password) { showToast("Please fill in all fields"); return; }
     
+    setIsLoading(true);
     try {
       const response = await fetch("http://localhost:8080/api/auth/login", {
         method: "POST",
@@ -40,18 +43,23 @@ export default function LoginPage() {
       if (response.ok) {
         showToast("Login Successful!");
         localStorage.setItem("auth", "true");
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", "true");
+        }
         setTimeout(() => router.replace("/dashboard"), 1500);
       } else {
         showToast(message || "Invalid credentials");
       }
     } catch (error) {
+      console.error("Login error:", error);
       showToast("Failed to connect to the server");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="login-wrapper relative min-h-screen flex items-center justify-center">
-
       <motion.div 
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
@@ -74,7 +82,7 @@ export default function LoginPage() {
             <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
           </div>
 
-          <div className="mb-8 relative">
+          <div className="mb-4 relative">
             <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
             <input
               className={`${inputStyle} pl-10 pr-10 text-foreground`}
@@ -91,10 +99,24 @@ export default function LoginPage() {
             </button>
           </div>
 
+          <div className="flex items-center justify-between mb-8 px-1">
+            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+              <input 
+                type="checkbox" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+              />
+              Remember me
+            </label>
+            <span className="text-sm text-primary font-medium cursor-pointer hover:underline">{` `}</span>
+          </div>
+
           <Button 
-            className="w-60 mx-auto"
+            className="w-full md:w-60 mx-auto"
             size="lg"
             onClick={handleLogin}
+            isLoading={isLoading}
           >
             Log in
           </Button>
