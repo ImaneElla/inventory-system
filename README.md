@@ -113,19 +113,7 @@ graph TD
 ```
 
 ---
-
-## 🗄️ Database Schema
-
-### `users` Table
-
-| Field | Type | Description |
-|---|---|---|
-| id | INT (PK) | Primary key |
-| username | VARCHAR | Username |
-| email | VARCHAR | example.gmail.com |
-| password | VARCHAR | Hashed password |
-| role | ENUM | `ADMIN` / `MANAGER` |
-
+ 
 ## 🖼️ Schema Overview
 
 ![Database Schema](./docs/Diagram(ERD).png)
