@@ -11,6 +11,8 @@ import {
   BarChart2,
   LogOut,
   Settings,
+  Tags,
+
   HelpCircle,
 } from "lucide-react";
 import {
@@ -32,6 +34,7 @@ import { cn } from "@/lib/utils";
 const mainMenuItems = [
   { name: "Dashboard",    icon: LayoutDashboard, path: "/dashboard",           color: "bg-blue-500",    shadow: "shadow-blue-500/30" },
   { name: "Products",     icon: Box,             path: "/dashboard/products",  color: "bg-orange-500",  shadow: "shadow-orange-500/30" },
+  { name: "Categories",   icon: Tags,            path: "/dashboard/categories", color: "bg-yellow-500", shadow: "shadow-yellow-500/30" },
   { name: "Sales",        icon: ShoppingCart,    path: "/dashboard/sales",     color: "bg-green-500",   shadow: "shadow-green-500/30" },
   { name: "Users",        icon: Users,           path: "/dashboard/users",     color: "bg-purple-500",  shadow: "shadow-purple-500/30" },
   { name: "AI Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant", color: "bg-pink-500", shadow: "shadow-pink-500/30" },
@@ -59,7 +62,7 @@ function NavItem({ icon: Icon, name, path, color, shadow, isActive, isCollapsed 
       href={path}
       title={isCollapsed ? name : undefined}
       className={cn(
-        "flex items-center rounded-xl transition-all duration-200 select-none text-[15px] font-medium",
+        "flex items-center rounded-[15px] transition-all duration-200 select-none text-[15px] font-medium",
         isCollapsed
           ? "w-10 h-10 justify-center mx-auto"
           : "gap-3 px-3 py-2.5 w-full",
