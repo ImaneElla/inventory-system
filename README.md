@@ -34,7 +34,7 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 
 <div align="center">
 
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,github,bun,git)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
