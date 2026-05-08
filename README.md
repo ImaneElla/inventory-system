@@ -34,14 +34,14 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 
 <div align="center">
 
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,github,bun,git)](https://skillicons.dev)
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,github,bun,git,docker,)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS, Framer Motion, Chart.js |
 | **Backend** | Java 17+, Spring Boot 3, Spring Security, JPA/Hibernate |
 | **Database** | PostgreSQL (Relational persistence) |
-| **Tools** | Maven, Bun, Postman, Git |
+| **Tools** | Maven, Bun, Postman, Git, Docker |
 
 </div>
 
