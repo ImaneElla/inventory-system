@@ -67,8 +67,8 @@ public class AuthController {
             user.setRole(Role.valueOf(role.toUpperCase()));
             user.setImageUrl(fileName); // Save the name/path of the photo
             
-            // Generate a username automatically from email or name
-            user.setUsername(email.split("@")[0]); 
+            // Use the userName provided in the request
+            user.setUsername(userName); 
 
             userRepository.save(user);
             return ResponseEntity.ok("Registration successful!");

@@ -15,7 +15,7 @@ interface StatCardProps {
   title: string
   value: string | number
   description?: string
-  icon: React.ElementType
+  icon: React.ElementType | string
   trend?: string
   status?: "success" | "warning" | "danger" | "neutral"
   variant?: "default" | "compact" | "gradient"
@@ -42,7 +42,7 @@ const statusColors = {
 }
 
 const gradientColors = {
-  default: "from-slate-800 to-slate-900",
+  neutral: "from-slate-800 to-slate-900",
   success: "from-emerald-500 to-emerald-600",
   warning: "from-amber-500 to-amber-600",
   danger: "from-rose-500 to-rose-600",
@@ -59,7 +59,7 @@ export function StatCard({
   className = "",
   onClick,
 }: StatCardProps) {
-  const IconComponent = Icon in iconMap ? iconMap[Icon as keyof typeof iconMap] : Icon
+  const IconComponent = typeof Icon === 'string' && Icon in iconMap ? iconMap[Icon as keyof typeof iconMap] : Icon as React.ElementType
   const statusColor = statusColors[status]
   const gradientColor = gradientColors[status]
 

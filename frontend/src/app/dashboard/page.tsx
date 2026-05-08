@@ -163,11 +163,11 @@ export default function DashboardPage() {
         bodyColor: "rgba(28,28,30,0.6)",
         padding: 12,
         cornerRadius: 12,
-        titleFont: { family: "Inter, sans-serif", weight: "600" as const, size: 13 },
+        titleFont: { family: "Inter, sans-serif", weight: "bold" as const, size: 13 },
         bodyFont: { family: "Inter, sans-serif", size: 12 },
         callbacks: {
-          label: (ctx: { dataset: { label: string }; parsed: { y: number } }) =>
-            `  ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} DH`,
+          label: (ctx: any) =>
+            `  ${ctx.dataset.label || ''}: ${ctx.parsed.y.toLocaleString()} DH`,
         },
       },
     },
@@ -215,7 +215,7 @@ export default function DashboardPage() {
         bodyColor: "rgba(28,28,30,0.6)",
         padding: 12,
         cornerRadius: 12,
-        titleFont: { family: "Inter, sans-serif", weight: "600" as const, size: 13 },
+        titleFont: { family: "Inter, sans-serif", weight: "bold" as const, size: 13 },
         bodyFont: { family: "Inter, sans-serif", size: 12 },
         callbacks: {
           label: (ctx: { parsed: number }) => `  ${ctx.parsed}% of sales`,

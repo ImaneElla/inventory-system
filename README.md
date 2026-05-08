@@ -174,7 +174,7 @@ frontend/
    ```
 
 2. **Initialize Database**
-   Create a database named `inventory_db` in PostgreSQL and update `backend/src/main/resources/application.properties` with your credentials.
+   Create a database named `inventory-system` in PostgreSQL and update `backend/src/main/resources/application.properties` with your credentials.
 
 3. **Launch Backend**
    ```bash
