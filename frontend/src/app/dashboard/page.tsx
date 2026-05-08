@@ -1,4 +1,3 @@
-//DASHBOARD
 "use client";
 
 import { useEffect, useState } from "react";
@@ -27,6 +26,10 @@ import {
 } from "chart.js";
 import { Line, Doughnut } from "react-chartjs-2";
 
+// Components & Data
+import { StatCard } from "@/components/dashboard/StatCard";
+import { months, salesData, profitData, topSellers } from "./mockData";
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -37,59 +40,6 @@ ChartJS.register(
   Legend,
   Filler
 );
-
-
-const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-
-const salesData = [12400, 18900, 14200, 22100, 19600, 25800];
-const profitData = [3100, 5200, 3900, 7400, 5800, 8900];
-
-const topSellers = [
-  { name: "Laptop", value: 34, color: "#3b82f6" },
-  { name: "Mouse", value: 26, color: "#8b5cf6" },
-  { name: "Keyboard", value: 18, color: "#10b981" },
-  { name: "Monitor", value: 14, color: "#f59e0b" },
-  { name: "Others", value: 8, color: "#e5e7eb" },
-];
-
-interface StatCardProps {
-  label: string;
-  value: string;
-  sub: string;
-  trend: "up" | "down" | "warn";
-  icon: React.ElementType;
-  color: string;
-  shadow: string;
-}
-
-function StatCard({ label, value, sub, trend, icon: Icon, color, shadow }: StatCardProps) {
-  return (
-    <div className="bg-white rounded-2xl border border-black/[0.06] shadow-sm p-5 flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${color} shadow-md ${shadow}`}>
-          <Icon size={22} className="text-white" strokeWidth={1.75} />
-        </div>
-        <span
-          className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg ${
-            trend === "up"
-              ? "bg-green-50 text-green-600"
-              : trend === "down"
-              ? "bg-red-50 text-red-500"
-              : "bg-amber-50 text-amber-600"
-          }`}
-        >
-          {trend === "up" ? <ArrowUpRight size={13} /> : trend === "down" ? <ArrowDownRight size={13} /> : <AlertTriangle size={13} />}
-          {sub}
-        </span>
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-[#1c1c1e] tracking-tight">{value}</p>
-        <p className="text-xs text-[#1c1c1e]/50 mt-0.5 font-medium">{label}</p>
-      </div>
-    </div>
-  );
-}
-
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -103,7 +53,9 @@ export default function DashboardPage() {
     }
   }, [router]);
 
-  if (!authorized) return null;
+  if (!authorized) {
+    return null;
+  }
 
   // Chart configs
   const lineChartData = {

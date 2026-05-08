@@ -11,3 +11,4 @@ docker-compose.yml
 .env.development.local
 .env.test.local
 .env.production.local
+.dockerignore

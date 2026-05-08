@@ -40,6 +40,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Docker
 # docker-compose.yml was here, removed to allow committing.
 postgres_data/
+*.mv.db
+*.trace.db
+backend/data/
 
 # Deployment manifests with hardcoded secrets
 bridge/
@@ -53,3 +56,7 @@ bridge/
 *.pfx
 secrets.yaml
 credentials.json
+
+Dockerfile
+docker-compose.yml
+
