@@ -63,12 +63,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-wrapper relative min-h-screen flex items-center justify-center p-4">
+    <div className="login-wrapper relative min-h-screen flex items-center justify-center">
       <motion.div 
         initial={{ opacity: 0, filter: "blur(20px)", scale: 0.95, y: 20 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex w-full max-w-[1000px] min-h-[600px] bg-card/60 backdrop-blur-3xl border border-border/40 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
+        className="flex w-full max-w-[900px] min-h-[550px] bg-card/60 backdrop-blur-3xl border border-border/40 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
       >
         <LeftPanel />
         <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-card/40 text-center relative overflow-hidden">
@@ -76,19 +76,19 @@ export default function LoginPage() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32" />
 
-          <div className="relative z-10 max-w-[420px] mx-auto w-full">
+          <div className="relative z-10 max-w-[420px] mx-auto">
             <div className="flex justify-center mb-6">
               <Logo className="w-16 h-16 drop-shadow-sm" />
             </div>
             
             <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Welcome Back</h1>
-            <p className="text-sm text-muted-foreground mb-12 font-medium">Please enter your credentials to access your workspace</p>
+            <p className="text-sm text-muted-foreground mb-6 font-medium">Please enter your credentials to access your workspace</p>
 
-            <div className="space-y-5 mb-8">
+            <div className="space-y-5 mb-4">
               <div className="relative group">
                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
                 <input 
-                  className={`${inputStyle} pl-12 h-13 rounded-2xl text-foreground font-medium shadow-sm`} 
+                  className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`} 
                   type="email" 
                   placeholder="Email Address" 
                   value={email} 
@@ -99,7 +99,7 @@ export default function LoginPage() {
               <div className="relative group">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
                 <input
-                  className={`${inputStyle} pl-12 pr-12 h-13 rounded-2xl text-foreground font-medium shadow-sm`}
+                  className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`}
                   type={showPwd ? "text" : "password"}
                   placeholder="Password"
                   value={password}
@@ -132,14 +132,14 @@ export default function LoginPage() {
             </div>
 
             <Button 
-              className="w-full h-14 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
+              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
               onClick={handleLogin}
               isLoading={isLoading}
             >
               Sign In
             </Button>
 
-            <p className="text-sm text-muted-foreground mt-10 font-medium">
+            <p className="text-sm text-muted-foreground mt-6 font-medium">
               New here?{" "}
               <button 
                 type="button"

@@ -110,12 +110,12 @@ export default function RegisterPage() {
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[1000px] md:min-h-[600px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 "
+        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[900px] md:min-h-[450px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-10   "
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         
         <div className="flex-1 flex flex-col bg-card/40 relative">
-          <div className="flex justify-center mt-10 mb-2">
+          <div className="flex justify-center mt-6 mb-2">
             <Logo className="w-14 h-14" />
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-1 tracking-tight text-center">
@@ -123,9 +123,9 @@ export default function RegisterPage() {
           </h1>
 
           <div className="flex-1 overflow-y-auto register-panel px-4 sm:px-8">
-            <div className="flex flex-col h-full max-w-[500px] mx-auto py-8">
+            <div className="flex flex-col h-full max-w-[500px] mx-auto py-3">
               {/* Progress Bar */}
-              <div className="flex items-center justify-center gap-1.5 mb-10 shrink-0">
+              <div className="flex items-center justify-center gap-1.5 mb-5 shrink-0">
                 {[1, 2, 3].map((s) => (
                   <div 
                     key={s}
@@ -260,11 +260,11 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
         ))}
       </div>
 
-      <Button className="w-full sm:w-72 mx-auto h-14 rounded-2xl text-base font-bold shadow-lg shadow-primary/20" onClick={onNext}>
+      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 text-sm" onClick={onNext}>
         Continue to Details
       </Button>
       
-      <p className="text-xs text-muted-foreground mt-10 font-medium">
+      <p className="text-xs text-muted-foreground mt-3 font-medium">
         Already have an account?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
       </p>
@@ -279,21 +279,21 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
       className="flex flex-col w-full"
     >
       <h2 className="text-2xl font-extrabold text-foreground mb-1 text-center tracking-tight">Account Details</h2>
-      <p className="text-sm text-muted-foreground mb-10 text-center font-medium">Let's set up your login credentials</p>
+      <p className="text-sm text-muted-foreground mb-6 text-center font-medium">Let's set up your login credentials</p>
 
       <div className="space-y-5 mb-6">
         <div className="relative group">
           <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
-          <input className={`${inputStyle} pl-12 h-13 rounded-2xl text-foreground font-medium`} type="text" placeholder="Full Name" value={userName} onChange={e => setUserName(e.target.value)} />
+          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium`} type="text" placeholder="Full Name" value={userName} onChange={e => setUserName(e.target.value)} />
         </div>
         <div className="relative group">
           <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
-          <input className={`${inputStyle} pl-12 h-13 rounded-2xl text-foreground font-medium`} type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />
+          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium`} type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div className="relative group">
           <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
           <input
-            className={`${inputStyle} pl-12 pr-12 h-13 rounded-2xl text-foreground font-medium`}
+            className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-foreground font-medium`}
             type={showPwd ? "text" : "password"}
             placeholder="Create Secure Password"
             value={password}
@@ -316,11 +316,11 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
-        <Button variant="outline" className="flex-1 h-13 rounded-2xl font-bold" onClick={onBack}>Back</Button>
-        <Button className="flex-2 h-13 rounded-2xl font-bold shadow-lg shadow-primary/20" onClick={onNext}>Next Step</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack}>Back</Button>
+        <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20" onClick={onNext}>Next Step</Button>
       </div>
       
-      <p className="text-xs text-muted-foreground mt-6 text-center font-medium">
+      <p className="text-xs text-muted-foreground mt-3 mb-2 text-center font-medium">
         Already have an account?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
       </p>
@@ -371,11 +371,11 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
               </div>  
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
-        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
-        <Button className="flex-2 h-14 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
+        <Button className="flex-2 h-10 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base text-sm" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
       </div>
       
-      <p className="text-xs text-muted-foreground mt-10 text-center font-medium">
+      <p className="text-xs text-muted-foreground mt-4 mb-3 text-center font-medium">
         Want to go back?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
       </p>
