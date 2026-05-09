@@ -71,3 +71,8 @@ build/
 ### Env ###
 .env
 /src/main/resources/application.properties
+
+# Uploaded images
+uploads/
+profiles/
+

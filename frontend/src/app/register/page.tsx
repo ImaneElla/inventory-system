@@ -6,6 +6,7 @@ import { LeftPanel, inputStyle } from "@/components/AuthComponents";
 import { Logo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,12 +25,9 @@ export default function RegisterPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Reverse auth guard logic: prevent logged in users from viewing register form
     if (localStorage.getItem("auth") === "true") {
       router.replace("/dashboard");
     }
-
-    // Attempt to pull user data safely out of sessionStorage if they navigated away
     const stored = sessionStorage.getItem("registerState");
     if (stored) {
       try {
@@ -44,7 +42,6 @@ export default function RegisterPage() {
     }
   }, [router]);
 
-  // Hook to instantly mirror user typing to sessionStorage
   useEffect(() => {
     sessionStorage.setItem("registerState", JSON.stringify({ userName, email, role, password }));
   }, [userName, email, role, password]);
@@ -84,15 +81,20 @@ export default function RegisterPage() {
         body: formData
       });
       
-      const message = await response.text();
+      let data: any = {};
+      try { data = await response.json(); } catch { data = { message: await response.text() }; }
       
       if (response.ok) {
-        showToast(message); 
+        showToast(data.message || "Registration successful!"); 
         localStorage.setItem("auth", "true");
-        sessionStorage.removeItem("registerState"); // Cleanup
+        if (data.userName) localStorage.setItem("userName", data.userName);
+        if (data.role)     localStorage.setItem("role",     data.role);
+        if (data.imageUrl) localStorage.setItem("userImage", data.imageUrl);
+        else               localStorage.removeItem("userImage");
+        sessionStorage.removeItem("registerState");
         setTimeout(() => router.replace("/dashboard"), 1500);
       } else {
-        showToast(message || "Failed to create account");
+        showToast(data.message || "Failed to create account");
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -108,140 +110,64 @@ export default function RegisterPage() {
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[860px] md:min-h-[480px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 "
+        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[1000px] md:min-h-[600px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 "
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
-        <div className="flex-1 p-8 md:p-4 flex flex-col justify-center bg-card/40 overflow-y-auto register-panel">
-          <div className="flex justify-center mb-4">
+        
+        <div className="flex-1 flex flex-col bg-card/40 relative">
+          <div className="flex justify-center mt-10 mb-2">
             <Logo className="w-14 h-14" />
           </div>
-          <h1 className="text-3xl font-semibold text-foreground mb-6 tracking-tight text-center">Create an account</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1 tracking-tight text-center">
+            Join Inventory System
+          </h1>
 
-          {step === 1 ? (
-            <motion.div 
-              key="step1"
-              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col w-full"
-            >
-              {/* Role toggle */}
-              <div className="flex bg-primary/5 border border-primary/10 rounded-full overflow-hidden mb-4 p-1 w-80 mx-auto duration-500">
-                {(["MANAGER", "ADMIN"] as const).map(r => (
-                  <button
-                    key={r}
-                    onClick={() => setRole(r)}
-                    className={`flex-1 py-2 text-[13px] font-medium rounded-full transition-all border-none cursor-pointer duration-500 ${role === r ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent text-muted-foreground hover:text-foreground"}`}
-                  >
-                    {r.charAt(0) + r.slice(1).toLowerCase()}
-                  </button>
+          <div className="flex-1 overflow-y-auto register-panel px-4 sm:px-8">
+            <div className="flex flex-col h-full max-w-[500px] mx-auto py-8">
+              {/* Progress Bar */}
+              <div className="flex items-center justify-center gap-1.5 mb-10 shrink-0">
+                {[1, 2, 3].map((s) => (
+                  <div 
+                    key={s}
+                    className={cn(
+                      "h-1.5 rounded-full transition-all duration-700 ease-out",
+                      step >= s ? "w-10 bg-primary" : "w-5 bg-primary/10"
+                    )}
+                  />
                 ))}
               </div>
 
-              {/* Name row */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <div className="relative flex-1 ">
-                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-                  <input className={`${inputStyle} pl-10 text-foreground`} type="text" placeholder="Full name" value={userName} onChange={e => setUserName(e.target.value)} />
-                </div>
+              <div className="flex-1 flex flex-col justify-center min-h-0">
+                {step === 1 && (
+                  <StepRole role={role} setRole={setRole} onNext={() => setStep(2)} onLogin={() => router.push("/login")} />
+                )}
+                {step === 2 && (
+                  <StepInfo 
+                    userName={userName} setUserName={setUserName} 
+                    email={email} setEmail={setEmail} 
+                    password={password} setPassword={setPassword} 
+                    showPwd={showPwd} setShowPwd={setShowPwd} 
+                    onBack={() => setStep(1)} 
+                    onNext={() => {
+                      if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
+                      if (password.length < 8) { showToast("Password is too short"); return; }
+                      setStep(3);
+                    }} 
+                    onLogin={() => router.push("/login")} 
+                  />
+                )}
+                {step === 3 && (
+                  <StepProfile 
+                    userName={userName} avatarUrl={avatarUrl} fileRef={fileRef} handleAvatar={handleAvatar} 
+                    terms={terms} setTerms={setTerms} onBack={() => setStep(2)} 
+                    onRegister={handleRegister} isLoading={isLoading} 
+                    onLogin={() => router.push("/login")} 
+                    setShowTermsModal={setShowTermsModal}
+                  />
+                )}
               </div>
-
-              {/* Email */}
-              <div className="mb-4 relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-                <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-              </div>
-
-              {/* Password */}
-              <div className="mb-6 relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-                <input
-                  className={`${inputStyle} pl-10 pr-10 text-foreground`}
-                  type={showPwd ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                />
-                <button onClick={() => setShowPwd(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center">
-                  {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-
-              <Button 
-                className="w-60 mx-auto cursor-pointer" 
-                size="lg"
-                onClick={() => {
-                  if (!email || !password || !userName) { showToast("Please fill in all required fields"); return; }
-                  setStep(2);
-                }}
-              >
-                Next
-              </Button>
-              
-              <p className="text-sm text-muted-foreground mt-6 text-center">
-                Already have an account?{" "}
-                <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="step2"
-              initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col w-full"
-            >
-              {/* Avatar */}
-              <div className="flex flex-col items-center gap-4 mb-8 mx-auto mt-2">
-                <div
-                  onClick={() => fileRef.current?.click()}
-                  className="w-24 h-24 rounded-full bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-3xl font-bold overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-colors"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
-                </div>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
-                <div className="text-center text-sm text-muted-foreground leading-snug">
-                  <strong className="block text-foreground text-base mb-1">Profile Picture</strong>
-                  Optional — click to upload or skip this
-                </div>
-              </div>
-
-              {/* Terms */}
-              <div className="flex items-center justify-center gap-2 mb-8">
-                <input 
-                  type="checkbox" 
-                  id="terms" 
-                  checked={terms} 
-                  onChange={e => setTerms(e.target.checked)} 
-                  className="w-4 h-4 accent-primary cursor-pointer rounded border-border" 
-                />
-                <label htmlFor="terms" className="text-[13px] text-muted-foreground cursor-pointer">
-                  I agree to the <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="text-primary no-underline hover:underline">Terms &amp; Conditions</span>
-                </label>
-              </div>
-
-              <div className="flex gap-3 w-full max-w-xs mx-auto mb-6 cursor-pointer">
-                <Button 
-                  variant="outline"
-                  className="flex-1" 
-                  onClick={() => setStep(1)}
-                  disabled={isLoading}
-                >
-                  Back
-                </Button>
-                <Button 
-                  className="flex-2"
-                  disabled={!terms}
-                  onClick={handleRegister}
-                  isLoading={isLoading}
-                >
-                  Create account
-                </Button>
-              </div>
-              
-              <p className="text-sm text-muted-foreground text-center">
-                Already have an account?{" "}
-                <span onClick={() => router.push("/login")} className="text-primary font-medium cursor-pointer hover:underline">Log in</span>
-              </p>
-            </motion.div>
-          )}
+            </div>
+          </div>
         </div>
       </motion.div>
 
@@ -253,7 +179,7 @@ export default function RegisterPage() {
 
       {/* Terms & Conditions Modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -293,5 +219,166 @@ export default function RegisterPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function StepRole({ role, setRole, onNext, onLogin }: any) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col w-full text-center"
+    >
+      <h2 className="text-2xl font-extrabold text-foreground mb-1 tracking-tight">Choose your role</h2>
+      <p className="text-sm text-muted-foreground mb-10">Select the access level for your professional account</p>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-12">
+        {(["MANAGER", "ADMIN"] as const).map(r => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => setRole(r)}
+            className={cn(
+              "flex flex-col items-center gap-5 p-8 rounded-[32px] border-2 transition-all duration-500 cursor-pointer group relative overflow-hidden",
+              role === r 
+                ? "border-primary bg-primary/5 shadow-2xl shadow-primary/10 scale-[1.05]" 
+                : "border-border/40 bg-card/40 hover:border-primary/40 hover:bg-primary/5 hover:scale-[1.02]"
+            )}
+          >
+            <div className={cn(
+              "w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-xl transition-all duration-700 group-hover:rotate-12 group-hover:scale-110",
+              r === "ADMIN" ? "bg-linear-to-br from-blue-500 to-indigo-700 shadow-blue-500/30" : "bg-linear-to-br from-violet-500 to-purple-700 shadow-violet-500/30"
+            )}>
+              {r === "ADMIN" ? <Lock size={28} /> : <User size={28} />}
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="font-black text-foreground text-sm uppercase tracking-widest">{r}</span>
+              <span className="text-[10px] text-muted-foreground mt-2 leading-relaxed font-semibold max-w-[120px]">
+                {r === "ADMIN" ? "Full system access & management" : "Inventory control & sales tracking"}
+              </span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <Button className="w-full sm:w-72 mx-auto h-14 rounded-2xl text-base font-bold shadow-lg shadow-primary/20" onClick={onNext}>
+        Continue to Details
+      </Button>
+      
+      <p className="text-xs text-muted-foreground mt-10 font-medium">
+        Already have an account?{" "}
+        <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
+      </p>
+    </motion.div>
+  );
+}
+
+function StepInfo({ userName, setUserName, email, setEmail, password, setPassword, showPwd, setShowPwd, onBack, onNext, onLogin }: any) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
+      className="flex flex-col w-full"
+    >
+      <h2 className="text-2xl font-extrabold text-foreground mb-1 text-center tracking-tight">Account Details</h2>
+      <p className="text-sm text-muted-foreground mb-10 text-center font-medium">Let's set up your login credentials</p>
+
+      <div className="space-y-5 mb-6">
+        <div className="relative group">
+          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+          <input className={`${inputStyle} pl-12 h-13 rounded-2xl text-foreground font-medium`} type="text" placeholder="Full Name" value={userName} onChange={e => setUserName(e.target.value)} />
+        </div>
+        <div className="relative group">
+          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+          <input className={`${inputStyle} pl-12 h-13 rounded-2xl text-foreground font-medium`} type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />
+        </div>
+        <div className="relative group">
+          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+          <input
+            className={`${inputStyle} pl-12 pr-12 h-13 rounded-2xl text-foreground font-medium`}
+            type={showPwd ? "text" : "password"}
+            placeholder="Create Secure Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+          />
+          <button 
+            type="button" onClick={() => setShowPwd(!showPwd)} 
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center p-1"
+            aria-label={showPwd ? "Hide password" : "Show password"}
+          >
+            {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
+        <div className="flex items-center gap-2 px-1">
+           <div className={cn("h-1 flex-1 rounded-full bg-border", password.length >= 8  && "from-red-500 via-yellow-500 to-green-500 bg-linear-to-r")} />
+        </div>
+        <p className="text-[10px] text-muted-foreground ml-1 font-semibold italic">
+          * Must contain at least 8 characters
+        </p>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
+        <Button variant="outline" className="flex-1 h-13 rounded-2xl font-bold" onClick={onBack}>Back</Button>
+        <Button className="flex-2 h-13 rounded-2xl font-bold shadow-lg shadow-primary/20" onClick={onNext}>Next Step</Button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground mt-6 text-center font-medium">
+        Already have an account?{" "}
+        <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
+      </p>
+    </motion.div>
+  );
+}
+
+function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTerms, onBack, onRegister, isLoading, onLogin, setShowTermsModal }: any) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col w-full"
+    >
+      <h2 className="text-2xl font-extrabold text-foreground mb-1 text-center tracking-tight">Final Setup</h2>
+      <p className="text-sm text-muted-foreground mb-10 text-center font-medium">Add a personal touch to your profile</p>
+
+      <div className="flex flex-col items-center gap-5 mb-6 mx-auto">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="w-32 h-32 rounded-[38%] bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-5xl font-black overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-all duration-700 hover:scale-105 group shadow-2xl"
+          aria-label="Upload profile photo"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
+            <User className="text-white animate-bounce" size={28} />
+          </div>
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
+        <div className="text-center">
+          <strong className="block text-foreground text-sm font-bold uppercase tracking-widest mb-1">Profile Photo</strong>
+          <p className="text-[10px] text-muted-foreground italic font-medium">Optional — tap to select image</p>
+        </div>
+      </div>
+
+        <div className="flex items-center justify-center gap-2 mb-6">
+                <input 
+                  type="checkbox" 
+                  id="terms" 
+                  checked={terms} 
+                  onChange={e => setTerms(e.target.checked)} 
+                  className="w-4 h-4 accent-primary cursor-pointer rounded border-border" 
+                />
+                <label htmlFor="terms" className="text-[13px] text-muted-foreground cursor-pointer">
+                  I agree to the <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="text-primary no-underline hover:underline">Terms &amp; Conditions</span>
+                </label>
+              </div>  
+
+      <div className="flex flex-col sm:flex-row gap-4 w-full">
+        <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
+        <Button className="flex-2 h-14 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
+      </div>
+      
+      <p className="text-xs text-muted-foreground mt-10 text-center font-medium">
+        Want to go back?{" "}
+        <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
+      </p>
+    </motion.div>
   );
 }
