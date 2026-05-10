@@ -24,6 +24,10 @@ import lombok.NoArgsConstructor;
 @Builder
 
 public class Product {
+
+    public static long getQuantity(T value) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 @Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;
@@ -54,7 +58,7 @@ private LocalDateTime updatedAt;
 private Integer minStockLevel;
 
 @Column(nullable = false,precision= 10,scale = 2)
-private BigDecimal purshacePrice;
+private BigDecimal purchasePrice;
 
 @Column(nullable = false,precision= 10,scale = 2)
 private BigDecimal sellPrice;
