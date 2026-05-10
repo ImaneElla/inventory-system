@@ -34,14 +34,14 @@ In modern commerce, data is the difference between profit and loss. This **Inven
 
 <div align="center">
 
-[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,vercel,github)](https://skillicons.dev)
+[![My Skills](https://skillicons.dev/icons?i=nextjs,react,ts,tailwind,spring,java,postgres,maven,postman,github,bun,git,docker,)](https://skillicons.dev)
 
 | Layer | Technologies |
 |---|---|
 | **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS, Framer Motion, Chart.js |
 | **Backend** | Java 17+, Spring Boot 3, Spring Security, JPA/Hibernate |
 | **Database** | PostgreSQL (Relational persistence) |
-| **Tools** | Maven, Bun, Postman, Git |
+| **Tools** | Maven, Bun, Postman, Git, Docker |
 
 </div>
 
@@ -174,7 +174,7 @@ frontend/
    ```
 
 2. **Initialize Database**
-   Create a database named `inventory_db` in PostgreSQL and update `backend/src/main/resources/application.properties` with your credentials.
+   Create a database named `inventory-system` in PostgreSQL and update `backend/src/main/resources/application.properties` with your credentials.
 
 3. **Launch Backend**
    ```bash

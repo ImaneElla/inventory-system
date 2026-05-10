@@ -27,23 +27,23 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { Logo } from "./logo/logo";
+import { Logo } from "../logo/logo";
 import { cn } from "@/lib/utils";
 
 // Each item gets a distinctive iOS-style icon color
 const mainMenuItems = [
   { name: "Dashboard",    icon: LayoutDashboard, path: "/dashboard",           color: "bg-blue-500",    shadow: "shadow-blue-500/30" },
-  { name: "Products",     icon: Box,             path: "/dashboard/products",  color: "bg-orange-500",  shadow: "shadow-orange-500/30" },
-  { name: "Categories",   icon: Tags,            path: "/dashboard/categories", color: "bg-yellow-500", shadow: "shadow-yellow-500/30" },
-  { name: "Sales",        icon: ShoppingCart,    path: "/dashboard/sales",     color: "bg-green-500",   shadow: "shadow-green-500/30" },
-  { name: "Users",        icon: Users,           path: "/dashboard/users",     color: "bg-purple-500",  shadow: "shadow-purple-500/30" },
-  { name: "AI Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant", color: "bg-pink-500", shadow: "shadow-pink-500/30" },
-  { name: "Reports",      icon: BarChart2,       path: "/dashboard/reports",   color: "bg-teal-500",    shadow: "shadow-teal-500/30" },
+  { name: "Products",     icon: Box,             path: "/dashboard/products",  color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
+  { name: "Categories",   icon: Tags,            path: "/dashboard/categories", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
+  { name: "Sales",        icon: ShoppingCart,    path: "/dashboard/sales",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Users",        icon: Users,           path: "/dashboard/users",     color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
+  { name: "AI Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
+  { name: "Reports",      icon: BarChart2,       path: "/dashboard/reports",   color: "bg-blue-500",    shadow: "shadow-blue-500/30" },
 ];
 
 const generalMenuItems = [
-  { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-slate-500", shadow: "shadow-slate-500/30" },
-  { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-cyan-500",  shadow: "shadow-cyan-500/30" },
+  { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-blue-500", shadow: "shadow-slate-500/30" },
+  { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-blue-500",  shadow: "shadow-cyan-500/30" },
 ];
 
 interface NavItemProps {
@@ -62,16 +62,16 @@ function NavItem({ icon: Icon, name, path, color, shadow, isActive, isCollapsed 
       href={path}
       title={isCollapsed ? name : undefined}
       className={cn(
-        "flex items-center rounded-[15px] transition-all duration-200 select-none text-[15px] font-medium",
+        "flex items-center rounded-[15px] transition-all duration-200 select-none text-[15px] font-medium ",
         isCollapsed
           ? "w-10 h-10 justify-center mx-auto"
-          : "gap-3 px-3 py-2.5 w-full",
+          : "gap-4 px-3 py-2.5 w-full",
         isActive
-          ? "bg-linear-to-br from-blue-500 via-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-500/25"
-          : "text-[#1c1c1e]/70 hover:bg-black/5 hover:text-[#1c1c1e] active:scale-[0.98]"
+          ? "bg-linear-to-l from-blue-500 via-blue-800 to-indigo-900 text-white shadow-lg shadow-blue-500/25"
+          : "text-foreground hover:bg-foreground/10 hover:text-foreground active:scale-[0.98]"
       )}
     >
-      {/* iOS-style icon badge */}
+    
       <span
         className={cn(
           "flex items-center justify-center rounded-[9px] shrink-0",
@@ -120,15 +120,28 @@ export default function SidebarApp() {
             : "px-4 py-4"
         )}
       >
-        {/* Logo + Brand */}
-        <div className={cn("flex items-center overflow-hidden", isCollapsed ? "gap-0 justify-center" : "gap-2.5")}>
-          <Logo className="w-8 h-8 shrink-0 rounded-lg" />
+        {/* Logo + Brand Container */}
+        <div className={cn(
+          "flex items-center transition-all duration-300 ease-in-out", 
+          isCollapsed ? "gap-0 justify-center w-full" : "gap-3 px-1"
+        )}>
+          <div className={cn(
+            "relative flex items-center justify-center shrink-0 rounded-xl transition-all duration-500",
+            isCollapsed ? "w-10 h-10 bg-primary/10" : "w-9 h-9 bg-linear-to-br from-primary/20 to-primary/5 shadow-sm"
+          )}>
+            <Logo className="w-6 h-6 drop-shadow-md" />
+            <div className="absolute inset-0 rounded-xl border border-primary/10 pointer-events-none" />
+          </div>
+          
           {!isCollapsed && (
-            <span
-              className="text-[17px] font-semibold font font-serif tracking-tight truncate text-[#1c1c1e]"
-            >
-              IMN
-            </span>
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[16px] font-black tracking-tighter text-foreground leading-none">
+                IMN <span className="text-primary text-[10px] align-top ml-0.5">SYSTEM</span>
+              </span>
+              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1 opacity-60">
+                Inventory Hub
+              </span>
+            </div>
           )}
         </div>
       </SidebarHeader>
@@ -142,7 +155,7 @@ export default function SidebarApp() {
       >
         {/* Menu section */}
         {!isCollapsed && (
-          <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1c1c1e]/35 select-none">
+          <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
             Menu
           </p>
         )}
@@ -160,7 +173,7 @@ export default function SidebarApp() {
 
         {/* General section */}
         {!isCollapsed && (
-          <p className="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#1c1c1e]/35 select-none">
+          <p className="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
             General
           </p>
         )}
@@ -175,29 +188,7 @@ export default function SidebarApp() {
               />
             </SidebarMenuItem>
           ))}
-          {/* Logout */}
-          <SidebarMenuItem className={isCollapsed ? "w-full flex justify-center" : ""}>
-            <button
-              onClick={handleSignOut}
-              title={isCollapsed ? "Sign Out" : undefined}
-              className={cn(
-                "flex items-center rounded-xl transition-all duration-200 select-none",
-                isCollapsed
-                  ? "w-10 h-10 justify-center"
-                  : "w-full gap-3 px-3 py-2.5 text-[15px] font-medium text-red-500 hover:bg-red-50 active:scale-[0.98]"
-              )}
-            >
-              <span
-                className={cn(
-                  "flex items-center justify-center rounded-[9px] shrink-0 bg-red-500 shadow-md shadow-red-500/30",
-                  isCollapsed ? "w-10 h-10 rounded-xl" : "w-8 h-8"
-                )}
-              >
-                <LogOut size={isCollapsed ? 20 : 17} className="text-white" strokeWidth={2} />
-              </span>
-              {!isCollapsed && <span className="truncate leading-none">Sign Out</span>}
-            </button>
-          </SidebarMenuItem>
+
         </SidebarMenu>
       </SidebarContent>
 

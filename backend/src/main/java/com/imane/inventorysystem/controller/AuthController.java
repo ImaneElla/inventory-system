@@ -67,11 +67,18 @@ public class AuthController {
             user.setRole(Role.valueOf(role.toUpperCase()));
             user.setImageUrl(fileName); // Save the name/path of the photo
             
-            // Generate a username automatically from email or name
-            user.setUsername(email.split("@")[0]); 
+            // Use the userName provided in the request
+            user.setUsername(userName); 
 
             userRepository.save(user);
-            return ResponseEntity.ok("Registration successful!");
+            java.util.Map<String, String> responseMap = new java.util.HashMap<>();
+            responseMap.put("message", "Registration successful!");
+            responseMap.put("userName", userName);
+            responseMap.put("role", role);
+            if (fileName != null) {
+                responseMap.put("imageUrl", "/uploads/profiles/" + fileName);
+            }
+            return ResponseEntity.ok(responseMap);
 
         } catch (IOException e) {
             return ResponseEntity.status(500).body("Error saving image: " + e.getMessage());
@@ -87,7 +94,17 @@ public class AuthController {
 
         return userRepository.findByEmail(loginRequest.getEmail())
                 .filter(user -> user.getPassword().equals(loginRequest.getPassword()))
-                .map(user -> ResponseEntity.ok("Login successful ! Welcome " + user.getUsername()))
-                .orElse(ResponseEntity.status(401).body("Invalid email or password"));
+                .map(user -> {
+                    java.util.Map<String, String> response = new java.util.HashMap<>();
+                    response.put("userName", user.getUsername());
+                    response.put("role",     user.getRole().name());
+                    response.put("email",    user.getEmail());
+                    response.put("message",  "Login successful! Welcome " + user.getUsername());
+                    if (user.getImageUrl() != null) {
+                        response.put("imageUrl", "/uploads/profiles/" + user.getImageUrl());
+                    }
+                    return ResponseEntity.ok(response);
+                })
+                .orElse(ResponseEntity.status(401).body(java.util.Map.of("message", "Invalid email or password")));
     }
 }

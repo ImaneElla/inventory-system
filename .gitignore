@@ -1,5 +1,8 @@
 # dependencies (bun install)
 node_modules
+.vscode/
+
+
 
 # output
 out
@@ -17,10 +20,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # dotenv environment variable files
 .env
+.env.*
+.env.local
 .env.development.local
 .env.test.local
 .env.production.local
-.env.local
 
 # caches
 .eslintcache
@@ -32,3 +36,28 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+
+# Docker
+# docker-compose.yml was here, removed to allow committing.
+postgres_data/
+*.mv.db
+*.trace.db
+backend/data/
+backend/uploads/
+
+# Deployment manifests with hardcoded secrets
+bridge/
+
+# Secrets and keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+secrets.yaml
+credentials.json
+
+Dockerfile
+docker-compose.yml
+

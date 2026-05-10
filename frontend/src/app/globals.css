@@ -4,7 +4,7 @@
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
+    --card: hsl(0, 0%, 94%);
     --card-foreground: oklch(0.141 0.005 285.823);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.141 0.005 285.823);
@@ -34,6 +34,8 @@
     --sidebar-accent-foreground: hsl(240, 6%, 10%);
     --sidebar-border: hsl(240, 6%, 84%);
     --sidebar-ring: oklch(0.705 0.015 286.067);
+    --logo-primary: #d3d0fa;
+    --logo-secondary: rgb(0, 68, 255);
 }
 
 .dark {
@@ -68,6 +70,8 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.552 0.016 285.938);
+    --logo-primary: hsl(0, 0%, 0%);
+    --logo-secondary: rgb(255, 255, 255);
 }
 
 @theme inline {

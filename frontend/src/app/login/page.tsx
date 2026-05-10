@@ -32,23 +32,27 @@ export default function LoginPage() {
     
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-      
-      const message = await response.text();
+      let data: { userName?: string; role?: string; message?: string; imageUrl?: string } = {};
+      try { data = await response.json(); } catch { data = { message: await response.text() }; }
       
       if (response.ok) {
         showToast("Login Successful!");
         localStorage.setItem("auth", "true");
+        if (data.userName) localStorage.setItem("userName", data.userName);
+        if (data.role)     localStorage.setItem("role",     data.role);
+        if (data.imageUrl) localStorage.setItem("userImage", data.imageUrl);
+        else               localStorage.removeItem("userImage");
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true");
         }
         setTimeout(() => router.replace("/dashboard"), 1500);
       } else {
-        showToast(message || "Invalid credentials");
+        showToast(data.message || "Invalid credentials");
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -61,65 +65,91 @@ export default function LoginPage() {
   return (
     <div className="login-wrapper relative min-h-screen flex items-center justify-center">
       <motion.div 
-        initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
+        initial={{ opacity: 0, filter: "blur(20px)", scale: 0.95, y: 20 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full max-w-[860px] min-h-[480px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-2xl overflow-hidden shadow-2xl flex-col md:flex-row m-4 z-10"
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="flex w-full max-w-[900px] min-h-[550px] bg-card/60 backdrop-blur-3xl border border-border/40 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
       >
         <LeftPanel />
-        <div className="flex-1 p-8 md:p-10 flex flex-col justify-center bg-card/40 text-center">
-          <div className="flex justify-center mb-4">
-            <Logo className="w-16 h-16" />
-          </div>
-          <h1 className="text-3xl text-foreground mb-2 tracking-tight font-bold">Welcome back</h1>
-          <p className="text-sm text-muted-foreground mb-8">
-            No account?{" "}
-            <span onClick={() => router.push("/register")} className="text-primary font-medium cursor-pointer hover:underline">Create one</span>
-          </p>
+        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-card/40 text-center relative overflow-hidden">
+          {/* Ambient Background Glow */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32" />
 
-          <div className="mb-4 relative">
-            <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-            <input className={`${inputStyle} pl-10 text-foreground`} type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-          </div>
+          <div className="relative z-10 max-w-[420px] mx-auto">
+            <div className="flex justify-center mb-6">
+              <Logo className="w-16 h-16 drop-shadow-sm" />
+            </div>
+            
+            <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Welcome Back</h1>
+            <p className="text-sm text-muted-foreground mb-6 font-medium">Please enter your credentials to access your workspace</p>
 
-          <div className="mb-4 relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-foreground/50" />
-            <input
-              className={`${inputStyle} pl-10 pr-10 text-foreground`}
-              type={showPwd ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <button 
-              onClick={() => setShowPwd(v => !v)} 
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center"
+            <div className="space-y-5 mb-4">
+              <div className="relative group">
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+                <input 
+                  className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`} 
+                  type="email" 
+                  placeholder="Email Address" 
+                  value={email} 
+                  onChange={e => setEmail(e.target.value)} 
+                />
+              </div>
+
+              <div className="relative group">
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+                <input
+                  className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`}
+                  type={showPwd ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+                <button 
+                  type="button"
+                  onClick={() => setShowPwd(v => !v)} 
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center p-1"
+                  aria-label={showPwd ? "Hide password" : "Show password"}
+                >
+                  {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mb-10 px-1">
+              <label className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer select-none font-medium hover:text-foreground transition-colors">
+                <input 
+                  type="checkbox" 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-5 h-5 rounded-lg border-border accent-primary cursor-pointer transition-all"
+                />
+                Remember me
+              </label>
+              <button type="button" className="text-sm text-primary font-bold hover:underline bg-transparent border-none cursor-pointer">
+                Forgot password?
+              </button>
+            </div>
+
+            <Button 
+              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
+              onClick={handleLogin}
+              isLoading={isLoading}
             >
-              {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
+              Sign In
+            </Button>
 
-          <div className="flex items-center justify-between mb-8 px-1">
-            <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-              <input 
-                type="checkbox" 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
-              />
-              Remember me
-            </label>
-            <span className="text-sm text-primary font-medium cursor-pointer hover:underline">{` `}</span>
+            <p className="text-sm text-muted-foreground mt-6 font-medium">
+              New here?{" "}
+              <button 
+                type="button"
+                onClick={() => router.push("/register")} 
+                className="text-primary font-black cursor-pointer hover:underline bg-transparent border-none"
+              >
+                Create an account
+              </button>
+            </p>
           </div>
-
-          <Button 
-            className="w-full md:w-60 mx-auto"
-            size="lg"
-            onClick={handleLogin}
-            isLoading={isLoading}
-          >
-            Log in
-          </Button>
         </div>
       </motion.div>
 
