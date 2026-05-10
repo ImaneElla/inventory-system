@@ -31,7 +31,7 @@ public class ProductController {
         //Dashboard Stats
         @GetMapping("/stats")
         public ResponseEntity<Map<String,Object>> getStats() {
-            return ResponseEntity.ok(^roductService.getDashboardStats());
+            return ResponseEntity.ok(productService.getDashboardStats());
         }   
 
         //CRUD Operations

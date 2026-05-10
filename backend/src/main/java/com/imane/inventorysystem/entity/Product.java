@@ -25,9 +25,6 @@ import lombok.NoArgsConstructor;
 
 public class Product {
 
-    public static long getQuantity(T value) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 @Id
 @GeneratedValue(strategy = GenerationType.IDENTITY)
 private Long id;

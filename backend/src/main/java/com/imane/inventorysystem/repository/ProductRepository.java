@@ -13,9 +13,11 @@ import com.imane.inventorysystem.entity.Product;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    Page<Product> findByNameContainingIgnoreCaseOrCategoryContainingIgnoreCaseOrSkuContainingIgnoreCaseOrColorContainingIgnoreCase(
-        String name, String category, String sku, String color, Pageable pageable
+    Page<Product> findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBrandContainingIgnoreCaseOrColorContainingIgnoreCase(
+        String name, String sku, String brand, String color, Pageable pageable
     );
+    
     List<Product> findByQuantityLessThanEqual(Integer minStockLevel);
+    
     List<Product> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }
