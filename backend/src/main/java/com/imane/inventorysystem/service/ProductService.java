@@ -67,7 +67,7 @@ public class ProductService {
                 .map(p -> p.getSalePrice().subtract(p.getPurchasePrice())
                         .multiply(BigDecimal.valueOf(p.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-                
+        
         stats.put("expectedProfit", expectedProfit);
 
         stats.put("lowStockCount", allProducts.stream()
