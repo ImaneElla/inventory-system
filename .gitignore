@@ -43,6 +43,7 @@ postgres_data/
 *.mv.db
 *.trace.db
 backend/data/
+backend/uploads/
 
 # Deployment manifests with hardcoded secrets
 bridge/
