@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, X, Package2, Hash, Tag,
-  DollarSign, Boxes, ImagePlus, Link2, Check, Palette,
-  Loader2, UploadCloud, Filter, ChevronDown, ChevronUp,
-  CircleSlash
+  Boxes, ImagePlus, Check, Palette,
+  Loader2, UploadCloud, CircleSlash, Filter,
+  MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories } from "@/lib/api";
@@ -27,14 +27,78 @@ const DEFAULT_FORM = {
   minStockLevel: 5, brand: "", color: "#3B82F6", imageUrl: "",
 };
 
-const inputCls = `h-12 w-full rounded-2xl border-2 border-slate-200/80 bg-foreground/3 px-5 text-sm
-  text-foreground placeholder:text-foreground/50 outline-none transition-all
-  focus:border-primary focus:ring-1`;
+const inputCls = `h-12 w-full rounded-2xl border border-border bg-card/50 px-5 text-sm
+  text-foreground placeholder:text-muted-foreground/50 outline-none transition-all
+  focus:ring-2 focus:ring-primary/20 focus:border-primary`;
+
+// --- New Actions Menu Component ---
+function ProductActions({ 
+  onEdit, 
+  onDelete, 
+  onView,
+  isDeleting 
+}: { 
+  onEdit: () => void; 
+  onDelete: () => void; 
+  onView: () => void;
+  isDeleting?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button 
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="p-2 hover:bg-muted/20 rounded-xl transition-colors text-muted-foreground hover:text-foreground"
+      >
+        <MoreVertical size={20} />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-[50] overflow-hidden backdrop-blur-xl"
+          >
+            <div className="p-2 space-y-1">
+              <button onClick={() => { onView(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all">
+                <Eye size={16} /> View Details
+              </button>
+              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all">
+                <Edit3 size={16} /> Edit Product
+              </button>
+              <div className="h-px bg-border my-1" />
+              <button 
+                disabled={isDeleting}
+                onClick={() => { onDelete(); setOpen(false); }} 
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+              >
+                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
+                Delete
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1.5 text-[10px] font-bold tracking-[0.18em] uppercase text-muted-foreground">
+      <label className="flex items-center gap-2 text-[11px] font-bold tracking-wider uppercase text-muted-foreground/80">
         {icon} {label}
       </label>
       {children}
@@ -42,8 +106,25 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
   );
 }
 
+function StatCard({
+  icon, label, value, iconBg, iconColor, valueColor, primary = false,
+}: {
+  icon: React.ReactNode; label: string; value: number; iconBg: string; iconColor: string; valueColor: string; primary?: boolean;
+}) {
+  return (
+    <div className={`bg-card/40 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center justify-center gap-3 text-center border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 select-none ${primary ? "border-primary/30 ring-1 ring-primary/5" : "border-border"}`} style={{ minHeight: 140 }}>
+      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg} ${iconColor} shadow-inner`}>{icon}</div>
+      <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">{label}</p>
+      <p className={`text-4xl font-black tabular-nums tracking-tight ${valueColor}`}>{value}</p>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const qc = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [viewMode, setViewMode] = useState<"table" | "grid">("table");
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
@@ -65,18 +146,12 @@ export default function ProductsPage() {
 
   const createM = useMutation({
     mutationFn: createProduct,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      closeForm();
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); },
   });
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateProduct(id, data),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["products"] });
-      closeForm();
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); },
   });
 
   const deleteM = useMutation({
@@ -105,414 +180,411 @@ export default function ProductsPage() {
   }, [products, filterBrand, filterCategory]);
 
   const toggleForm = () => {
-    if (showForm && !editId) {
-      setShowForm(false);
-    } else {
-      setEditId(null);
-      setForm(DEFAULT_FORM);
-      setShowForm(true);
-    }
+    if (showForm && !editId) setShowForm(false);
+    else { setEditId(null); setForm(DEFAULT_FORM); setShowForm(true); }
   };
 
   const openEdit = (p: Product) => {
     setEditId(p.id);
     setForm({
-      name: p.name, sku: p.sku, description: p.description || "",
-      quantity: p.quantity, categoryId: p.categoryId,
-      purchasePrice: p.purchasePrice, sellPrice: p.sellPrice,
-      minStockLevel: p.minStockLevel, brand: p.brand || "",
-      color: p.color || "#3B82F6", imageUrl: p.imageUrl || ""
+      name: p.name, sku: p.sku, description: p.description || "", quantity: p.quantity,
+      categoryId: p.categoryId, purchasePrice: p.purchasePrice, sellPrice: p.sellPrice,
+      minStockLevel: p.minStockLevel, brand: p.brand || "", color: p.color || "#3B82F6", imageUrl: p.imageUrl || "",
     });
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const closeForm = () => {
-    setShowForm(false);
-    setEditId(null);
-    setForm(DEFAULT_FORM);
-  };
+  const closeForm = () => { setShowForm(false); setEditId(null); setForm(DEFAULT_FORM); };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (editId) {
-      updateM.mutate({ id: editId, data: form });
-    } else {
-      createM.mutate(form);
-    }
+    if (editId !== null) updateM.mutate({ id: editId, data: form });
+    else createM.mutate(form);
   };
 
-  function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>): void {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setForm({ ...form, imageUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
-  }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setForm(prev => ({ ...prev, imageUrl: reader.result as string }));
+    reader.readAsDataURL(file);
+  };
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10 space-y-8 text-foreground md:max-w-[1300px] mx-auto overflow-x-hidden max-w-full">
-      {/* Background Decor */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 -right-24 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 overflow-x-hidden">
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 -right-24 w-80 h-80 bg-primary/10 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-[1600px] mx-auto space-y-8">
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Products</p>
-              <h2 className="text-3xl font-black text-foreground mt-1">{totalProducts}</h2>
-            </div>
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center"><Package2 size={24} /></div>
-          </div>
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Available</p>
-              <h2 className="text-3xl font-black text-emerald-500 mt-1">{available}</h2>
-            </div>
-            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center"><Check size={24} /></div>
-          </div>
-          <div className="bg-card border border-border rounded-3xl p-6 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Out of Stock</p>
-              <h2 className="text-3xl font-black text-rose-500 mt-1">{outOfStock}</h2>
-            </div>
-            <div className="w-12 h-12 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center"><CircleSlash size={24} /></div>
-          </div>
+      <main className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-12 space-y-10">
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <StatCard icon={<Package2 size={24} />} label="Total Inventory" value={totalProducts} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-foreground" primary />
+          <StatCard icon={<Check size={24} />} label="In Stock" value={available} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
+          <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={outOfStock} iconBg="bg-rose-500/10" iconColor="text-rose-500" valueColor="text-rose-500" />
         </div>
 
-        {/* Header Section */}
-        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-foreground tracking-tight">Products List</h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <select 
-              value={filterCategory} 
-              onChange={e => setFilterCategory(e.target.value)}
-              className="h-10 rounded-2xl bg-card border border-border text-sm font-semibold px-4 shadow-sm outline-none cursor-pointer text-foreground"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-            <select 
-              value={filterBrand} 
-              onChange={e => setFilterBrand(e.target.value)}
-              className="h-10 rounded-2xl bg-card border border-border text-sm font-semibold px-4 shadow-sm outline-none cursor-pointer text-foreground"
-            >
-              <option value="all">All Brands</option>
-              {uniqueBrands.map((b: any) => <option key={b as string} value={b as string}>{b as string}</option>)}
-            </select>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground group-focus-within:text-primary transition-colors" size={18} />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search Products..."  
-                className="h-10 w-48 sm:w-64 pl-12 pr-4 rounded-2xl bg-card border border-border shadow-sm outline-none focus:ring-4 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
-              />
-            </div>
-            <button
-              onClick={toggleForm}
-              className="btn-gradient h-10 flex items-center gap-2 px-6 rounded-2xl font-bold cursor-pointer"
-            >
-              <Plus size={18} />
-              Add Product
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <h1 className="text-4xl font-black tracking-tight text-foreground">Product List</h1>
+            <button onClick={toggleForm} className="btn-gradient h-12 flex items-center justify-center gap-2 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+              <Plus size={20} /> Add Product
             </button>
           </div>
+
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between bg-card/30 p-4 rounded-[2.5rem] border border-border backdrop-blur-sm">
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search inventory..." className="h-11 w-full pl-12 pr-4 rounded-2xl bg-background border border-border outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+              {/* --- View Switcher --- */}
+              <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-2xl mr-2">
+                <button 
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-xl transition-all ${viewMode === "table" ? "btn-gradient duration-300 ease-in-out shadow-lg" : "text-muted-foreground hover:bg-primary/10 ease-out duration-300"}`}
+                >
+                  <List size={18} />
+                </button>
+                <button 
+                  onClick={() => setViewMode("grid")}
+                  className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "btn-gradient duration-300 ease-in-out shadow-lg" : "text-muted-foreground hover:bg-primary/10"}`}
+                >
+                  <LayoutGrid size={18} />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
+                <Filter size={14} className="text-muted-foreground" />
+                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
+                  <option value="all" className="bg-background text-foreground">All Categories</option>
+                  {categories.map((c: any) => <option key={c.id} value={c.id} className="bg-background text-foreground">{c.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
+                <Boxes size={14} className="text-muted-foreground" />
+                <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
+                  <option value="all" className="bg-background text-foreground capitalize">All Brands</option>
+                  {uniqueBrands.map((b: any) => (
+                    <option key={b} value={b} className="bg-background text-foreground ">{b}</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Modal Form Section */}
+        {/* --- Main Content View Toggle --- */}
+        <div className="relative">
+          {viewMode === "table" ? (
+            <div className="relative rounded-[2.5rem] border border-border bg-card/30 backdrop-blur-md overflow-hidden transition-all">
+              <div className="h-2 " />
+              <div className="p-1 md:p-0">
+                <ProductsTable
+                  products={filteredProducts}
+                  isLoading={isLoading}
+                  onEdit={openEdit}
+                  onDelete={id => deleteM.mutate(id)}
+                  onViewDetails={setViewProduct}
+                  deletingId={deleteM.isPending ? (deleteM.variables as any) : null}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((p) => (
+                <motion.div
+                  layout
+                  key={p.id}
+                  className="group bg-card border border-border rounded-[2.5rem] overflow-hidden flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
+                >
+                  <div className="relative h-48 bg-muted/10 flex items-center justify-center overflow-hidden">
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    ) : (
+                      <Package2 size={40} className="text-muted-foreground/20" />
+                    )}
+                    <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-1 border border-border shadow-lg">
+                      <ProductActions 
+                        onEdit={() => openEdit(p)}
+                        onDelete={() => deleteM.mutate(p.id)}
+                        onView={() => setViewProduct(p)}
+                        isDeleting={deleteM.isPending && deleteM.variables === p.id}
+                      />
+                    </div>
+                    {p.quantity <= p.minStockLevel && (
+                       <div className="absolute top-4 left-4 bg-rose-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Low Stock</div>
+                    )}
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-black text-lg truncate pr-2">{p.name}</h3>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{p.brand || "Generics"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-primary">{p.sellPrice} DH</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                        <span className="text-[11px] font-bold text-muted-foreground">{p.quantity} in stock</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-muted-foreground/60">{p.sku}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* --- Modals (Form & Details) --- */}
         <AnimatePresence>
           {showForm && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto"
+              className="fixed inset-0 z-10000 flex items-center justify-center p-4 md:p-4 bg-black/60 backdrop-blur-lg "
             >
               <motion.div
-                initial={{ scale: 0.95, y: 20 }}
+                initial={{ scale: 0.9, y: 40 }}
                 animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                className="bg-card border border-border rounded-3xl shadow-2xl p-8 w-full max-w-4xl my-auto relative"
+                exit={{ scale: 0.9, y: 40 }}
+                className="bg-card border border-border rounded-[2rem] shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-hidden relative mt-16 mb-2"
               >
                 <button
                   onClick={closeForm}
-                  className="absolute top-6 right-6 p-2 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                  className="absolute top-8 right-8 p-2 rounded-2xl cursor-pointer hover:bg-foreground/20 text-foreground transition-colors z-10 bg-foreground/5"
                 >
-                  <X size={20} />
+                  <X size={24} />
                 </button>
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-foreground shadow-sm shadow-accent flex items-center justify-center text-background">
-                      <Package2 size={24} />
+
+                <div className="p-8 md:p-12">
+                  <div className="flex items-center gap-5 mb-10">
+                    <div className="w-14 h-14 rounded-[1.25rem] btn-gradient flex items-center justify-center shadow-xl">
+                      <Package2 size={28} />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-foreground">{editId ? 'Update Product' : 'Create New Product'}</h2>
-                      <p className="text-sm text-foreground/60">Fill in the information below.</p>
-                    </div>
-                  </div>
-                
-                </div>
-
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8 mr-4">
-                  {/* Left Column: Basic Info */}
-                  <div className="lg:col-span-2 space-y-6 ">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
-
-                      <Field label="Product Name" icon={<Package2 size={12} />}>
-                        <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="name " className={inputCls } style={{ paddingLeft: "1rem"  }} />
-                      </Field>
-                      <Field label="SKU" icon={<Hash size={12} />}>
-                        <input required value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="e.g. APP-IPH-15" className={inputCls} style={{ paddingLeft: "1rem" }} />
-                      </Field>
-                    <Field label="Category" icon={<Tag size={12} />}>
-  <div className="relative ">
-    <select
-      required
-      value={form.categoryId}
-      onChange={(e) =>
-        setForm({ ...form, categoryId: Number(e.target.value) })
-      }
-      className={`
-        ${inputCls}
-        appearance-none
-        px-2 
-        cursor-pointer
-        backdrop-blur-xl
-        border border-slate-200/70
-        hover:border-indigo-300
-        focus:border-indigo-500
-        text-foreground
-        font-medium
-        shadow-sm
-      `}
-    >
-      <option value={0} disabled>
-        Select Category
-      </option>
-
-      {categories.map((c: any) => (
-        <option
-          key={c.id}
-          value={c.id}
-          className="bg-card text-foreground"
-        >
-          {c.name}
-        </option>
-      ))}
-    </select>
-  </div>
-</Field>
-                      <Field label="Brand" icon={<Boxes size={12} />}>
-                        <input value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} placeholder="e.g. Apple" className={inputCls} style={{ paddingLeft: "1rem" ,}} />
-                      </Field>
-                    </div>
-                    <Field label="Description">
-                      <textarea rows={3} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Describe the product details..." className={`${inputCls} h-auto py-4 resize-none rounded-2xl border-0 bg-transparent `}style={{ paddingLeft: "1rem" , paddingBottom: "1rem", height:"6rem" }} />
-                    </Field>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-100 mb-4">
-                      <Field label="Buy Price" >
-                        <input type="number" value={form.purchasePrice} onChange={e => setForm({ ...form, purchasePrice: parseFloat(e.target.value) || 0 })} className={inputCls} style={{ paddingLeft: "1rem" ,}} />
-                      </Field>
-                      <Field label="Sell Price">
-                        <input type="number" value={form.sellPrice} onChange={e => setForm({ ...form, sellPrice: parseFloat(e.target.value) || 0 })} className={inputCls} style={{ paddingLeft: "1rem" ,}} />
-                      </Field>
-                      <Field label="Quantity">
-                        <input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className={inputCls} style={{ paddingLeft: "1rem" ,}} />
-                      </Field>
-                      <Field label="Min Stock">
-                        <input type="number" value={form.minStockLevel} onChange={e => setForm({ ...form, minStockLevel: parseInt(e.target.value) || 0 })} className={inputCls} style={{ paddingLeft: "1rem" ,}} />
-                      </Field>
+                      <h2 className="text-3xl font-black">{editId ? "Edit Product" : "New Product"}</h2>
+                      <p className="text-muted-foreground font-medium">Define your product specifications</p>
                     </div>
                   </div>
 
-                  {/* Right Column: Media & Color */}
-                  <div className="space-y-8 p-6 rounded-[2rem] ">
-                    <Field label="Product Image" icon={<ImagePlus size={12} />}>
-                      <div className="flex gap-2 mb-3 bg-primary/10 p-1 rounded-xl border-none ">
-                        <button type="button" onClick={() => setImageMode('url')} className={`flex-1 h-9 rounded-lg text-xs font-bold transition-all ${imageMode === 'url' ? ' text-foreground shadow-md' : 'text-slate-500'}`}>URL</button>
-                        <button type="button" onClick={() => setImageMode('upload')} className={`flex-1 h-9 rounded-lg text-xs font-bold transition-all ${imageMode === 'upload' ? ' text-foreground shadow-md' : 'text-slate-500'}`}>Upload</button>
+                  <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-7 space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Field label="Name" icon={<Package2 size={12} />}>
+                          <input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Enter name" className={inputCls} />
+                        </Field>
+                        <Field label="SKU" icon={<Hash size={12} />}>
+                          <input required value={form.sku} onChange={e => setForm({ ...form, sku: e.target.value })} placeholder="SKU-001" className={inputCls} />
+                        </Field>
+                        <Field label="Category" icon={<Tag size={12} />}>
+                          <select required value={form.categoryId} onChange={e => setForm({ ...form, categoryId: Number(e.target.value) })} className={`${inputCls} appearance-none cursor-pointer`}>
+                            <option value={0} disabled>Select</option>
+                            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                          </select>
+                        </Field>
+                        <Field label="Brand" icon={<Boxes size={12} />}>
+                          <input value={form.brand} onChange={e => setForm({ ...form, brand: e.target.value })} placeholder="Brand" className={inputCls} />
+                        </Field>
                       </div>
-                      {imageMode === 'url' ? (
-                        <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="Image URL...(https://..)" className={`${inputCls} h-12 bg-card/10 px-4`} />
-                      ) : (
-                        <div className="h-24 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center bg-card/50 text-foreground hover:border-indigo-400 transition-colors cursor-pointer">
-                          <UploadCloud size={20} className="text-slate-400 mb-1" />
-                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                          <span className="text-[10px] font-bold text-slate-500">CLICK TO UPLOAD</span>
+
+                      <Field label="Description">
+                        <textarea rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Product narrative..." className={`${inputCls} h-32 py-4 resize-none`} />
+                      </Field>
+
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-muted/5 border border-border/50">
+                        <Field label="Cost (DH)">
+                          <input type="number" value={form.purchasePrice} onChange={e => setForm({ ...form, purchasePrice: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                        </Field>
+                        <Field label="Price (DH)">
+                          <input type="number" value={form.sellPrice} onChange={e => setForm({ ...form, sellPrice: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                        </Field>
+                        <Field label="Stock">
+                          <input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className={inputCls} />
+                        </Field>
+                        <Field label="Alert At">
+                          <input type="number" value={form.minStockLevel} onChange={e => setForm({ ...form, minStockLevel: parseInt(e.target.value) || 0 })} className={inputCls} />
+                        </Field>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-8">
+                      <Field label="Media" icon={<ImagePlus size={12} />}>
+                        <div className="space-y-4">
+                          <div className="flex gap-1 p-1 bg-muted/10 rounded-2xl">
+                            {(['url', 'upload'] as const).map((mode) => (
+                              <button
+                                key={mode}
+                                type="button"
+                                onClick={() => setImageMode(mode)}
+                                className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${imageMode === mode ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+                              >
+                                {mode}
+                              </button>
+                            ))}
+                          </div>
+                          
+                          {imageMode === "url" ? (
+                            <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." className={inputCls} />
+                          ) : (
+                            <div
+                              onClick={() => fileInputRef.current?.click()}
+                              className="group h-48 border-2 border-dashed border-border rounded-[2rem] flex flex-col items-center justify-center gap-3 bg-muted/5 hover:border-primary hover:bg-primary/5 transition-all cursor-pointer overflow-hidden"
+                            >
+                              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                              {form.imageUrl && imageMode === "upload" ? (
+                                <img src={form.imageUrl} alt="preview" className="h-full w-full object-cover" />
+                              ) : (
+                                <>
+                                  <div className="p-4 rounded-2xl bg-background shadow-sm group-hover:scale-110 transition-transform">
+                                    <UploadCloud size={24} className="text-primary" />
+                                  </div>
+                                  <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Drop or Click</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </Field>
+                      </Field>
 
-                    <Field label="Product Theme Color" icon={<Palette size={12} />}>
-                      <div className="grid grid-cols-3 gap-2 pt-4">
-                        {PALETTES.map(pal => (
-                          <button
-                            key={pal.value}
-                            type="button"
-                            onClick={() => setForm({ ...form, color: pal.value })}
-                            className={`h-10 rounded-2xl border-2 transition-all flex items-center justify-center ${form.color === pal.value ? 'border-indigo-500 bg-foreground ring-4 ring-indigo-500/10' : 'border-transparent bg-foreground/20 shadow-sm'}`}
-                          >
-                            <div className="w-5 h-5 rounded-full shadow-inner" style={{ background: pal.value }} />
-                        
-                          <label
-      className={`
-        relative h-5 rounded-full border-2 border-dashed
-        flex items-center justify-center cursor-pointer
-        overflow-hidden transition-all
-        ${
-          !PALETTES.some((p) => p.value === form.color)
-            ? "border-indigo-500 ring-4 ring-indigo-500/15"
-            : "border-slate-300 hover:border-slate-400"
-        }
-      `}
-      style={{ background: form.color }}
-    >
-      <Palette size={16} className="text-white drop-shadow" />
+                      <Field label="Visual Identity" icon={<Palette size={12} />}>
+                        <div className="grid grid-cols-3 gap-3">
+                          {PALETTES.map(pal => (
+                            <button
+                              key={pal.value}
+                              type="button"
+                              onClick={() => setForm({ ...form, color: pal.value })}
+                              className={`h-12 rounded-2xl border-2 transition-all flex items-center justify-center ${form.color === pal.value ? "border-primary ring-4 ring-primary/10" : "border-transparent bg-muted/10"}`}
+                            >
+                              <div className="w-6 h-6 rounded-full shadow-lg" style={{ background: pal.value }} />
+                            </button>
+                          ))}
+                        </div>
+                      </Field>
 
-      <input
-        type="color"
-        value={form.color}
-        onChange={(e) =>
-          setForm({ ...form, color: e.target.value })
-        }
-        className="absolute inset-0 opacity-0 cursor-pointer"
-      />
-    </label>
-        </button>
-                        ))}
-                      </div>
-                    </Field>
-
-                    <div className="pt-4 bg">
                       <button
                         type="submit"
                         disabled={busy}
-                        className="w-full h-14 bg-linear-to-l from-blue-500 via-blue-800 to-indigo-900 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-60 h-12 btn-gradient rounded-3xl mt-8 font-black text-[14px] transition-all flex items-center justify-center gap-3 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-foreground/10 mx-auto"
                       >
-                        {busy ? <Loader2 className="animate-spin" /> : editId ? 'Update Product' : 'Create Product'}
+                        {busy ? <Loader2 className="animate-spin" size={24} /> : (editId ? "Save Changes" : "Create Product")}
                       </button>
                     </div>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Table Section */}
-        <div className="bg-card text-foreground border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-          
-          </div>
-          <ProductsTable
-            products={filteredProducts}
-            isLoading={isLoading}
-            onEdit={openEdit}
-            onDelete={id => deleteM.mutate(id)}
-            onViewDetails={setViewProduct}
-            deletingId={deleteM.isPending ? (deleteM.variables as any) : null}
-          />
-        </div>
+        {/**
+         * 
+         * 
+         * 
+         * VIEW PRODUCTS DETAIL---------------------------------------
+         *  
+         * 
+         * 
+         */}
 
-        {/* Product Details Modal */}
         <AnimatePresence>
           {viewProduct && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xl"
               onClick={() => setViewProduct(null)}
             >
               <motion.div
-                initial={{ scale: 0.95, y: 20 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.95, y: 20 }}
-                onClick={(e) => e.stopPropagation()}
-                className="bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden w-full max-w-2xl"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-card border border-border rounded-3xl shadow-2xl overflow-hidden w-full max-w-2xl"
               >
-                <div className="relative h-64 bg-slate-100 flex items-center justify-center overflow-hidden">
+                <div className="relative h-72 bg-background backdrop-blur-xl flex items-center justify-center">
                   {viewProduct.imageUrl ? (
-                    <img src={viewProduct.imageUrl} alt={viewProduct.name} className="w-full h-full object-contain" />
+                    <img src={viewProduct.imageUrl} alt={viewProduct.name} className="w-full h-full object-contain " />
                   ) : (
-                    <Package2 size={64} className="text-slate-300" />
+                    <Package2 size={80} className="text-muted-foreground/20" />
                   )}
                   <button
                     onClick={() => setViewProduct(null)}
-                    className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
+                    className="absolute top-6 right-6 p-3 bg-background/80 hover:bg-background text-foreground rounded-2xl backdrop-blur-md transition-all shadow-lg"
                   >
                     <X size={20} />
                   </button>
-                  <div className="absolute bottom-4 left-4 flex gap-2">
+                  <div className="absolute bottom-6 left-6 flex gap-3 items-center">
                     {viewProduct.color && (
-                      <span className="w-6 h-6 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: viewProduct.color }} />
+                      <span className="w-8 h-8 rounded-full border-2 border-background/60 shadow-2xl" style={{ backgroundColor: viewProduct.color }} />
                     )}
-                    <span className="px-3 py-1 rounded-full bg-white/90 backdrop-blur text-xs font-bold text-slate-800 shadow-sm">
-                      {viewProduct.brand || 'No Brand'}
+                    <span className="px-4 py-1.5 rounded-xl bg-foreground backdrop-blur text-[10px] font-black uppercase tracking-widest text-background shadow-sm border border-border">
+                      {viewProduct.brand || "Generics"}
                     </span>
                   </div>
                 </div>
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-6">
+
+                <div className="p-10 space-y-8">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <h2 className="text-3xl font-black text-slate-900 mb-1">{viewProduct.name}</h2>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-sm font-mono text-slate-500 bg-slate-100 inline-block px-2 py-0.5 rounded-lg">{viewProduct.sku}</p>
-                        <p className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-lg uppercase tracking-wider">
-                          {categories.find((c: any) => c.id === viewProduct.categoryId)?.name || 'Uncategorized'}
-                        </p>
+                      <h2 className="text-4xl font-black tracking-tight">{viewProduct.name}</h2>
+                      <div className="flex items-center gap-3 mt-4">
+                        <span className="text-xs font-bold font-mono text-muted-foreground bg-background px-3 py-1 rounded-lg border border-border/50">{viewProduct.sku}</span>
+                        <span className="text-[10px] font-black text-primary bg-primary/10 px-3 py-1.5 rounded-lg uppercase tracking-[0.15em]">
+                          {categories.find((c: any) => c.id === viewProduct.categoryId)?.name || "Default"}
+                        </span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-emerald-600">{viewProduct.sellPrice.toFixed(2)} DH</div>
-                      <div className="text-sm font-bold text-slate-400 mt-1">Cost: <span className="text-slate-500">{viewProduct.purchasePrice.toFixed(2)} DH</span></div>
+                      <div className="text-3xl font-black text-foreground">{viewProduct.sellPrice.toLocaleString()} DH</div>
+                      <div className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Cost : {viewProduct.purchasePrice} DH</div>
                     </div>
                   </div>
-                  
-                  <div className="bg-slate-50 rounded-2xl p-4 mb-6 border border-slate-100">
-                    <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Description</h3>
-                    <p className="text-slate-700 text-sm leading-relaxed">{viewProduct.description || 'No description available.'}</p>
+
+                  <div className="bg-background/80 backdrop-blur-xl rounded-3xl p-6 border border-border/50">
+                    <p className="text-muted-foreground text-sm leading-relaxed font-medium">{viewProduct.description || "No description provided for this item."}</p>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center text-center shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Stock</span>
-                      <span className="text-lg font-black text-slate-900">{viewProduct.quantity}</span>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center text-center shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Min Level</span>
-                      <span className="text-lg font-black text-slate-900">{viewProduct.minStockLevel}</span>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center text-center shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</span>
-                      <span className={`text-sm font-bold mt-1 ${viewProduct.quantity === 0 ? "text-rose-500" : viewProduct.quantity <= viewProduct.minStockLevel ? "text-amber-500" : "text-emerald-500"}`}>
-                        {viewProduct.quantity === 0 ? 'Empty' : viewProduct.quantity <= viewProduct.minStockLevel ? 'Low' : 'In Stock'}
-                      </span>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center text-center shadow-sm">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Added On</span>
-                      <span className="text-xs font-bold text-slate-900 mt-1">
-                        {viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleDateString() : '—'}
-                      </span>
-                    </div>
+                    {[
+                      { label: "Stock", value: viewProduct.quantity },
+                      { label: "Minimum", value: viewProduct.minStockLevel },
+                      {
+                        label: "Status",
+                        value: viewProduct.quantity === 0 ? "Out of stock" : viewProduct.quantity <= viewProduct.minStockLevel ? "Low stock" : "In stock",
+                        color: viewProduct.quantity === 0 ? "text-rose-500" : viewProduct.quantity <= viewProduct.minStockLevel ? "text-amber-500" : "text-emerald-500",
+                      },
+                      {
+                        label: "Added",
+                        value: viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleDateString() : "N/A" ,
+                        isSmall: true
+                      },
+                    ].map(item => (
+                      <div key={item.label} className="bg-background/80 backdrop-blur-xl border border-border rounded-2xl p-4 flex flex-col items-center justify-center text-center">
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{item.label}</span>
+                        <span className={`font-black tracking-tight ${item.color || "text-foreground"} ${item.isSmall ? "text-sm" : "text-xl"}`}>
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </main>
     </div>
   );
 }

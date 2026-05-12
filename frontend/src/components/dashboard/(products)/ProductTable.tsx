@@ -145,7 +145,7 @@ export default function ProductsTable({
   if (isLoading) {
     return (
       <div className="w-full overflow-hidden rounded-3xl
-                      bg-white/60 backdrop-blur-2xl border
+                      bg-primary backdrop-blur-2xl border
                       shadow-[0_8px_32px_rgba(99,102,241,0.07)]">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-slate-100/60 last:border-none">
@@ -205,8 +205,8 @@ export default function ProductsTable({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.22 }}
-                  className="group border-b border-slate-100/60 last:border-none
-                             hover:bg-indigo-50/30 transition-colors duration-150"
+                  className="group border-b border-secondary-500/60 last:border-none
+                             hover:bg-secondary-500/30 transition-colors duration-150"
                 >
                   {/* product */}
                   <td className="px-6 py-4">
@@ -260,7 +260,7 @@ export default function ProductsTable({
                   {/* date added */}
                   {isVisible("date") && <td className="px-6 py-4">
                     <span className="text-sm text-foreground/60">
-                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString() + ' ' + new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
                     </span>
                   </td>}
 
@@ -370,17 +370,17 @@ export default function ProductsTable({
       </div>
 
     <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-3xl border-white/40 bg-white/80 backdrop-blur-3xl shadow-[0_30px_100px_-15px_rgba(0,0,0,0.15)] p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
+        <AlertDialogContent className="rounded-3xl border-white/40 bg-background/80 backdrop-blur-3xl  p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
           <div className="absolute top-0 inset-x-0 text-center h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
           <AlertDialogHeader className="relative z-10 text-center space-y-3">
-            <div className="w-16 h-16 rounded-full  flex items-center text-center justify-center mx-auto mb-4  border-rose-200/50">
+            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10  flex items-center text-center justify-center mx-auto mb-4 ">
               <Trash2 size={28} className="text-rose-500" />
             </div>
-            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-slate-900 w-full text-center sm:text-center">
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
               Delete Product?
             </AlertDialogTitle>
             <AlertDialogDescription className=" font-medium leading-relaxed w-full text-center sm:text-center">
-              This action cannot be undone. This will permanently delete <strong className="text-slate-800">{deleteTarget?.name}</strong> from the inventory system.
+              This action cannot be undone. This will permanently delete <strong className="text-foreground">{deleteTarget?.name}</strong> from the inventory system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
