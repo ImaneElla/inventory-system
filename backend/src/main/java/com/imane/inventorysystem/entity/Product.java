@@ -61,6 +61,7 @@ private BigDecimal purchasePrice;
 private BigDecimal sellPrice;
 
 
+@Column(columnDefinition = "TEXT")
 private String imageUrl;
 
 
