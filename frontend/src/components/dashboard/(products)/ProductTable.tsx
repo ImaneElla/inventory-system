@@ -1,17 +1,22 @@
 "use client";
-/**
- * ProductsTable — standalone, composable table component
- * Drop-in replacement: <ProductsTable products={...} onDelete={...} onEdit={...} />
- */
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
-  MoreVertical, Edit3, Trash2, Package, ChevronUp, ChevronDown,
-  ArrowUpDown,
+  Edit3, Trash2, Package, ChevronUp, ChevronDown,
+  ArrowUpDown, Eye, ChevronLeft, ChevronRight
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-/* ─── types ───────────────────────────────────────────────────── */
 export interface Product {
   id: number;
   name: string;
@@ -25,6 +30,7 @@ export interface Product {
   quantity: number;
   minStockLevel: number;
   categoryId: number;
+  createdAt?: string;
 }
 
 interface ProductsTableProps {
@@ -32,14 +38,14 @@ interface ProductsTableProps {
   isLoading?: boolean;
   onEdit?: (product: Product) => void;
   onDelete?: (id: number) => void;
+  onViewDetails?: (product: Product) => void;
   deletingId?: number | null;
 }
 
-/* ─── stock badge ─────────────────────────────────────────────── */
 function StockBadge({ qty, min }: { qty: number; min: number }) {
-  if (qty === 0)   return <Badge cls="bg-rose-50 text-rose-500 border-rose-100">Empty</Badge>;
-  if (qty <= min)  return <Badge cls="bg-amber-50 text-amber-600 border-amber-100">Low</Badge>;
-  return               <Badge cls="bg-emerald-50 text-emerald-600 border-emerald-100">In stock</Badge>;
+  if (qty === 0)   return <Badge cls="bg-rose-50 text-rose-500 border-rose-100">Out of Stock</Badge>;
+  if (qty <= min)  return <Badge cls="bg-amber-50 text-amber-600 border-amber-100">Low Stock</Badge>;
+  return               <Badge cls="bg-emerald-50 text-emerald-600 border-emerald-100">In Stock</Badge>;
 }
 
 function Badge({ cls, children }: { cls: string; children: React.ReactNode }) {
@@ -51,7 +57,6 @@ function Badge({ cls, children }: { cls: string; children: React.ReactNode }) {
   );
 }
 
-/* ─── sortable column header ─────────────────────────────────── */
 type SortKey = keyof Product | null;
 function ColHeader({
   label, sortKey, active, dir, onSort,
@@ -79,12 +84,41 @@ function ColHeader({
   );
 }
 
-/* ─── main component ─────────────────────────────────────────── */
 export default function ProductsTable({
-  products, isLoading = false, onEdit, onDelete, deletingId,
+  products, isLoading = false, onEdit, onDelete, onViewDetails, deletingId,
 }: ProductsTableProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
+  const [deleteTarget, setDeleteTarget] = React.useState<Product | null>(null);
+
+  const { state } = useSidebar();
+  const isSidebarOpen = state === "expanded";
+  
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
+  type ColId = "brand" | "sku" | "sell" | "cost" | "qty" | "date" | "color" | "status" | "action";
+  const [visibleCols, setVisibleCols] = React.useState<Record<ColId, boolean>>({
+    brand: true, sku: true, sell: true, cost: true,
+    qty: true, date: true, color: true, status: true, action: true
+  });
+
+  const colOptions: { id: ColId; label: string }[] = [
+    { id: "brand", label: "Brand" },
+    { id: "sku", label: "SKU" },
+    { id: "sell", label: "Sell Price" },
+    { id: "cost", label: "Cost" },
+    { id: "qty", label: "Quantity" },
+    { id: "date", label: "Date Added" },
+    { id: "color", label: "Color" },
+    { id: "status", label: "Status" },
+    { id: "action", label: "Action" }
+  ];
+
+  const isVisible = (col: ColId) => {
+    if (isSidebarOpen && (col === "brand" || col === "cost" || col === "action")) return false;
+    return visibleCols[col];
+  };
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(d => d === "asc" ? "desc" : "asc");
@@ -101,11 +135,17 @@ export default function ProductsTable({
     });
   }, [products, sortKey, sortDir]);
 
-  /* ── skeleton ───────────────────────────────────────────────── */
+  const totalPages = Math.ceil(sorted.length / pageSize) || 1;
+  const paginatedProducts = sorted.slice((page - 1) * pageSize, page * pageSize);
+
+  React.useEffect(() => {
+    if (page > totalPages) setPage(Math.max(1, totalPages));
+  }, [totalPages, page]);
+
   if (isLoading) {
     return (
       <div className="w-full overflow-hidden rounded-3xl
-                      bg-white/60 backdrop-blur-2xl border border-white/70
+                      bg-white/60 backdrop-blur-2xl border
                       shadow-[0_8px_32px_rgba(99,102,241,0.07)]">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-slate-100/60 last:border-none">
@@ -122,46 +162,43 @@ export default function ProductsTable({
     );
   }
 
-  /* ── empty ──────────────────────────────────────────────────── */
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4 text-center
-                      bg-white/60 backdrop-blur-2xl border border-white/70
-                      shadow-[0_8px_32px_rgba(99,102,241,0.07)] rounded-3xl">
-        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center">
-          <Package size={28} className="text-slate-400" />
+                      bg-card  rounded-3xl">
+        <div className="w-16 h-16 rounded-3xl bg-foreground/80 shadow-lg shadow-foreground/10 flex items-center justify-center">
+          <Package size={28} className="text-background " />
         </div>
         <div>
-          <p className="text-base font-bold text-slate-700">No products</p>
-          <p className="text-sm text-slate-400 mt-0.5">Add a product to get started</p>
+          <p className="text-base font-bold text-foreground">No products</p>
+          <p className="text-sm text-foreground/50 mt-0.5">Add a product to get started</p>
         </div>
       </div>
     );
   }
 
-  /* ── table ──────────────────────────────────────────────────── */
   return (
-    <div className="w-full overflow-hidden rounded-3xl
-                    bg-white/60 backdrop-blur-2xl border border-white/70
-                    shadow-[0_8px_32px_rgba(99,102,241,0.07)]">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+    <>
+        <div className="overflow-x-auto w-full">
+        <table className="w-full min-w-[1000px] text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100/80">
               <ColHeader label="Product"   sortKey="name"         active={sortKey === "name"}          dir={sortDir} onSort={handleSort} />
-              <ColHeader label="Brand"     sortKey="brand"        active={sortKey === "brand"}         dir={sortDir} onSort={handleSort} />
-              <ColHeader label="SKU"       sortKey="sku"          active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />
-              <ColHeader label="Sell $"    sortKey="sellPrice"    active={sortKey === "sellPrice"}     dir={sortDir} onSort={handleSort} />
-              <ColHeader label="Cost $"    sortKey="purchasePrice"active={sortKey === "purchasePrice"} dir={sortDir} onSort={handleSort} />
-              <ColHeader label="Qty"       sortKey="quantity"     active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort} />
-              <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>
-              <th className="px-6 py-4" />
+              {isVisible("brand") && <ColHeader label="Brand"     sortKey="brand"        active={sortKey === "brand"}         dir={sortDir} onSort={handleSort} />}
+              {isVisible("sku") && <ColHeader label="SKU"       sortKey="sku"          active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />}
+              {isVisible("sell") && <ColHeader label="Sell"      sortKey="sellPrice"    active={sortKey === "sellPrice"}     dir={sortDir} onSort={handleSort} />}
+              {isVisible("cost") && <ColHeader label="Cost"      sortKey="purchasePrice"active={sortKey === "purchasePrice"} dir={sortDir} onSort={handleSort} />}
+              {isVisible("qty") && <ColHeader label="Qty"       sortKey="quantity"     active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort} />}
+              {isVisible("date") && <ColHeader label="Date Added" sortKey="createdAt"    active={sortKey === "createdAt"}     dir={sortDir} onSort={handleSort} />}
+              {isVisible("color") && <ColHeader label="Color"     sortKey="color"        active={sortKey === "color"}         dir={sortDir} onSort={handleSort} />}
+              {isVisible("status") && <th className="px-10 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>}
+              {isVisible("action") && <th className="px-14 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Action</th>}
             </tr>
           </thead>
 
           <tbody>
             <AnimatePresence initial={false}>
-              {sorted.map((p, i) => (
+              {paginatedProducts.map((p, i) => (
                 <motion.tr
                   key={p.id}
                   initial={{ opacity: 0, x: -6 }}
@@ -174,100 +211,106 @@ export default function ProductsTable({
                   {/* product */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-slate-100 border border-white/80
+                      <div className="w-20 h-18 rounded-2xl bg-slate-100 border border-white/80  
                                       shadow-sm flex items-center justify-center overflow-hidden shrink-0">
                         {p.imageUrl
-                          ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                          : <Package size={18} className="text-slate-400" />}
+                          ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain" />
+                          : <Package size={18} className="text-foreground/30" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-slate-900 whitespace-nowrap">{p.name}</span>
-                          {p.color && (
-                            <span className="w-2.5 h-2.5 rounded-full border border-white shadow-sm shrink-0"
-                                  style={{ backgroundColor: p.color }} />
-                          )}
+                          <span className="text-sm font-bold text-foreground whitespace-nowrap">{p.name}</span>
                         </div>
                         {p.description && (
-                          <p className="text-[11px] text-slate-400 truncate max-w-[160px] mt-0.5">{p.description}</p>
+                          <p className="text-[11px] text-foreground/60 truncate max-w-[160px] mt-0.5">{p.description}</p>
                         )}
                       </div>
                     </div>
                   </td>
 
                   {/* brand */}
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-slate-600">{p.brand || <span className="text-slate-300">—</span>}</span>
-                  </td>
+                  {isVisible("brand") && <td className="px-6 py-4">
+                    <span className="text-sm text-foreground/60">{p.brand || <span className="text-foreground/60">—</span>}</span>
+                  </td>}
 
                   {/* sku */}
-                  <td className="px-6 py-4">
-                    <span className="text-[11px] font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">{p.sku}</span>
-                  </td>
+                  {isVisible("sku") && <td className="px-3 py-4 w-[220px]">
+                    <span className="text-[11px] font-mono text-black bg-slate-100 px-2 py-0.5 rounded-lg">{p.sku}</span>
+                  </td>}
 
                   {/* sell price */}
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-900">${p.sellPrice.toFixed(2)}</span>
-                  </td>
+                  {isVisible("sell") && <td className=" py-4 w-[200px]">
+                    <span className="text-sm font-bold text-foreground">{p.sellPrice.toFixed(2)} DH</span>
+                  </td>}
 
                   {/* cost */}
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-slate-500">${p.purchasePrice.toFixed(2)}</span>
-                  </td>
+                  {isVisible("cost") && <td className="px-1 py-2 w-[200px]">
+                    <span className="text-sm font-bold text-slate-500">{p.purchasePrice.toFixed(2)} DH</span>
+                  </td>}
 
                   {/* qty */}
-                  <td className="px-6 py-4">
-                    <span className={`text-sm font-bold ${
+                  {isVisible("qty") && <td className="px-6 py-4">
+                    <span className={`text-sm font-bold tracking-wider ${
                       p.quantity === 0 ? "text-rose-500"
                       : p.quantity <= p.minStockLevel ? "text-amber-500"
-                      : "text-slate-900"
+                      : "text-foreground"
                     }`}>{p.quantity}</span>
-                  </td>
+                  </td>}
 
-                  {/* badge */}
-                  <td className="px-6 py-4">
+                  {/* date added */}
+                  {isVisible("date") && <td className="px-6 py-4">
+                    <span className="text-sm text-foreground/60">
+                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString() + ' ' + new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                    </span>
+                  </td>}
+
+                  {/* color */}
+                  {isVisible("color") && <td className="px-6 py-4">
+                    {p.color ? (
+                      <span className="inline-block w-8 h-8 rounded-lg border border-slate-200 shadow-sm" style={{ backgroundColor: p.color }} />
+                    ) : <span className="text-slate-300">—</span>}
+                  </td>}
+
+                  {/* badge / status */}
+                  {isVisible("status") && <td className="px-6 py-4 text-center text-[11px] max-w-[150px] truncate">
                     <StockBadge qty={p.quantity} min={p.minStockLevel} />
-                  </td>
+                  </td>}
 
                   {/* actions */}
-                  <td className="px-6 py-4 text-right">
-                    <Dropdown placement="bottom-end">
-                      <DropdownTrigger>
-                        <button
-                          className="w-8 h-8 rounded-xl flex items-center justify-center
-                                     text-slate-400 hover:text-slate-700 hover:bg-slate-100
-                                     opacity-0 group-hover:opacity-100 transition-all"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                      </DropdownTrigger>
-                      <DropdownMenu
-                        className="bg-white/95 backdrop-blur-xl border border-slate-100
-                                    rounded-2xl shadow-xl p-1.5 min-w-[130px]"
-                      >
+                  {isVisible("action") && (
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
+                        {onViewDetails && (
+                          <button
+                            onClick={() => onViewDetails(p)}
+                            className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        )}
                         {onEdit && (
-                          <DropdownItem key="edit" onPress={() => onEdit(p)} className="rounded-xl text-sm">
-                            <span className="flex items-center gap-2 text-slate-700">
-                              <Edit3 size={14} /> Edit
-                            </span>
-                          </DropdownItem>
+                          <button
+                            onClick={() => onEdit(p)}
+                            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+                            title="Edit"
+                          >
+                            <Edit3 size={16} />
+                          </button>
                         )}
                         {onDelete && (
-                          <DropdownItem
-                            key="delete"
-                            onPress={() => onDelete(p.id)}
-                            isDisabled={deletingId === p.id}
-                            className="text-rose-500 rounded-xl text-sm"
+                          <button
+                            onClick={() => setDeleteTarget(p)}
+                            disabled={deletingId === p.id}
+                            className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+                            title="Delete"
                           >
-                            <span className="flex items-center gap-2">
-                              <Trash2 size={14} />
-                              {deletingId === p.id ? "Deleting…" : "Delete"}
-                            </span>
-                          </DropdownItem>
+                            <Trash2 size={16} />
+                          </button>
                         )}
-                      </DropdownMenu>
-                    </Dropdown>
-                  </td>
+                      </div>
+                    </td>
+                  )}
                 </motion.tr>
               ))}
             </AnimatePresence>
@@ -275,12 +318,28 @@ export default function ProductsTable({
         </table>
       </div>
 
-      {/* footer count */}
-      <div className="border-t border-slate-100/80 px-6 py-3 flex items-center justify-between">
-        <span className="text-xs text-slate-400 font-medium">
-          {products.length} product{products.length !== 1 ? "s" : ""}
-        </span>
-        <div className="flex items-center gap-1">
+      {/* footer count & pagination */}
+      <div className="border-t border-slate-100/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-slate-400 font-medium">
+            Showing {products.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, products.length)} of {products.length} products
+          </span>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+             Rows per page:
+             <select 
+               value={pageSize} 
+               onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} 
+               className="border border-slate-200 rounded-lg px-2 py-1 bg-white font-bold text-slate-600 outline-none cursor-pointer"
+             >
+               <option value={5}>5</option>
+               <option value={10}>10</option>
+               <option value={20}>20</option>
+               <option value={50}>50</option>
+             </select>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
           {sortKey && (
             <button
               onClick={() => { setSortKey(null); setSortDir("asc"); }}
@@ -289,8 +348,58 @@ export default function ProductsTable({
               Clear sort
             </button>
           )}
+          
+          <div className="flex items-center gap-2">
+            <button 
+              disabled={page === 1} 
+              onClick={() => setPage(p => p - 1)} 
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-xs font-bold text-slate-600 px-2">{page} / {totalPages}</span>
+            <button 
+              disabled={page === totalPages} 
+              onClick={() => setPage(p => p + 1)} 
+              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+    <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-3xl border-white/40 bg-white/80 backdrop-blur-3xl shadow-[0_30px_100px_-15px_rgba(0,0,0,0.15)] p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
+          <div className="absolute top-0 inset-x-0 text-center h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
+          <AlertDialogHeader className="relative z-10 text-center space-y-3">
+            <div className="w-16 h-16 rounded-full  flex items-center text-center justify-center mx-auto mb-4  border-rose-200/50">
+              <Trash2 size={28} className="text-rose-500" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-slate-900 w-full text-center sm:text-center">
+              Delete Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className=" font-medium leading-relaxed w-full text-center sm:text-center">
+              This action cannot be undone. This will permanently delete <strong className="text-slate-800">{deleteTarget?.name}</strong> from the inventory system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
+            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold  cursor-pointer border-none transition-all flex-1">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
+              onClick={() => {
+                if (deleteTarget !== null && onDelete) {
+                  onDelete(deleteTarget.id);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -14,7 +14,7 @@ export default function DashboardLayout({
         <SidebarApp />
         <SidebarInset className="bg-background">
           <DashboardHeader />
-          <main className="flex flex-1 flex-col overflow-y-auto">
+          <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
             {children}
           </main>
         </SidebarInset>
