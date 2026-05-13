@@ -43,8 +43,8 @@ interface ProductsTableProps {
 }
 
 function StockBadge({ qty, min }: { qty: number; min: number }) {
-  if (qty === 0)   return <Badge cls="bg-rose-50 text-rose-500 border-rose-100">Out of Stock</Badge>;
-  if (qty <= min)  return <Badge cls="bg-amber-50 text-amber-600 border-amber-100">Low Stock</Badge>;
+  if (qty === 0)  return <Badge cls="bg-rose-50 text-rose-500 border-rose-100">Out of Stock</Badge>;
+  if (qty <= min) return <Badge cls="bg-amber-50 text-amber-600 border-amber-100">Low Stock</Badge>;
   return               <Badge cls="bg-emerald-50 text-emerald-600 border-emerald-100">In Stock</Badge>;
 }
 
@@ -93,7 +93,7 @@ export default function ProductsTable({
 
   const { state } = useSidebar();
   const isSidebarOpen = state === "expanded";
-  
+
   const [page, setPage] = React.useState(1);
   const [pageSize, setPageSize] = React.useState(10);
 
@@ -102,18 +102,6 @@ export default function ProductsTable({
     brand: true, sku: true, sell: true, cost: true,
     qty: true, date: true, color: true, status: true, action: true
   });
-
-  const colOptions: { id: ColId; label: string }[] = [
-    { id: "brand", label: "Brand" },
-    { id: "sku", label: "SKU" },
-    { id: "sell", label: "Sell Price" },
-    { id: "cost", label: "Cost" },
-    { id: "qty", label: "Quantity" },
-    { id: "date", label: "Date Added" },
-    { id: "color", label: "Color" },
-    { id: "status", label: "Status" },
-    { id: "action", label: "Action" }
-  ];
 
   const isVisible = (col: ColId) => {
     if (isSidebarOpen && (col === "brand" || col === "cost" || col === "action")) return false;
@@ -144,9 +132,7 @@ export default function ProductsTable({
 
   if (isLoading) {
     return (
-      <div className="w-full overflow-hidden rounded-3xl
-                      bg-primary backdrop-blur-2xl border
-                      shadow-[0_8px_32px_rgba(99,102,241,0.07)]">
+      <div className="w-full overflow-hidden rounded-3xl bg-primary backdrop-blur-2xl border shadow-[0_8px_32px_rgba(99,102,241,0.07)]">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-slate-100/60 last:border-none">
             <div className="w-10 h-10 rounded-2xl bg-slate-200/60 animate-pulse shrink-0" />
@@ -164,10 +150,9 @@ export default function ProductsTable({
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4 text-center
-                      bg-card  rounded-3xl">
+      <div className="flex flex-col items-center justify-center py-24 gap-4 text-center bg-card rounded-3xl">
         <div className="w-16 h-16 rounded-3xl bg-foreground/80 shadow-lg shadow-foreground/10 flex items-center justify-center">
-          <Package size={28} className="text-background " />
+          <Package size={28} className="text-background" />
         </div>
         <div>
           <p className="text-base font-bold text-foreground">No products</p>
@@ -179,18 +164,18 @@ export default function ProductsTable({
 
   return (
     <>
-        <div className="overflow-x-auto w-full">
+      <div className="overflow-x-auto w-full">
         <table className="w-full min-w-[1000px] text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100/80">
-              <ColHeader label="Product"   sortKey="name"         active={sortKey === "name"}          dir={sortDir} onSort={handleSort} />
-              {isVisible("brand") && <ColHeader label="Brand"     sortKey="brand"        active={sortKey === "brand"}         dir={sortDir} onSort={handleSort} />}
-              {isVisible("sku") && <ColHeader label="SKU"       sortKey="sku"          active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />}
-              {isVisible("sell") && <ColHeader label="Sell"      sortKey="sellPrice"    active={sortKey === "sellPrice"}     dir={sortDir} onSort={handleSort} />}
-              {isVisible("cost") && <ColHeader label="Cost"      sortKey="purchasePrice"active={sortKey === "purchasePrice"} dir={sortDir} onSort={handleSort} />}
-              {isVisible("qty") && <ColHeader label="Qty"       sortKey="quantity"     active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort} />}
-              {isVisible("date") && <ColHeader label="Date Added" sortKey="createdAt"    active={sortKey === "createdAt"}     dir={sortDir} onSort={handleSort} />}
-              {isVisible("color") && <ColHeader label="Color"     sortKey="color"        active={sortKey === "color"}         dir={sortDir} onSort={handleSort} />}
+              <ColHeader label="Product"    sortKey="name"          active={sortKey === "name"}          dir={sortDir} onSort={handleSort} />
+              {isVisible("brand")  && <ColHeader label="Brand"      sortKey="brand"         active={sortKey === "brand"}         dir={sortDir} onSort={handleSort} />}
+              {isVisible("sku")    && <ColHeader label="SKU"        sortKey="sku"           active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />}
+              {isVisible("sell")   && <ColHeader label="Sell"       sortKey="sellPrice"     active={sortKey === "sellPrice"}     dir={sortDir} onSort={handleSort} />}
+              {isVisible("cost")   && <ColHeader label="Cost"       sortKey="purchasePrice" active={sortKey === "purchasePrice"} dir={sortDir} onSort={handleSort} />}
+              {isVisible("qty")    && <ColHeader label="Qty"        sortKey="quantity"      active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort} />}
+              {isVisible("date")   && <ColHeader label="Date Added" sortKey="createdAt"     active={sortKey === "createdAt"}     dir={sortDir} onSort={handleSort} />}
+              {isVisible("color")  && <ColHeader label="Color"      sortKey="color"         active={sortKey === "color"}         dir={sortDir} onSort={handleSort} />}
               {isVisible("status") && <th className="px-10 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>}
               {isVisible("action") && <th className="px-14 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Action</th>}
             </tr>
@@ -205,14 +190,11 @@ export default function ProductsTable({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.22 }}
-                  className="group border-b border-secondary-500/60 last:border-none
-                             hover:bg-secondary-500/30 transition-colors duration-150"
+                  className="group border-b border-secondary-500/60 last:border-none hover:bg-secondary-500/30 transition-colors duration-150"
                 >
-                  {/* product */}
-                  <td className="px-6 py-4">
+                  <td className="px-2 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-20 h-18 rounded-2xl bg-slate-100 border border-white/80  
-                                      shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                      <div className="w-20 h-18 rounded-2xl bg-slate-100 border border-white/80 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
                         {p.imageUrl
                           ? <img src={p.imageUrl} alt={p.name} className="w-full h-full object-contain" />
                           : <Package size={18} className="text-foreground/30" />}
@@ -228,28 +210,23 @@ export default function ProductsTable({
                     </div>
                   </td>
 
-                  {/* brand */}
-                  {isVisible("brand") && <td className="px-6 py-4">
+                  {isVisible("brand") && <td className="px-2 py-4">
                     <span className="text-sm text-foreground/60">{p.brand || <span className="text-foreground/60">—</span>}</span>
                   </td>}
 
-                  {/* sku */}
-                  {isVisible("sku") && <td className="px-3 py-4 w-[220px]">
+                  {isVisible("sku") && <td className="py-4">
                     <span className="text-[11px] font-mono text-black bg-slate-100 px-2 py-0.5 rounded-lg">{p.sku}</span>
                   </td>}
 
-                  {/* sell price */}
-                  {isVisible("sell") && <td className=" py-4 w-[200px]">
+                  {isVisible("sell") && <td className="py-4 px-4 w-[200px]">
                     <span className="text-sm font-bold text-foreground">{p.sellPrice.toFixed(2)} DH</span>
                   </td>}
 
-                  {/* cost */}
-                  {isVisible("cost") && <td className="px-1 py-2 w-[200px]">
+                  {isVisible("cost") && <td className="px-2 py-2 w-[200px]">
                     <span className="text-sm font-bold text-slate-500">{p.purchasePrice.toFixed(2)} DH</span>
                   </td>}
 
-                  {/* qty */}
-                  {isVisible("qty") && <td className="px-6 py-4">
+                  {isVisible("qty") && <td className="px-9 py-4">
                     <span className={`text-sm font-bold tracking-wider ${
                       p.quantity === 0 ? "text-rose-500"
                       : p.quantity <= p.minStockLevel ? "text-amber-500"
@@ -257,54 +234,37 @@ export default function ProductsTable({
                     }`}>{p.quantity}</span>
                   </td>}
 
-                  {/* date added */}
                   {isVisible("date") && <td className="px-6 py-4">
                     <span className="text-sm text-foreground/60">
-                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}
+                      {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
                     </span>
                   </td>}
 
-                  {/* color */}
                   {isVisible("color") && <td className="px-6 py-4">
                     {p.color ? (
                       <span className="inline-block w-8 h-8 rounded-lg border border-slate-200 shadow-sm" style={{ backgroundColor: p.color }} />
                     ) : <span className="text-slate-300">—</span>}
                   </td>}
 
-                  {/* badge / status */}
                   {isVisible("status") && <td className="px-6 py-4 text-center text-[11px] max-w-[150px] truncate">
                     <StockBadge qty={p.quantity} min={p.minStockLevel} />
                   </td>}
 
-                  {/* actions */}
                   {isVisible("action") && (
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
                         {onViewDetails && (
-                          <button
-                            onClick={() => onViewDetails(p)}
-                            className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
-                            title="View Details"
-                          >
+                          <button onClick={() => onViewDetails(p)} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors" title="View Details">
                             <Eye size={16} />
                           </button>
                         )}
                         {onEdit && (
-                          <button
-                            onClick={() => onEdit(p)}
-                            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
-                            title="Edit"
-                          >
+                          <button onClick={() => onEdit(p)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors" title="Edit">
                             <Edit3 size={16} />
                           </button>
                         )}
                         {onDelete && (
-                          <button
-                            onClick={() => setDeleteTarget(p)}
-                            disabled={deletingId === p.id}
-                            className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
-                            title="Delete"
-                          >
+                          <button onClick={() => setDeleteTarget(p)} disabled={deletingId === p.id} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 cursor-pointer" title="Delete">
                             <Trash2 size={16} />
                           </button>
                         )}
@@ -318,73 +278,60 @@ export default function ProductsTable({
         </table>
       </div>
 
-      {/* footer count & pagination */}
       <div className="border-t border-slate-100/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="text-xs text-slate-400 font-medium">
-            Showing {products.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, products.length)} of {products.length} products
+            Showing {products.length > 0 ? (page - 1) * pageSize + 1 : 0} – {Math.min(page * pageSize, products.length)} of {products.length} products
           </span>
           <div className="flex items-center gap-2 text-xs text-slate-400">
-             Rows per page:
-             <select 
-               value={pageSize} 
-               onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }} 
-               className="border border-slate-200 rounded-lg px-2 py-1 bg-white font-bold text-slate-600 outline-none cursor-pointer"
-             >
-               <option value={5}>5</option>
-               <option value={10}>10</option>
-               <option value={20}>20</option>
-               <option value={50}>50</option>
-             </select>
+            Rows per page:
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}
+              className="border border-slate-200 rounded-lg px-2 py-1 bg-white font-bold text-slate-600 outline-none cursor-pointer"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           {sortKey && (
-            <button
-              onClick={() => { setSortKey(null); setSortDir("asc"); }}
-              className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-600 transition-colors px-2 py-0.5 rounded-lg hover:bg-indigo-50"
-            >
+            <button onClick={() => { setSortKey(null); setSortDir("asc"); }} className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-600 transition-colors px-2 py-0.5 rounded-lg hover:bg-indigo-50">
               Clear sort
             </button>
           )}
-          
           <div className="flex items-center gap-2">
-            <button 
-              disabled={page === 1} 
-              onClick={() => setPage(p => p - 1)} 
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-            >
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
               <ChevronLeft size={16} />
             </button>
             <span className="text-xs font-bold text-slate-600 px-2">{page} / {totalPages}</span>
-            <button 
-              disabled={page === totalPages} 
-              onClick={() => setPage(p => p + 1)} 
-              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-            >
+            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
               <ChevronRight size={16} />
             </button>
           </div>
         </div>
       </div>
 
-    <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-3xl border-white/40 bg-background/80 backdrop-blur-3xl  p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-3xl border-white/40 bg-background/80 backdrop-blur-3xl p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
           <div className="absolute top-0 inset-x-0 text-center h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
           <AlertDialogHeader className="relative z-10 text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10  flex items-center text-center justify-center mx-auto mb-4 ">
+            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10 flex items-center text-center justify-center mx-auto mb-4">
               <Trash2 size={28} className="text-rose-500" />
             </div>
             <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
               Delete Product?
             </AlertDialogTitle>
-            <AlertDialogDescription className=" font-medium leading-relaxed w-full text-center sm:text-center">
+            <AlertDialogDescription className="font-medium leading-relaxed w-full text-center sm:text-center">
               This action cannot be undone. This will permanently delete <strong className="text-foreground">{deleteTarget?.name}</strong> from the inventory system.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
-            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold  cursor-pointer border-none transition-all flex-1">
+            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold cursor-pointer border-none transition-all flex-1">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
@@ -392,6 +339,7 @@ export default function ProductsTable({
               onClick={() => {
                 if (deleteTarget !== null && onDelete) {
                   onDelete(deleteTarget.id);
+                  setDeleteTarget(null);
                 }
               }}
             >

@@ -41,7 +41,7 @@ export default function LoginPage() {
       try { data = await response.json(); } catch { data = { message: await response.text() }; }
       
       if (response.ok) {
-        showToast("Login Successful!");
+        showToast("Login Successful ");
         localStorage.setItem("auth", "true");
         if (data.userName) localStorage.setItem("userName", data.userName);
         if (data.role)     localStorage.setItem("role",     data.role);

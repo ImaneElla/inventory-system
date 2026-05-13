@@ -130,6 +130,7 @@
 }
 
 @layer components {
+  
   .btn-gradient {
     @apply bg-linear-to-l from-blue-500 via-blue-800 to-indigo-900 text-white
            backdrop-blur-2xl

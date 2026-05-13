@@ -6,18 +6,18 @@ import {
   Plus, Search, X, Package2, Hash, Tag,
   Boxes, ImagePlus, Check, Palette,
   Loader2, UploadCloud, CircleSlash, Filter,
-  MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye
+  MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye, Pipette
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
 
 const PALETTES = [
-  { name: "Ocean", value: "#3B82F6" },
-  { name: "Gray", value: "#808080" },
-  { name: "Rose", value: "#F43F5E" },
-  { name: "Emerald", value: "#10B981" },
-  { name: "Amber", value: "#F59E0B" },
+  { name: "Ocean",    value: "#3B82F6" },
+  { name: "Gray",     value: "#808080" },
+  { name: "Rose",     value: "#F43F5E" },
+  { name: "Emerald",  value: "#10B981" },
+  { name: "Amber",    value: "#F59E0B" },
   { name: "Midnight", value: "#0F172A" },
 ];
 
@@ -31,17 +31,11 @@ const inputCls = `h-12 w-full rounded-2xl border border-border bg-card/50 px-5 t
   text-foreground placeholder:text-muted-foreground/50 outline-none transition-all
   focus:ring-2 focus:ring-primary/20 focus:border-primary`;
 
-// --- New Actions Menu Component ---
-function ProductActions({ 
-  onEdit, 
-  onDelete, 
-  onView,
-  isDeleting 
-}: { 
-  onEdit: () => void; 
-  onDelete: () => void; 
-  onView: () => void;
-  isDeleting?: boolean;
+// --- Actions Menu ---
+function ProductActions({
+  onEdit, onDelete, onView, isDeleting,
+}: {
+  onEdit: () => void; onDelete: () => void; onView: () => void; isDeleting?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -56,13 +50,12 @@ function ProductActions({
 
   return (
     <div className="relative" ref={menuRef}>
-      <button 
+      <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className="p-2 hover:bg-muted/20 rounded-xl transition-colors text-muted-foreground hover:text-foreground"
       >
         <MoreVertical size={20} />
       </button>
-
       <AnimatePresence>
         {open && (
           <motion.div
@@ -79,12 +72,12 @@ function ProductActions({
                 <Edit3 size={16} /> Edit Product
               </button>
               <div className="h-px bg-border my-1" />
-              <button 
+              <button
                 disabled={isDeleting}
-                onClick={() => { onDelete(); setOpen(false); }} 
+                onClick={() => { onDelete(); setOpen(false); }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
               >
-                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
+                {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                 Delete
               </button>
             </div>
@@ -106,10 +99,9 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
   );
 }
 
-function StatCard({
-  icon, label, value, iconBg, iconColor, valueColor, primary = false,
-}: {
-  icon: React.ReactNode; label: string; value: number; iconBg: string; iconColor: string; valueColor: string; primary?: boolean;
+function StatCard({ icon, label, value, iconBg, iconColor, valueColor, primary = false }: {
+  icon: React.ReactNode; label: string; value: number;
+  iconBg: string; iconColor: string; valueColor: string; primary?: boolean;
 }) {
   return (
     <div className={`bg-card/40 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center justify-center gap-3 text-center border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 select-none ${primary ? "border-primary/30 ring-1 ring-primary/5" : "border-border"}`} style={{ minHeight: 140 }}>
@@ -119,6 +111,135 @@ function StatCard({
     </div>
   );
 }
+
+function ColorPicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  const [showCustom, setShowCustom] = useState(false);
+  const nativeRef = useRef<HTMLInputElement>(null);
+
+  // Check if current value matches a preset
+  const isPreset = PALETTES.some(p => p.value.toLowerCase() === value.toLowerCase());
+
+  return (
+    <div className="space-y-3">
+      {/* Preset swatches */}
+      <div className="grid grid-cols-3 gap-3">
+        {PALETTES.map((pal) => (
+          <button
+            key={pal.value}
+            type="button"
+            onClick={() => { onChange(pal.value); setShowCustom(false); }}
+            className={`h-12 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${
+              value === pal.value
+                ? "border-primary ring-4 ring-primary/10"
+                : "border-transparent bg-muted/10"
+            }`}
+          >
+            <div className="w-5 h-5 rounded-full shadow-lg" style={{ background: pal.value }} />
+            <span className="text-[10px] font-bold text-muted-foreground">{pal.name}</span>
+          </button>
+        ))}
+
+        {/* Custom swatch button */}
+        <button
+          type="button"
+          onClick={() => {
+            setShowCustom((v) => !v);
+            if (!isPreset) setTimeout(() => nativeRef.current?.click(), 50);
+          }}
+          className={`h-12 rounded-2xl border-2 transition-all flex items-center justify-center gap-2 ${
+            !isPreset
+              ? "border-primary ring-4 ring-primary/10"
+              : "border-dashed border-border bg-muted/5 hover:bg-muted/10"
+          }`}
+        >
+          {!isPreset ? (
+            <>
+              <div className="w-5 h-5 rounded-full shadow-lg" style={{ background: value }} />
+              <span className="text-[10px] font-bold text-muted-foreground">Custom</span>
+            </>
+          ) : (
+            <>
+              <Pipette size={14} className="text-muted-foreground" />
+              <span className="text-[10px] font-bold text-muted-foreground">Custom</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {(showCustom || !isPreset) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-muted/5 border border-border/60">
+              {/* Native color wheel */}
+              <div className="relative">
+                <div
+                  className="w-12 h-12 rounded-xl cursor-pointer border-2 border-border shadow-inner overflow-hidden"
+                  style={{ background: value }}
+                  onClick={() => nativeRef.current?.click()}
+                  title="Open color picker"
+                >
+                  <input
+                    ref={nativeRef}
+                    type="color"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                    tabIndex={-1}
+                  />
+                </div>
+              </div>
+
+              {/* Hex text input */}
+              <div className="flex-1 space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Hex code</label>
+                <input
+                  type="text"
+                  value={value}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // Accept partial input but only call onChange for valid hex
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) onChange(v);
+                    else if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) {
+                      e.target.value = v;
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+                      e.target.value = value;
+                    }
+                  }}
+                  maxLength={7}
+                  placeholder="#3B82F6"
+                  className={`${inputCls} h-10 font-mono uppercase`}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preview</label>
+                <div
+                  className="w-20 h-10 rounded-xl border border-border shadow-inner"
+                  style={{ background: value }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+// ──────────────────────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
   const qc = useQueryClient();
@@ -189,7 +310,8 @@ export default function ProductsPage() {
     setForm({
       name: p.name, sku: p.sku, description: p.description || "", quantity: p.quantity,
       categoryId: p.categoryId, purchasePrice: p.purchasePrice, sellPrice: p.sellPrice,
-      minStockLevel: p.minStockLevel, brand: p.brand || "", color: p.color || "#3B82F6", imageUrl: p.imageUrl || "",
+      minStockLevel: p.minStockLevel, brand: p.brand || "", color: p.color || "#3B82F6",
+      imageUrl: p.imageUrl || "",
     });
     setShowForm(true);
   };
@@ -218,7 +340,7 @@ export default function ProductsPage() {
       </div>
 
       <main className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-12 space-y-10">
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <StatCard icon={<Package2 size={24} />} label="Total Inventory" value={totalProducts} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-foreground" primary />
           <StatCard icon={<Check size={24} />} label="In Stock" value={available} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
@@ -242,15 +364,14 @@ export default function ProductsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-              {/* --- View Switcher --- */}
               <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-2xl mr-2">
-                <button 
+                <button
                   onClick={() => setViewMode("table")}
                   className={`p-2 rounded-xl transition-all ${viewMode === "table" ? "btn-gradient duration-300 ease-in-out shadow-lg" : "text-muted-foreground hover:bg-primary/10 ease-out duration-300"}`}
                 >
                   <List size={18} />
                 </button>
-                <button 
+                <button
                   onClick={() => setViewMode("grid")}
                   className={`p-2 rounded-xl transition-all ${viewMode === "grid" ? "btn-gradient duration-300 ease-in-out shadow-lg" : "text-muted-foreground hover:bg-primary/10"}`}
                 >
@@ -269,21 +390,20 @@ export default function ProductsPage() {
               <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
                 <Boxes size={14} className="text-muted-foreground" />
                 <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
-                  <option value="all" className="bg-background text-foreground capitalize">All Brands</option>
+                  <option value="all" className="bg-background text-foreground">All Brands</option>
                   {uniqueBrands.map((b: any) => (
-                    <option key={b} value={b} className="bg-background text-foreground ">{b}</option>
-                    ))}
+                    <option key={b} value={b} className="bg-background text-foreground">{b}</option>
+                  ))}
                 </select>
               </div>
             </div>
           </div>
         </div>
 
-        {/* --- Main Content View Toggle --- */}
         <div className="relative">
           {viewMode === "table" ? (
             <div className="relative rounded-[2.5rem] border border-border bg-card/30 backdrop-blur-md overflow-hidden transition-all">
-              <div className="h-2 " />
+              <div className="h-2" />
               <div className="p-1 md:p-0">
                 <ProductsTable
                   products={filteredProducts}
@@ -310,7 +430,7 @@ export default function ProductsPage() {
                       <Package2 size={40} className="text-muted-foreground/20" />
                     )}
                     <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-1 border border-border shadow-lg">
-                      <ProductActions 
+                      <ProductActions
                         onEdit={() => openEdit(p)}
                         onDelete={() => deleteM.mutate(p.id)}
                         onView={() => setViewProduct(p)}
@@ -318,7 +438,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     {p.quantity <= p.minStockLevel && (
-                       <div className="absolute top-4 left-4 bg-rose-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Low Stock</div>
+                      <div className="absolute top-4 left-4 bg-rose-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Low Stock</div>
                     )}
                   </div>
                   <div className="p-6 space-y-4">
@@ -344,21 +464,20 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
-
-        {/* --- Modals (Form & Details) --- */}
+   {/* --- Modals (Form & Details) --- */}
         <AnimatePresence>
           {showForm && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-10000 flex items-center justify-center p-4 md:p-4 bg-black/60 backdrop-blur-lg "
+              className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-lg"
             >
               <motion.div
                 initial={{ scale: 0.9, y: 40 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 40 }}
-                className="bg-card border border-border rounded-[2rem] shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-hidden relative mt-16 mb-2"
+                className="bg-card border border-border rounded-[2rem] shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-y-auto relative mt-16 mb-2"
               >
                 <button
                   onClick={closeForm}
@@ -379,6 +498,7 @@ export default function ProductsPage() {
                   </div>
 
                   <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Left column */}
                     <div className="lg:col-span-7 space-y-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Field label="Name" icon={<Package2 size={12} />}>
@@ -418,11 +538,12 @@ export default function ProductsPage() {
                       </div>
                     </div>
 
+                    {/* Right column */}
                     <div className="lg:col-span-5 space-y-8">
                       <Field label="Media" icon={<ImagePlus size={12} />}>
                         <div className="space-y-4">
                           <div className="flex gap-1 p-1 bg-muted/10 rounded-2xl">
-                            {(['url', 'upload'] as const).map((mode) => (
+                            {(["url", "upload"] as const).map((mode) => (
                               <button
                                 key={mode}
                                 type="button"
@@ -433,7 +554,7 @@ export default function ProductsPage() {
                               </button>
                             ))}
                           </div>
-                          
+
                           {imageMode === "url" ? (
                             <input value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." className={inputCls} />
                           ) : (
@@ -457,19 +578,12 @@ export default function ProductsPage() {
                         </div>
                       </Field>
 
+                      {/*  Visual Identity  */}
                       <Field label="Visual Identity" icon={<Palette size={12} />}>
-                        <div className="grid grid-cols-3 gap-3">
-                          {PALETTES.map(pal => (
-                            <button
-                              key={pal.value}
-                              type="button"
-                              onClick={() => setForm({ ...form, color: pal.value })}
-                              className={`h-12 rounded-2xl border-2 transition-all flex items-center justify-center ${form.color === pal.value ? "border-primary ring-4 ring-primary/10" : "border-transparent bg-muted/10"}`}
-                            >
-                              <div className="w-6 h-6 rounded-full shadow-lg" style={{ background: pal.value }} />
-                            </button>
-                          ))}
-                        </div>
+                        <ColorPicker
+                          value={form.color}
+                          onChange={(color) => setForm({ ...form, color })}
+                        />
                       </Field>
 
                       <button
@@ -486,16 +600,6 @@ export default function ProductsPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/**
-         * 
-         * 
-         * 
-         * VIEW PRODUCTS DETAIL---------------------------------------
-         *  
-         * 
-         * 
-         */}
 
         <AnimatePresence>
           {viewProduct && (
@@ -515,7 +619,7 @@ export default function ProductsPage() {
               >
                 <div className="relative h-72 bg-background backdrop-blur-xl flex items-center justify-center">
                   {viewProduct.imageUrl ? (
-                    <img src={viewProduct.imageUrl} alt={viewProduct.name} className="w-full h-full object-contain " />
+                    <img src={viewProduct.imageUrl} alt={viewProduct.name} className="w-full h-full object-contain" />
                   ) : (
                     <Package2 size={80} className="text-muted-foreground/20" />
                   )}
@@ -548,7 +652,7 @@ export default function ProductsPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-3xl font-black text-foreground">{viewProduct.sellPrice.toLocaleString()} DH</div>
-                      <div className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Cost : {viewProduct.purchasePrice} DH</div>
+                      <div className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Cost: {viewProduct.purchasePrice} DH</div>
                     </div>
                   </div>
 
@@ -558,7 +662,7 @@ export default function ProductsPage() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                      { label: "Stock", value: viewProduct.quantity },
+                      { label: "Stock",   value: viewProduct.quantity },
                       { label: "Minimum", value: viewProduct.minStockLevel },
                       {
                         label: "Status",
@@ -567,13 +671,13 @@ export default function ProductsPage() {
                       },
                       {
                         label: "Added",
-                        value: viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleDateString() : "N/A" ,
-                        isSmall: true
+                        value: viewProduct.createdAt ? new Date(viewProduct.createdAt).toLocaleDateString() : "N/A",
+                        isSmall: true,
                       },
                     ].map(item => (
                       <div key={item.label} className="bg-background/80 backdrop-blur-xl border border-border rounded-2xl p-4 flex flex-col items-center justify-center text-center">
                         <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{item.label}</span>
-                        <span className={`font-black tracking-tight ${item.color || "text-foreground"} ${item.isSmall ? "text-sm" : "text-xl"}`}>
+                        <span className={`font-black tracking-tight ${(item as any).color || "text-foreground"} ${(item as any).isSmall ? "text-sm" : "text-xl"}`}>
                           {item.value}
                         </span>
                       </div>
