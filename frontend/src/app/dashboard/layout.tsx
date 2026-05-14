@@ -12,9 +12,9 @@ export default function DashboardLayout({
     <TooltipProvider>
       <SidebarProvider>
         <SidebarApp />
-        <SidebarInset className="bg-background">
+        <SidebarInset className="bg-background w-full overflow-hidden">
           <DashboardHeader />
-          <main className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden min-w-0">
+          <main className="flex flex-1 flex-col overflow-y-hidden overflow-x-hidden min-w-0">
             {children}
           </main>
         </SidebarInset>

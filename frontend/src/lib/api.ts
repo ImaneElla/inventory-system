@@ -75,6 +75,35 @@ export async function deleteCategory(id: number) {
   if (!res.ok) throw new Error("Failed to delete category");
 }
 
+export const fetchSales = async () => {
+  const res = await fetch("http://localhost:5000/sales"); 
+  if (!res.ok) throw new Error("Failed to fetch sales");
+  return res.json();
+};
+
+// --- sales ---
+
+export const createSale = async (data: any) => {
+  const res = await fetch("http://localhost:5000/sales", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...data,
+      date: new Date().toISOString(), 
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to create sale");
+  return res.json();
+};
+
+export const deleteSale = async (id: number) => {
+  const res = await fetch(`http://localhost:5000/sales/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete sale");
+  return res.json();
+};
+
 // --- Stats ---
 
 export async function fetchDashboardStats() {

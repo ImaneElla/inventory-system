@@ -62,13 +62,13 @@ function ProductActions({
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-[50] overflow-hidden backdrop-blur-xl"
+            className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-[10] overflow-hidden backdrop-blur-xl cursor-default"
           >
             <div className="p-2 space-y-1">
-              <button onClick={() => { onView(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all">
+              <button onClick={() => { onView(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all cursor-pointer">
                 <Eye size={16} /> View Details
               </button>
-              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all">
+              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all cursor-pointer">
                 <Edit3 size={16} /> Edit Product
               </button>
               <div className="h-px bg-border my-1" />
