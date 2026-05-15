@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { Sale } from "@/types/sale";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, Sparkles, ShoppingBag, TrendingUp, 
@@ -17,9 +18,15 @@ export default function SalesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ productName: "", customer: "", amount: "", status: "Completed" });
-
-  const { data: sales = [], isLoading } = useQuery<any[]>({
+const [form, setForm] = useState({
+  items: [
+    {
+      productId: 0,
+      quantity: 1,
+    },
+  ],
+});
+  const { data: sales = [], isLoading } = useQuery<Sale[]>({
     queryKey: ["sales"],
     queryFn: fetchSales,
   });
@@ -39,14 +46,14 @@ export default function SalesPage() {
 
   const filtered = useMemo(() =>
     sales.filter((s) => 
-      s.productName.toLowerCase().includes(search.toLowerCase()) ||
+      s.transactionId.toLowerCase().includes(search.toLowerCase()) ||
       s.customer.toLowerCase().includes(search.toLowerCase())
     ),
     [sales, search],
   );
 
   const stats = useMemo(() => {
-    const total = sales.reduce((acc, s) => acc + Number(s.amount), 0);
+    const total = sales.reduce((acc, s) => acc + Number(s.totalAmount), 0);
     return {
       revenue: total.toLocaleString(),
       count: sales.length,
@@ -54,15 +61,24 @@ export default function SalesPage() {
     };
   }, [sales]);
 
-  const closeForm = () => {
-    setShowForm(false);
-    setForm({ productName: "", customer: "", amount: "", status: "Completed" });
-  };
+const closeForm = () => {
+  setShowForm(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createM.mutate(form);
-  };
+  setForm({
+    items: [
+      {
+        productId: 0,
+        quantity: 1,
+      },
+    ],
+  });
+};
+
+ const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  createM.mutate(form);
+};
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-6 md:p-10 space-y-8 relative overflow-hidden">
@@ -212,21 +228,19 @@ export default function SalesPage() {
                         <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-colors">
                           <ShoppingBag size={18} />
                         </div>
-                        <span className="font-bold text-slate-900">{sale.productName}</span>
+                        <span className="font-bold text-slate-900">{sale.items[0]?.product?.name}</span>
                       </div>
                     </td>
-                    <td className="p-6 text-slate-600 font-medium">{sale.customer}</td>
+                    <td className="p-6 text-slate-600 font-medium">{sale.totalAmount}</td>
                     <td className="p-6 text-slate-500 text-sm">
                       <div className="flex items-center gap-2">
-                        <Calendar size={14} />
-                        {new Date().toLocaleDateString()}
-                      </div>
+                        <Calendar size={14} /> {new Date(sale.createdAt).toLocaleDateString() }                   </div>
                     </td>
                     <td className="p-6 font-black text-slate-900">${Number(sale.amount).toLocaleString()}</td>
                     <td className="p-6">
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        Completed
+                     {sale.status}
                       </span>
                     </td>
                     <td className="p-6 text-right">
