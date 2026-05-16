@@ -288,7 +288,7 @@ export default function CategoriesPage() {
                 ? "Your catalog is currently empty. Start by creating a new category to organize your products."
                 : `There are no ${filter} categories to display. Try changing the filters or create a new one.`}
             </p>
-            <div className="flex gap-4 mt-8">
+            <div className="flex gap-4 m">
                <Button variant="outline" onClick={() => { setSearch(""); setFilter("all"); }} className="rounded-2xl font-bold px-8 h-12">Show All</Button>
                <Button onClick={toggleForm} className="rounded-2xl font-bold px-8 h-12 btn-gradient text-white shadow-lg shadow-primary/20">Add Category</Button>
             </div>

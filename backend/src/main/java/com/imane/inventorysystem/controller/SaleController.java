@@ -7,7 +7,11 @@ import com.imane.inventorysystem.service.SaleService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/v1/sales")
@@ -19,10 +23,15 @@ public class SaleController {
         this.saleService = saleService;
     }
 
-    // GET all sales
+    // GET sales with pagination and filters
     @GetMapping
-    public ResponseEntity<List<SaleResponse>> getAllSales() {
-        return ResponseEntity.ok(saleService.getAllSales());
+    public ResponseEntity<Page<SaleResponse>> getAllSales(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end,
+            Pageable pageable) {
+        return ResponseEntity.ok(saleService.getAllSales(search, status, start, end, pageable));
     }
 
     // Process Sale
@@ -32,11 +41,8 @@ public class SaleController {
     }
 
     @GetMapping("/stats/revenue")
-    public ResponseEntity<Double> getRevenue() {
-
-        return ResponseEntity.ok(
-                saleService.getTotalRevenue()
-        );
+    public ResponseEntity<BigDecimal> getRevenue() {
+        return ResponseEntity.ok(saleService.getTotalRevenue());
     }
 
     @DeleteMapping("/{id}")

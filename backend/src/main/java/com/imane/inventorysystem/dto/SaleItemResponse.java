@@ -1,12 +1,14 @@
 package com.imane.inventorysystem.dto;
 
+import java.math.BigDecimal;
+
 public class SaleItemResponse {
     private Long id;
     private Long productId;
     private String productName;
     private Integer quantity;
-    private Double unitPrice;
-    private Double subtotal;
+    private BigDecimal unitPrice;
+    private BigDecimal subtotal;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -16,12 +18,12 @@ public class SaleItemResponse {
     public void setProductName(String productName) { this.productName = productName; }
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    public Double getUnitPrice() { return unitPrice; }
-    public void setUnitPrice(Double unitPrice) { this.unitPrice = unitPrice; }
-    public Double getSubtotal() { return subtotal; }
-    public void setSubtotal(Double subtotal) { this.subtotal = subtotal; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
+    public BigDecimal getSubtotal() { return subtotal; }
+    public void setSubtotal(BigDecimal subtotal) { this.subtotal = subtotal; }
     
     // Alias for unitPrice to maintain backward compatibility if needed
-    public Double getPrice() { return unitPrice; }
-    public void setPrice(Double price) { this.unitPrice = price; }
+    public BigDecimal getPrice() { return unitPrice; }
+    public void setPrice(BigDecimal price) { this.unitPrice = price; }
 }

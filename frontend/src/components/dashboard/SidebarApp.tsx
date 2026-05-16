@@ -136,7 +136,7 @@ export default function SidebarApp() {
           {!isCollapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="text-[16px] font-black tracking-tighter text-foreground leading-none">
-                IMN <span className="text-primary text-[10px] align-top ml-0.5">SYSTEM</span>
+                IMN <span className="text-primary text-[16px] align-top ml-0.5">SYSTEM</span>
               </span>
               <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1 opacity-60">
                 Inventory Hub
@@ -150,46 +150,49 @@ export default function SidebarApp() {
 
       {/* Main Navigation */}
       <SidebarContent
-        className="px-3 py-2 group-data-[collapsible=icon]:px-1.5"
+        className="flex flex-col h-full py-2 group-data-[collapsible=icon]:px-1.5"
         style={{ fontFamily: "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif" }}
       >
-        {/* Menu section */}
-        {!isCollapsed && (
-          <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
-            Menu
-          </p>
-        )}
-        <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
-          {mainMenuItems.map((item) => (
-            <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
-              <NavItem
-                {...item}
-                isActive={pathname === item.path}
-                isCollapsed={isCollapsed}
-              />
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
+        {/* Top Section: Main Menu */}
+        <div className="flex flex-col gap-2 px-3">
+          {!isCollapsed && (
+            <p className="px-3 pt-2 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
+              Menu
+            </p>
+          )}
+          <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
+            {mainMenuItems.map((item) => (
+              <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
+                <NavItem
+                  {...item}
+                  isActive={pathname === item.path}
+                  isCollapsed={isCollapsed}
+                />
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
 
-        {/* General section */}
-        {!isCollapsed && (
-          <p className="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
-            General
-          </p>
-        )}
-        {isCollapsed && <div className="h-3" />}
-        <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
-          {generalMenuItems.map((item) => (
-            <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
-              <NavItem
-                {...item}
-                isActive={pathname === item.path}
-                isCollapsed={isCollapsed}
-              />
-            </SidebarMenuItem>
-          ))}
-
-        </SidebarMenu>
+        {/* Bottom Section: General */}
+        <div className="mt-auto flex flex-col gap-2 px-3 pb-4">
+          {!isCollapsed && (
+            <p className="px-3 pt-4 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground/60 select-none">
+              General
+            </p>
+          )}
+          {isCollapsed && <div className="h-3" />}
+          <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
+            {generalMenuItems.map((item) => (
+              <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
+                <NavItem
+                  {...item}
+                  isActive={pathname === item.path}
+                  isCollapsed={isCollapsed}
+                />
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
       </SidebarContent>
 
       {/* Footer */}

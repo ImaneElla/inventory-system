@@ -287,7 +287,7 @@ export default function ProductsPage() {
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateProduct(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product updated!"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product updated!") },
     onError: (e: any) => setFormError(e?.message || "Failed to update product"),
   });
 
@@ -306,9 +306,6 @@ export default function ProductsPage() {
   }, [productsData, products]);
 
   const outOfStock = useMemo(() => {
-    // If we only have current page, this is an approximation. 
-    // Ideally we'd have a separate stats endpoint or the backend would return these stats in the Page metadata.
-    // For now, let's use the current page if it's all we have.
     return products.filter(p => p.quantity === 0).length;
   }, [products]);
 

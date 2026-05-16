@@ -110,11 +110,11 @@ export default function RegisterPage() {
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[900px] md:min-h-[450px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-10"
+        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[900px] md:min-h-[450px] bg-white/20 border border-slate-200 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-10"
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         
-        <div className="flex-1 flex flex-col bg-white text-slate-900 relative">
+        <div className="flex-1 flex flex-col bg-white/60 text-slate-900 relative">
           <div className="flex justify-center mt-6 mb-2">
             <Logo className="w-14 h-14" />
           </div>
@@ -260,13 +260,13 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
         ))}
       </div>
 
-      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 bg-primary text-white hover:bg-primary/90" onClick={onNext}>
+      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 btn-gradient text-white hover:bg-primary/90" onClick={onNext}>
         Continue to Details
       </Button>
       
       <p className="text-xs text-muted-foreground mt-3 font-medium">
         Already have an account?{" "}
-        <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
+        <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Sign in</button>
       </p>
     </motion.div>
   );
@@ -317,7 +317,7 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
         <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold border-slate-200 text-slate-600 hover:bg-slate-50" onClick={onBack}>Back</Button>
-        <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20 bg-primary text-white hover:bg-primary/90" onClick={onNext}>Next Step</Button>
+        <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20 btn-gradient text-white hover:bg-primary/90" onClick={onNext}>Next Step</Button>
       </div>
       
       <p className="text-xs text-muted-foreground mt-3 mb-2 text-center font-medium">
@@ -341,13 +341,13 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="w-32 h-32 rounded-[38%] bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-5xl font-black overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-all duration-700 hover:scale-105 group shadow-2xl"
+          className="w-32 h-32 rounded-[38%] bg-primary/5 border-2 border-dashed border-primary/20 flex items-center justify-center text-primary text-5xl font-black overflow-hidden cursor-pointer shrink-0 relative hover:bg-primary/10 transition-all duration-700 hover:scale-105 hover:rounded group shadow-2xl"
           aria-label="Upload profile photo"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : (userName ? userName.charAt(0).toUpperCase() : "?")}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-            <User className="text-white animate-bounce" size={28} />
+            <User className="text-white rounded-2xl animate-bounce" size={28} />
           </div>
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
@@ -365,14 +365,14 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
                   onChange={e => setTerms(e.target.checked)} 
                   className="w-4 h-4 accent-primary cursor-pointer rounded border-border" 
                 />
-                <label htmlFor="terms" className="text-[13px] text-muted-foreground cursor-pointer">
+                <label htmlFor="terms" className="text-[13px] roundedtext-muted-foreground cursor-pointer">
                   I agree to the <span onClick={(e) => { e.preventDefault(); setShowTermsModal(true); }} className="text-primary no-underline hover:underline">Terms &amp; Conditions</span>
                 </label>
               </div>  
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
         <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
-        <Button className="flex-2 h-10 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
+        <Button className="flex-2 h-10 rounded-2xl btn-gradient font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
       </div>
       
       <p className="text-xs text-muted-foreground mt-4 mb-3 text-center font-medium">

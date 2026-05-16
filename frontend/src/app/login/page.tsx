@@ -68,10 +68,10 @@ export default function LoginPage() {
         initial={{ opacity: 0, filter: "blur(20px)", scale: 0.95, y: 20 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="flex w-full max-w-[900px] min-h-[550px] bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
+        className="flex w-full max-w-[900px] min-h-[550px] bg-white/20 border border-slate-200 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
       >
         <LeftPanel />
-        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white text-slate-900 text-center relative overflow-hidden">
+        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white/60 text-slate-900 text-center relative overflow-hidden">
           {/* Ambient Background Glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32" />
@@ -132,7 +132,7 @@ export default function LoginPage() {
             </div>
 
             <Button 
-              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white"
+              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all btn-gradient hover:bg-primary/90 text-white"
               onClick={handleLogin}
               isLoading={isLoading}
             >
@@ -154,7 +154,7 @@ export default function LoginPage() {
       </motion.div>
 
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 btn-gradient  px-6 py-2 rounded-full text-sm font-medium z-50 shadow-lg">
           {toast}
         </div>
       )}

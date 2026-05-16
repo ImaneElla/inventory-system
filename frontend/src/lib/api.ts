@@ -100,8 +100,21 @@ export async function deleteCategory(id: number) {
 
 // --- Sales ---
 
-export async function fetchSales() {
-  const res = await fetch(`${BASE_V1_URL}/sales`);
+export async function fetchSales(filters?: { search?: string; status?: string; start?: string; end?: string; page?: number; size?: number }) {
+  const url = new URL(`${BASE_V1_URL}/sales`);
+  if (filters) {
+    if (filters.search) url.searchParams.append("search", filters.search);
+    if (filters.status) url.searchParams.append("status", filters.status);
+    if (filters.start) url.searchParams.append("start", filters.start);
+    if (filters.end) url.searchParams.append("end", filters.end);
+    if (filters.page !== undefined) url.searchParams.append("page", filters.page.toString());
+    if (filters.size !== undefined) url.searchParams.append("size", filters.size.toString());
+  } else {
+    url.searchParams.append("page", "0");
+    url.searchParams.append("size", "10");
+  }
+
+  const res = await fetch(url.toString());
   return handleResponse(res, "Failed to fetch sales");
 }
 

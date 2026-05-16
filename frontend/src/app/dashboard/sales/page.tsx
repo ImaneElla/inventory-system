@@ -5,16 +5,14 @@ import { Sale } from "@/types/sale";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, TrendingUp,
-  ShoppingBag, CreditCard, Calendar, DollarSign,
-  Trash2, X, Loader2, Check, ArrowUpRight, Receipt, Package2
+  ShoppingBag, Calendar,
+  Trash2, X, Loader2, Check, Package2,
+  ChevronLeft, ChevronRight, Filter, ShoppingCart
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSales, createSale, deleteSale, fetchProductsByName } from "@/lib/api";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
-  AlertDialogContent, AlertDialogDescription,
-  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+import { cn } from "@/lib/utils";
 
 // --- Product autocomplete types ---
 interface ProductSuggestion {
@@ -24,21 +22,25 @@ interface ProductSuggestion {
   quantity: number;
 }
 
+interface BasketItem {
+  product: ProductSuggestion;
+  quantity: number;
+}
+
 // --- Product Search Input ---
 function ProductSearchInput({
-  value,
   onSelect,
+  disabled
 }: {
-  value: string;
   onSelect: (p: ProductSuggestion) => void;
+  disabled?: boolean;
 }) {
-  const [query, setQuery] = useState(value);
+  const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<ProductSuggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
@@ -47,7 +49,6 @@ function ProductSearchInput({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Debounced search
   useEffect(() => {
     if (!query || query.length < 1) { setSuggestions([]); setOpen(false); return; }
     const t = setTimeout(async () => {
@@ -68,16 +69,16 @@ function ProductSearchInput({
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
   return (
-    <div className="relative" ref={wrapRef}>
+    <div className="relative w-full" ref={wrapRef}>
       <div className="relative">
         <Package2 size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
-          required
+          disabled={disabled}
           value={query}
           onChange={e => setQuery(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
-          placeholder="Search product..."
-          className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm outline-none focus:border-emerald-500 focus:bg-white transition-all capitalize"
+          placeholder="Search products to add..."
+          className="h-12 w-full rounded-xl border border-border bg-card/50 pl-9 pr-4 text-sm outline-none focus:border-primary focus:bg-card transition-all capitalize disabled:opacity-50"
         />
         {loading && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
       </div>
@@ -88,20 +89,23 @@ function ProductSearchInput({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto"
+            className="absolute z-50 mt-1 w-full bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto"
           >
             {suggestions.map(p => (
               <li
                 key={p.id}
                 onClick={() => {
-                  setQuery(capitalize(p.name));
                   onSelect(p);
+                  setQuery("");
                   setOpen(false);
                 }}
-                className="flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-emerald-50 transition-colors"
+                className="flex items-center justify-between px-4 py-3 text-sm cursor-pointer hover:bg-primary/5 transition-colors border-b border-border/50 last:border-0"
               >
-                <span className="font-semibold text-slate-800 capitalize">{p.name}</span>
-                <span className="text-xs text-slate-400 font-mono">{Number(p.sellPrice).toFixed(2)} DH · {p.quantity} in stock</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-foreground capitalize">{p.name}</span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{p.quantity} in stock</span>
+                </div>
+                <span className="font-mono font-bold text-primary">{Number(p.sellPrice).toFixed(2)} DH</span>
               </li>
             ))}
           </motion.ul>
@@ -110,37 +114,50 @@ function ProductSearchInput({
     </div>
   );
 }
-import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
-
-// ... (ProductSearchInput remains same)
 
 // --- Main Page ---
 export default function SalesPage() {
   const qc = useQueryClient();
-  const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Sale | null>(null);
 
-  // Form state: one item at a time
-  const [selectedProduct, setSelectedProduct] = useState<ProductSuggestion | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  // Filters & Pagination state
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
+  const [page, setPage] = useState(0);
+  const size = 10;
+
+  // Basket state for multi-item order
+  const [basket, setBasket] = useState<BasketItem[]>([]);
   const [error, setError] = useState("");
 
-  const computedTotal = selectedProduct ? (Number(selectedProduct.sellPrice) * quantity) : 0;
-
-  const { data: sales = [], isLoading } = useQuery<Sale[]>({
-    queryKey: ["sales"],
-    queryFn: fetchSales,
+  // Fetch sales with filters
+  const { data: salesData, isLoading } = useQuery({
+    queryKey: ["sales", search, status, dateStart, dateEnd, page],
+    queryFn: () => fetchSales({
+      search,
+      status: status || undefined,
+      start: dateStart ? new Date(dateStart).toISOString() : undefined,
+      end: dateEnd ? new Date(dateEnd).toISOString() : undefined,
+      page,
+      size
+    }),
   });
+
+  const sales = salesData?.content || [];
+  const totalPages = salesData?.totalPages || 0;
 
   const createM = useMutation({
     mutationFn: createSale,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       closeForm();
     },
-    onError: (e: any) => setError(e.message || "Failed to create sale"),
+    onError: (e: any) => setError(e.message || "Failed to process order"),
   });
 
   const deleteM = useMutation({
@@ -148,41 +165,74 @@ export default function SalesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
     },
   });
 
-  const filtered = useMemo(() =>
-    sales.filter((s) =>
-      s.transactionId?.toLowerCase().includes(search.toLowerCase()) ||
-      s.items?.some(item => item.productName?.toLowerCase().includes(search.toLowerCase()))
-    ),
-    [sales, search],
+  const basketTotal = useMemo(() => 
+    basket.reduce((acc, item) => acc + (item.product.sellPrice * item.quantity), 0),
+    [basket]
   );
-
-  const stats = useMemo(() => {
-    const total = sales.reduce((acc, s) => acc + Number(s.totalAmount), 0);
-    return {
-      revenue: total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      count: sales.length,
-      average: sales.length ? (total / sales.length).toFixed(2) : "0.00",
-    };
-  }, [sales]);
 
   const closeForm = () => {
     setShowForm(false);
-    setSelectedProduct(null);
-    setQuantity(1);
+    setBasket([]);
     setError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct) { setError("Please select a product"); return; }
-    if (quantity < 1) { setError("Quantity must be at least 1"); return; }
-    if (quantity > selectedProduct.quantity) { setError(`Only ${selectedProduct.quantity} in stock`); return; }
+  const addToBasket = (product: ProductSuggestion) => {
+    const existing = basket.find(item => item.product.id === product.id);
+    if (existing) {
+      if (existing.quantity >= product.quantity) {
+        setError(`Cannot add more ${product.name}. Max stock reached.`);
+        return;
+      }
+      setBasket(basket.map(item => 
+        item.product.id === product.id 
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      if (product.quantity < 1) {
+        setError(`${product.name} is out of stock.`);
+        return;
+      }
+      setBasket([...basket, { product, quantity: 1 }]);
+    }
     setError("");
-    createM.mutate({ items: [{ productId: selectedProduct.id, quantity }] });
   };
+
+  const removeFromBasket = (productId: number) => {
+    setBasket(basket.filter(item => item.product.id !== productId));
+  };
+
+  const updateBasketQuantity = (productId: number, q: number) => {
+    setBasket(basket.map(item => {
+      if (item.product.id === productId) {
+        const newQ = Math.max(1, Math.min(q, item.product.quantity));
+        return { ...item, quantity: newQ };
+      }
+      return item;
+    }));
+  };
+
+ const handleConfirmOrder = () => {
+  if (basket.length === 0) {
+    setError("Basket is empty");
+    return;
+  }
+
+  const payload = {
+    items: basket.map(item => ({
+      productId: item.product.id,
+      quantity: item.quantity
+    }))
+  };
+
+  console.log("SALE PAYLOAD:", payload);
+
+  createM.mutate(payload);
+};
 
   const capitalize = (s: string) => s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
 
@@ -190,154 +240,208 @@ export default function SalesPage() {
     <div className="min-h-screen bg-background p-6 md:p-10 space-y-8 relative overflow-hidden text-foreground">
       {/* Background Glow */}
       <div className="fixed inset-0 pointer-events-none -z-10">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-emerald-500/5 blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-[1400px] mx-auto space-y-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
-        >
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
-              <TrendingUp size={11} /> Revenue Tracking
+            <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
+              <TrendingUp size={11} /> POS System Active
             </div>
-            <h1 className="text-4xl font-black tracking-tight">Sales Ledger</h1>
-            <p className="text-muted-foreground font-medium mt-1">Track your revenue and customer transactions.</p>
+            <h1 className="text-4xl font-black tracking-tight">Sales & Orders</h1>
+            <p className="text-muted-foreground font-medium mt-1">Manage multi-item transactions and track revenue.</p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative group">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-emerald-500 transition-colors" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search transactions..."
-                className="h-12 w-full sm:w-72 pl-12 pr-5 rounded-2xl border border-border bg-card/50 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-foreground"
-              />
-            </div>
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowForm(!showForm)}
-              className={`h-12 inline-flex items-center justify-center gap-2 rounded-2xl font-bold px-6 shadow-lg transition-all border-none cursor-pointer ${showForm ? 'bg-secondary text-foreground' : 'bg-emerald-600 text-white shadow-emerald-500/20 hover:bg-emerald-700'}`}
+              className={cn(
+                "h-12 inline-flex items-center justify-center gap-2 rounded-2xl font-bold px-8 shadow-lg transition-all border-none cursor-pointer",
+                showForm ? "bg-secondary text-foreground" : "bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+              )}
             >
               {showForm ? <X size={18} /> : <Plus size={18} strokeWidth={2.5} />}
-              {showForm ? "Cancel" : "New Sale"}
+              {showForm ? "Close POS" : "New Transaction"}
             </motion.button>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
-          {[
-            { label: "Total Revenue", value: `${stats.revenue} DH`, icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-500/10" },
-            { label: "Transactions", value: stats.count, icon: ShoppingBag, color: "text-blue-600", bg: "bg-blue-500/10" },
-            { label: "Avg. Sale Value", value: `${stats.average} DH`, icon: CreditCard, color: "text-purple-600", bg: "bg-purple-500/10" },
-          ].map((stat, i) => (
-            <div key={i} className="bg-card border border-border p-6 rounded-3xl flex items-center gap-5 shadow-sm">
-              <div className={`w-14 h-14 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center`}>
-                <stat.icon size={24} />
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                <p className="text-2xl font-black text-foreground">{stat.value}</p>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Inline Sale Form */}
+        {/* Multi-Item Order Form */}
         <AnimatePresence>
           {showForm && (
             <motion.div
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3 }}
-              className="bg-card border border-border rounded-[2.5rem] shadow-xl p-8 relative overflow-hidden"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
             >
-              <div className="absolute top-0 inset-x-0 h-32 bg-linear-to-b from-emerald-500/5 to-transparent pointer-events-none" />
-              <div className="relative flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                  <Receipt size={24} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Record New Transaction</h2>
-                  <p className="text-sm text-muted-foreground">Select a product and enter quantity to create a sale.</p>
-                </div>
-              </div>
+              <div className="bg-card border border-border rounded-[2.5rem] shadow-xl p-8 relative mb-8">
+                <div className="absolute top-0 inset-x-0 h-32 bg-linear-to-b from-primary/5 to-transparent pointer-events-none" />
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 relative">
+                  {/* Left: Product Selection */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <Package2 size={20} />
+                      </div>
+                      <h3 className="font-bold text-lg">Add Products</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">Search and select items to add to the current order.</p>
+                      <ProductSearchInput onSelect={addToBasket} disabled={createM.isPending} />
+                      
+                      {error && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-xl bg-rose-500/10 text-rose-500 text-xs font-bold border border-rose-500/20">
+                          {error}
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
 
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">Product</label>
-                  <ProductSearchInput
-                    value={selectedProduct ? capitalize(selectedProduct.name) : ""}
-                    onSelect={(p) => { setSelectedProduct(p); setError(""); }}
-                  />
-                </div>
+                  {/* Right: Basket & Checkout */}
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <ShoppingCart size={20} />
+                        </div>
+                        <h3 className="font-bold text-lg">Current Basket</h3>
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">{basket.length} Items</span>
+                    </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">Quantity</label>
-                  <input
-                    required
-                    type="number"
-                    min={1}
-                    max={selectedProduct?.quantity ?? 9999}
-                    value={quantity}
-                    onChange={e => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="h-12 w-full rounded-xl border border-border bg-card/50 px-4 text-sm outline-none focus:border-emerald-500 focus:bg-card transition-all text-foreground"
-                  />
-                </div>
+                    <div className="min-h-[200px] bg-muted/20 rounded-[2rem] border border-border p-4">
+                      {basket.length === 0 ? (
+                        <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-3">
+                          <ShoppingBag size={40} className="opacity-20" />
+                          <p className="text-sm font-medium">Your basket is empty.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {basket.map((item) => (
+                            <motion.div
+                              layout
+                              key={item.product.id}
+                              className="flex items-center gap-4 bg-card p-4 rounded-2xl border border-border shadow-sm group"
+                            >
+                              <div className="flex-1">
+                                <p className="font-bold text-sm capitalize">{item.product.name}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{item.product.sellPrice.toFixed(2)} DH / unit</p>
+                              </div>
+                              
+                              <div className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-xl border border-border/50">
+                                <button 
+                                  onClick={() => updateBasketQuantity(item.product.id, item.quantity - 1)}
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-card transition-colors text-muted-foreground cursor-pointer"
+                                >
+                                  <ChevronLeft size={14} />
+                                </button>
+                                <span className="w-8 text-center text-sm font-black">{item.quantity}</span>
+                                <button 
+                                  onClick={() => updateBasketQuantity(item.product.id, item.quantity + 1)}
+                                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-card transition-colors text-muted-foreground cursor-pointer"
+                                >
+                                  <ChevronRight size={14} />
+                                </button>
+                              </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-muted-foreground px-1">Total</label>
-                  <div className="h-12 w-full rounded-xl border border-border bg-emerald-500/5 px-4 flex items-center font-black text-emerald-600 text-sm">
-                    {computedTotal.toFixed(2)} DH
+                              <div className="w-24 text-right">
+                                <p className="text-sm font-black text-primary">{(item.product.sellPrice * item.quantity).toFixed(2)} DH</p>
+                              </div>
+
+                              <button 
+                                onClick={() => removeFromBasket(item.product.id)}
+                                className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100 cursor-pointer"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </motion.div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4 border-t border-border">
+                      <div className="text-center sm:text-left">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-1">Grand Total</p>
+                        <p className="text-4xl font-black text-foreground">{basketTotal.toLocaleString("en-US", { minimumFractionDigits: 2 })} <span className="text-lg font-bold text-muted-foreground">DH</span></p>
+                      </div>
+
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={handleConfirmOrder}
+                        disabled={basket.length === 0 || createM.isPending}
+                        className="h-14 px-10 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/25 border-none cursor-pointer flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      >
+                        {createM.isPending ? <Loader2 size={20} className="animate-spin" /> : <><Check size={20} /> Checkout Order</>}
+                      </motion.button>
+                    </div>
                   </div>
                 </div>
-              </form>
-
-              {error && (
-                <p className="mt-3 text-sm text-rose-500 font-semibold">{error}</p>
-              )}
-
-              <div className="mt-6 flex justify-end">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleSubmit as any}
-                  disabled={createM.isPending || !selectedProduct}
-                  className="h-12 px-8 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-500/20 border-none cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                >
-                  {createM.isPending ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18} /> Confirm Sale</>}
-                </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Filters Bar */}
+        <div className="bg-card border border-border p-6 rounded-[2rem] shadow-sm flex flex-wrap items-center gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={e => { setSearch(e.target.value); setPage(0); }}
+              placeholder="Search by ID or product..."
+              className="h-11 w-full pl-11 pr-4 rounded-xl border border-border bg-muted/20 outline-none focus:border-primary transition-all text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-muted-foreground" />
+            <select 
+              value={status}
+              onChange={e => { setStatus(e.target.value); setPage(0); }}
+              className="h-11 px-4 rounded-xl border border-border bg-muted/20 outline-none text-sm font-medium focus:border-primary"
+            >
+              <option value="">All Statuses</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="PENDING">Pending</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-muted/20 border border-border rounded-xl px-3 h-11">
+            <Calendar size={16} className="text-muted-foreground" />
+            <input 
+              type="date" 
+              value={dateStart}
+              onChange={e => { setDateStart(e.target.value); setPage(0); }}
+              className="bg-transparent border-none outline-none text-xs font-bold uppercase tracking-tighter"
+            />
+            <span className="text-muted-foreground">→</span>
+            <input 
+              type="date" 
+              value={dateEnd}
+              onChange={e => { setDateEnd(e.target.value); setPage(0); }}
+              className="bg-transparent border-none outline-none text-xs font-bold uppercase tracking-tighter"
+            />
+          </div>
+        </div>
+
         {/* Sales Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="bg-card border border-border rounded-[2.5rem] overflow-hidden shadow-sm"
-        >
+        <div className="bg-card border border-border rounded-[2.5rem] overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-muted/30 border-b border-border">
-                  <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Product</th>
+                  <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Order Summary</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Transaction ID</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Date</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Total</th>
@@ -349,25 +453,30 @@ export default function SalesPage() {
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={6} className="p-6"><div className="h-12 bg-muted/40 rounded-xl" /></td>
+                      <td colSpan={6} className="p-6"><div className="h-14 bg-muted/40 rounded-2xl" /></td>
                     </tr>
                   ))
-                ) : filtered.length === 0 ? (
+                ) : sales.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-24 text-center text-muted-foreground font-medium">
-                      {search ? "No matching transactions found." : "No sales recorded yet. Add your first sale!"}
+                      No matching transactions found.
                     </td>
                   </tr>
-                ) : filtered.map((sale) => (
+                ) : sales.map((sale: Sale) => (
                   <tr key={sale.id} className="group hover:bg-muted/20 transition-colors">
                     <td className="p-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center text-muted-foreground group-hover:bg-emerald-500/10 group-hover:text-emerald-600 transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-muted/40 flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                           <ShoppingBag size={18} />
                         </div>
-                        <span className="font-bold text-foreground capitalize">
-                          {sale.items?.[0]?.productName ? capitalize(sale.items[0].productName) : "—"}
-                        </span>
+                        <div>
+                          <p className="font-bold text-foreground text-sm">
+                            {sale.items?.length || 0} Products
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate max-w-[200px] capitalize">
+                            {sale.items?.map(i => i.productName).join(", ")}
+                          </p>
+                        </div>
                       </div>
                     </td>
                     <td className="p-6 text-muted-foreground font-mono text-sm">{sale.transactionId}</td>
@@ -387,15 +496,8 @@ export default function SalesPage() {
                     <td className="p-6 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
-                          title="View Details"
-                        >
-                          <ArrowUpRight size={16} />
-                        </button>
-                        <button
                           onClick={() => setDeleteTarget(sale)}
                           className="p-2 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Delete"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -406,7 +508,32 @@ export default function SalesPage() {
               </tbody>
             </table>
           </div>
-        </motion.div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="p-6 bg-muted/10 border-t border-border flex items-center justify-between">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                Page {page + 1} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={page === 0}
+                  onClick={() => setPage(page - 1)}
+                  className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-card disabled:opacity-30 transition-all cursor-pointer"
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage(page + 1)}
+                  className="w-10 h-10 rounded-xl border border-border flex items-center justify-center hover:bg-card disabled:opacity-30 transition-all cursor-pointer"
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <DeleteConfirmationDialog
@@ -418,8 +545,8 @@ export default function SalesPage() {
             setDeleteTarget(null);
           }
         }}
-        title="Delete Sale?"
-        description={`This action cannot be undone. This will permanently delete transaction ${deleteTarget?.transactionId} from the records.`}
+        title="Delete Transaction?"
+        description={`This will permanently remove transaction ${deleteTarget?.transactionId} and restore the stock levels.`}
       />
     </div>
   );

@@ -24,7 +24,7 @@ export function SplashSuccess() {
              <span className="text-white font-extrabold text-4xl tracking-tighter">IMN</span>
           </div>
         </div>
-        <h1 className="text-4xl font-bold text-slate-900 mb-2 tracking-tight">
+        <h1 className="text-4xl font-bold text-black mb-2 tracking-tight">
           IMN Inventory Management
         </h1>
         <p className="text-slate-600 text-lg mb-8 font-light italic">
@@ -99,5 +99,5 @@ export function OAuthModal({ provider, onClose }: { provider: string; onClose: (
   );
 }
 
-export const inputStyle = "w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all backdrop-blur-sm placeholder:text-slate-400";
-export const submitBtnStyle = "w-full bg-primary text-white rounded-xl h-12 font-semibold text-sm hover:bg-primary/90 transition-all active:scale-[0.98] shadow-lg shadow-primary/20 mb-4";
+export const inputStyle = "w-full bg-white/50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400";
+export const submitBtnStyle = "w-full btn-primary text-white rounded-xl h-12 font-semibold text-sm hover:bg-primary/90 transition-all active:scale-[0.98] shadow-lg shadow-primary/20 mb-4";
