@@ -2,6 +2,7 @@ package com.imane.inventorysystem.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,10 +15,11 @@ import com.imane.inventorysystem.entity.Product;
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Page<Product> findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBrandContainingIgnoreCaseOrColorContainingIgnoreCase(
-        String name, String sku, String brand, String color, Pageable pageable
-    );
-    
+            String name, String sku, String brand, String color, Pageable pageable);
+
+    Optional<Product> findBySku(String sku);
+
     List<Product> findByQuantityLessThanEqual(Integer minStockLevel);
-    
+
     List<Product> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 }

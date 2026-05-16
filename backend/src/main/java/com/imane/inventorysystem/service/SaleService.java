@@ -48,26 +48,26 @@ public class SaleService {
                     .orElseThrow(() -> new RuntimeException("Product not found"));
 
             // Check stock
-            if (product.getStock() < item.getQuantity()) {
+            if (product.getQuantity() < item.getQuantity()) {
                 throw new RuntimeException(
                         "Insufficient stock for product: " + product.getName()
                 );
             }
 
             // Reduce stock
-            product.setStock(product.getStock() - item.getQuantity());
+            product.setQuantity(product.getQuantity() - item.getQuantity());
 
             // Create sale item
             SaleItem saleItem = new SaleItem();
 
             saleItem.setProduct(product);
             saleItem.setQuantity(item.getQuantity());
-            saleItem.setPrice(product.getPrice());
+            saleItem.setPrice(product.getSellPrice().doubleValue());
             saleItem.setSale(sale);
 
             saleItems.add(saleItem);
 
-            total += product.getPrice() * item.getQuantity();
+            total += product.getSellPrice().doubleValue() * item.getQuantity();
         }
 
         sale.setItems(saleItems);
@@ -82,5 +82,22 @@ public class SaleService {
 
     public Double getTotalRevenue() {
         return saleRepository.getTotalRevenue();
+    }
+
+    @Transactional
+    public void deleteSale(Long id) {
+        Sale sale = saleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sale not found"));
+
+        // Restore stock
+        for (SaleItem item : sale.getItems()) {
+            Product product = item.getProduct();
+            if (product != null) {
+                product.setQuantity(product.getQuantity() + item.getQuantity());
+                productRepository.save(product);
+            }
+        }
+
+        saleRepository.delete(sale);
     }
 }

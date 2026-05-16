@@ -1,113 +1,122 @@
-const BASE_URL = "http://localhost:8080/api/v1";
+const BASE_API_URL = "http://localhost:8080/api";
+const BASE_V1_URL = `${BASE_API_URL}/v1`;
+
+// Helper to handle response errors
+async function handleResponse(res: Response, defaultError: string) {
+  if (!res.ok) {
+    const errorMsg = await res.text().catch(() => "");
+    throw new Error(errorMsg || defaultError);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
 
 // --- Products ---
 
-export async function fetchProducts(search?: string, page = 0, size = 10) {
-  const url = new URL(`${BASE_URL}/products`);
+export async function fetchProducts(search?: string, page = 0, size = 5) {
+  const url = new URL(`${BASE_V1_URL}/products`);
   if (search) url.searchParams.append("search", search);
   url.searchParams.append("page", page.toString());
   url.searchParams.append("size", size.toString());
 
   const res = await fetch(url.toString());
-  if (!res.ok) throw new Error("Failed to fetch products");
-  return res.json();
+  return handleResponse(res, "Failed to fetch products");
+}
+
+export async function fetchProductsByName(name: string) {
+  const url = new URL(`${BASE_V1_URL}/products`);
+  if (name) url.searchParams.append("search", name);
+  url.searchParams.append("page", "0");
+  url.searchParams.append("size", "10");
+  
+  const res = await fetch(url.toString());
+  const data = await handleResponse(res, "Failed to search products");
+  return (data?.content || []) as Array<{ id: number; name: string; sellPrice: number; quantity: number }>;
 }
 
 export async function createProduct(product: any) {
-  const res = await fetch(`${BASE_URL}/products`, {
+  const res = await fetch(`${BASE_V1_URL}/products`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(product),
   });
-  if (!res.ok) throw new Error("Failed to create product");
-  return res.json();
+  return handleResponse(res, "Failed to create product");
 }
 
 export async function updateProduct(id: number, product: any) {
-  const res = await fetch(`${BASE_URL}/products/${id}`, {
+  const res = await fetch(`${BASE_V1_URL}/products/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(product),
   });
-  if (!res.ok) throw new Error("Failed to update product");
-  return res.json();
+  return handleResponse(res, "Failed to update product");
 }
 
 export async function deleteProduct(id: number) {
-  const res = await fetch(`${BASE_URL}/products/${id}`, {
+  const res = await fetch(`${BASE_V1_URL}/products/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete product");
+  return handleResponse(res, "Failed to delete product");
 }
 
 // --- Categories ---
 
 export async function fetchCategories() {
-  const res = await fetch(`${BASE_URL}/categories`);
-  if (!res.ok) throw new Error("Failed to fetch categories");
-  return res.json();
+  const res = await fetch(`${BASE_V1_URL}/categories`);
+  return handleResponse(res, "Failed to fetch categories");
 }
 
 export async function createCategory(category: any) {
-  const res = await fetch(`${BASE_URL}/categories`, {
+  const res = await fetch(`${BASE_V1_URL}/categories`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(category),
   });
-  if (!res.ok) throw new Error("Failed to create category");
-  return res.json();
+  return handleResponse(res, "Failed to create category");
 }
 
 export async function updateCategory(id: number, category: any) {
-  const res = await fetch(`${BASE_URL}/categories/${id}`, {
+  const res = await fetch(`${BASE_V1_URL}/categories/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(category),
   });
-  if (!res.ok) throw new Error("Failed to update category");
-  return res.json();
+  return handleResponse(res, "Failed to update category");
 }
 
 export async function deleteCategory(id: number) {
-  const res = await fetch(`${BASE_URL}/categories/${id}`, {
+  const res = await fetch(`${BASE_V1_URL}/categories/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete category");
+  return handleResponse(res, "Failed to delete category");
 }
 
-export const fetchSales = async () => {
-  const res = await fetch("http://localhost:5000/sales"); 
-  if (!res.ok) throw new Error("Failed to fetch sales");
-  return res.json();
-};
+// --- Sales ---
 
-// --- sales ---
+export async function fetchSales() {
+  const res = await fetch(`${BASE_API_URL}/sales`);
+  return handleResponse(res, "Failed to fetch sales");
+}
 
-export const createSale = async (data: any) => {
-  const res = await fetch("http://localhost:5000/sales", {
+export async function createSale(data: { items: { productId: number; quantity: number }[] }) {
+  const res = await fetch(`${BASE_API_URL}/sales/process`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...data,
-      date: new Date().toISOString(), 
-    }),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create sale");
-  return res.json();
-};
+  return handleResponse(res, "Failed to process sale");
+}
 
-export const deleteSale = async (id: number) => {
-  const res = await fetch(`http://localhost:5000/sales/${id}`, {
+export async function deleteSale(id: number) {
+  const res = await fetch(`${BASE_API_URL}/sales/${id}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete sale");
-  return res.json();
-};
+  return handleResponse(res, "Failed to delete sale");
+}
 
 // --- Stats ---
 
 export async function fetchDashboardStats() {
-  const res = await fetch(`${BASE_URL}/products/stats`);
-  if (!res.ok) throw new Error("Failed to fetch stats");
-  return res.json();
+  const res = await fetch(`${BASE_V1_URL}/products/stats`);
+  return handleResponse(res, "Failed to fetch dashboard statistics");
 }

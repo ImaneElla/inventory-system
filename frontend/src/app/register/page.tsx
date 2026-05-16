@@ -114,11 +114,11 @@ export default function RegisterPage() {
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         
-        <div className="flex-1 flex flex-col bg-card/40 relative">
+        <div className="flex-1 flex flex-col bg-white relative">
           <div className="flex justify-center mt-6 mb-2">
             <Logo className="w-14 h-14" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-1 tracking-tight text-center">
+          <h1 className="text-2xl font-bold text-slate-900 mb-1 tracking-tight text-center">
             Join Inventory System
           </h1>
 
@@ -241,7 +241,7 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
               "flex flex-col items-center gap-5 p-8 rounded-[32px] border-2 transition-all duration-500 cursor-pointer group relative overflow-hidden",
               role === r 
                 ? "border-primary bg-primary/5 shadow-2xl shadow-primary/10 scale-[1.05]" 
-                : "border-border/40 bg-card/40 hover:border-primary/40 hover:bg-primary/5 hover:scale-[1.02]"
+                : "border-slate-200 bg-slate-50/50 hover:border-primary/40 hover:bg-primary/5 hover:scale-[1.02]"
             )}
           >
             <div className={cn(
@@ -251,8 +251,8 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
               {r === "ADMIN" ? <Lock size={28} /> : <User size={28} />}
             </div>
             <div className="flex flex-col items-center">
-              <span className="font-black text-foreground text-sm uppercase tracking-widest">{r}</span>
-              <span className="text-[10px] text-muted-foreground mt-2 leading-relaxed font-semibold max-w-[120px]">
+              <span className="font-black text-slate-900 text-sm uppercase tracking-widest">{r}</span>
+              <span className="text-[10px] text-slate-500 mt-2 leading-relaxed font-semibold max-w-[120px]">
                 {r === "ADMIN" ? "Full system access & management" : "Inventory control & sales tracking"}
               </span>
             </div>
@@ -260,7 +260,7 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
         ))}
       </div>
 
-      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 text-sm" onClick={onNext}>
+      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 text-sm bg-primary text-white hover:bg-primary/90" onClick={onNext}>
         Continue to Details
       </Button>
       
@@ -283,17 +283,17 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
 
       <div className="space-y-5 mb-6">
         <div className="relative group">
-          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
-          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium`} type="text" placeholder="Full Name" value={userName} onChange={e => setUserName(e.target.value)} />
+          <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-slate-900 font-medium bg-slate-50 border-slate-200 focus:bg-white`} type="text" placeholder="Full Name" value={userName} onChange={e => setUserName(e.target.value)} />
         </div>
         <div className="relative group">
-          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
-          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium`} type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />
+          <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <input className={`${inputStyle} pl-12 h-10 rounded-2xl text-slate-900 font-medium bg-slate-50 border-slate-200 focus:bg-white`} type="email" placeholder="Email Address" value={email} onChange={e => setEmail(e.target.value)} />
         </div>
         <div className="relative group">
-          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+          <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
           <input
-            className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-foreground font-medium`}
+            className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-slate-900 font-medium bg-slate-50 border-slate-200 focus:bg-white`}
             type={showPwd ? "text" : "password"}
             placeholder="Create Secure Password"
             value={password}
@@ -301,23 +301,23 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
           />
           <button 
             type="button" onClick={() => setShowPwd(!showPwd)} 
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center p-1"
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer flex items-center p-1"
             aria-label={showPwd ? "Hide password" : "Show password"}
           >
             {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
         <div className="flex items-center gap-2 px-1">
-           <div className={cn("h-1 flex-1 rounded-full bg-border", password.length >= 8  && "from-red-500 via-yellow-500 to-green-500 bg-linear-to-r")} />
+           <div className={cn("h-1 flex-1 rounded-full bg-slate-200", password.length >= 8  && "from-red-500 via-yellow-500 to-green-500 bg-linear-to-r")} />
         </div>
-        <p className="text-[10px] text-muted-foreground ml-1 font-semibold italic">
+        <p className="text-[10px] text-slate-400 ml-1 font-semibold italic">
           * Must contain at least 8 characters
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
-        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack}>Back</Button>
-        <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20" onClick={onNext}>Next Step</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold border-slate-200 text-slate-600 hover:bg-slate-50" onClick={onBack}>Back</Button>
+        <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20 bg-primary text-white hover:bg-primary/90" onClick={onNext}>Next Step</Button>
       </div>
       
       <p className="text-xs text-muted-foreground mt-3 mb-2 text-center font-medium">

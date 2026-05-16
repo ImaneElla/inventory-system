@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,10 +16,11 @@ import com.imane.inventorysystem.repository.ProductRepository;
 @Service
 public class ProductService {
 
-    @Autowired
-    private ProductRepository repo;
+    private final ProductRepository repo;
 
-    private final String uploadPath = "uploads/products/";
+    public ProductService(ProductRepository repo) {
+        this.repo = repo;
+    }
 
     public Page<Product> getAllProducts(String search, Pageable pageable) {
         if (search == null || search.trim().isEmpty()) {
@@ -32,28 +32,42 @@ public class ProductService {
     }
 
     public Product saveProduct(Product product) {
-        if (product.getSku() == null || product.getSku().isEmpty()) {
+        validateProduct(product);
+        sanitizeProduct(product);
+        return repo.save(product);
+    }
+
+    private void validateProduct(Product product) {
+        if (product.getSku() == null || product.getSku().trim().isEmpty()) {
             throw new RuntimeException("SKU is required");
         }
-        if (product.getName() == null || product.getName().isEmpty()) {
+        if (product.getName() == null || product.getName().trim().isEmpty()) {
             throw new RuntimeException("Name is required");
         }
-        if (product.getQuantity() == null || product.getQuantity() < 0) {
-            throw new RuntimeException("Quantity is required");
+        if (product.getCategoryId() == null || product.getCategoryId() <= 0) {
+            throw new RuntimeException("Category is required");
         }
-        if (product.getCategoryId() == null) {
-            throw new RuntimeException("Category ID is required");
+
+        repo.findBySku(product.getSku()).ifPresent(existing -> {
+            if (product.getId() == null || !existing.getId().equals(product.getId())) {
+                throw new RuntimeException("SKU already exists: " + product.getSku());
+            }
+        });
+    }
+
+    private void sanitizeProduct(Product product) {
+        if (product.getQuantity() == null || product.getQuantity() < 0) {
+            product.setQuantity(0);
         }
         if (product.getMinStockLevel() == null || product.getMinStockLevel() < 0) {
-            throw new RuntimeException("Min Stock Level is required");
+            product.setMinStockLevel(0);
         }
-        if (product.getPurchasePrice() == null || product.getPurchasePrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Purchase Price must be greater than 0");
+        if (product.getPurchasePrice() == null || product.getPurchasePrice().compareTo(BigDecimal.ZERO) < 0) {
+            product.setPurchasePrice(BigDecimal.ZERO);
         }
-        if (product.getSellPrice() == null || product.getSellPrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Sell Price must be greater than 0");
+        if (product.getSellPrice() == null || product.getSellPrice().compareTo(BigDecimal.ZERO) < 0) {
+            product.setSellPrice(BigDecimal.ZERO);
         }
-        return repo.save(product);
     }
 
     public void deleteProduct(Long id) {

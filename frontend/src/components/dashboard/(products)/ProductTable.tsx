@@ -104,7 +104,7 @@ export default function ProductsTable({
   });
 
   const isVisible = (col: ColId) => {
-    if (isSidebarOpen && (col === "brand" || col === "cost" || col === "action")) return false;
+    if (isSidebarOpen && (col === "brand" || col === "cost")) return false;
     return visibleCols[col];
   };
 

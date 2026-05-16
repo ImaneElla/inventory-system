@@ -54,7 +54,7 @@ const tokens = [
   { iconBg: "rgba(59,130,246,0.12)",  iconColor: "#3b82f6" },
 ];
 
-const springConfig = { type: "spring", stiffness: 400, damping: 30 };
+const springConfig = { type: "spring", stiffness: 300, damping: 28 };
 
 export default function CategoriesPage() {
   const qc = useQueryClient();
@@ -66,6 +66,10 @@ export default function CategoriesPage() {
   const [sortKey, setSortKey]           = useState<"name" | "count" | "id">("name");
   const [filter, setFilter]             = useState<"all" | "active" | "empty">("all");
   const [viewMode, setViewMode]         = useState<"grid" | "list">("list");
+  const [formError, setFormError]       = useState("");
+  const [toast, setToast]               = useState("");
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
   const { data: categoriesData = [], isLoading: catLoading } = useQuery({
     queryKey: ["categories"],
@@ -74,14 +78,15 @@ export default function CategoriesPage() {
 
   const { data: rawProducts } = useQuery({
     queryKey: ["products"],
-    queryFn: fetchProducts,
+    queryFn: () => fetchProducts(undefined, 0, 1000),
   });
 
   const productList = useMemo(() => {
     if (!rawProducts) return [];
-    if (Array.isArray(rawProducts)) return rawProducts;
+    // Backend returns a Page object with a .content array
     const p = rawProducts as any;
-    return p.data?.data || p.data || p.products || p.results || p.items || [];
+    if (Array.isArray(p)) return p;
+    return p.content || p.data?.data || p.data || p.products || p.results || p.items || [];
   }, [rawProducts]);
 
   const categoryList = useMemo(() => {
@@ -104,12 +109,14 @@ export default function CategoriesPage() {
 
   const createM = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category created!"); },
+    onError: (e: any) => setFormError(e?.message || "Failed to create category"),
   });
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateCategory(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category updated!"); },
+    onError: (e: any) => setFormError(e?.message || "Failed to update category"),
   });
 
   const deleteM = useMutation({
@@ -136,7 +143,8 @@ export default function CategoriesPage() {
   const closeForm = () => { 
     setShowForm(false); 
     setEditId(null); 
-    setForm({ name: "", icon: "Tag", description: "" }); 
+    setForm({ name: "", icon: "Tag", description: "" });
+    setFormError("");
   };
 
   const toggleForm = () => { 
@@ -157,8 +165,10 @@ export default function CategoriesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" }); 
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!form.name.trim()) { setFormError("Name is required"); return; }
+    setFormError("");
     if (editId) {
       updateM.mutate({ id: editId, data: form });
     } else {
@@ -175,27 +185,24 @@ export default function CategoriesPage() {
 
       <div className="relative z-10 max-w-[1400px] mx-auto space-y-6">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={springConfig}>
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Store Catalog</p>
             <h1 className="text-4xl font-black tracking-tight">Categories</h1>
           </motion.div>
           
-          <div className="flex gap-2">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 bg-card/50 backdrop-blur-md border border-border rounded-2xl px-4 py-2 shadow-sm"
-            >
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }}
+            className="flex gap-2"
+          >
+            <div className="flex items-center gap-2 bg-card/50 backdrop-blur-md border border-border rounded-2xl px-4 py-2 shadow-sm">
               <Layers size={14} className="text-primary" />
               <span className="text-xs font-bold">{categoryList.length} Total</span>
-            </motion.div>
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-              className="flex items-center gap-2 bg-card/50 backdrop-blur-md border border-border rounded-2xl px-4 py-2 shadow-sm"
-            >
+            </div>
+            <div className="flex items-center gap-2 bg-card/50 backdrop-blur-md border border-border rounded-2xl px-4 py-2 shadow-sm">
               <TrendingUp size={14} className="text-emerald-500" />
               <span className="text-xs font-bold">{totalProductsCount} Products</span>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
         </header>
 
         {/* Filter Toolbar */}
@@ -237,7 +244,8 @@ export default function CategoriesPage() {
         <AnimatePresence mode="wait">
           {showForm && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3 }}
               className="bg-card border-2 border-primary/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none rotate-12"><Shapes size={150} /></div>
@@ -275,10 +283,18 @@ export default function CategoriesPage() {
                   </div>
 
                   <div className="flex gap-3 pt-4">
-                    <Button type="submit" disabled={busy || !form.name.trim()} className="flex-1 h-14 rounded-2xl font-bold btn-gradient text-white shadow-lg shadow-primary/20">
+                    <Button
+                      type="button"
+                      onClick={() => handleSubmit()}
+                      disabled={busy || !form.name.trim()}
+                      className="flex-1 h-14 rounded-2xl font-bold btn-gradient text-white shadow-lg shadow-primary/20"
+                    >
                       {busy ? <Loader2 className="animate-spin" /> : editId ? "Save Changes" : "Confirm Creation"}
                     </Button>
                   </div>
+                  {formError && (
+                    <p className="text-rose-500 text-sm font-semibold mt-2 px-1">{formError}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -341,11 +357,12 @@ export default function CategoriesPage() {
                     <motion.div
                       key={cat.id}
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      whileHover={{ y: -4 }}
-                      className={`group relative bg-card border border-border shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-300 ${
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      whileHover={{ y: -2 }}
+                      className={`group relative bg-card border border-border shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-200 ${
                         viewMode === "grid" ? "rounded-[2rem] p-6" : "rounded-2xl p-4 flex items-center gap-4"
                       }`}
                     >
@@ -408,27 +425,48 @@ export default function CategoriesPage() {
         </motion.button>
       </div>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-[3rem] p-10 max-w-md border-none bg-background/95 backdrop-blur-2xl">
-          <AlertDialogHeader className="items-center text-center">
-            <div className="w-20 h-20 rounded-[2rem] bg-destructive/10 flex items-center justify-center mb-6"><Trash2 size={32} className="text-destructive" /></div>
-            <AlertDialogTitle className="text-2xl font-black">Remove Category?</AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed mt-2">
-              Deleting <strong>{deleteTarget?.name}</strong> will un-categorize all items in this collection.
+      {/* Delete Confirmation — Apple/shadcn style */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-3xl border-border/40 bg-background/80 backdrop-blur-3xl p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-rose-500/10 to-transparent pointer-events-none" />
+          <AlertDialogHeader className="relative z-10 text-center space-y-3">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-b from-rose-500/10 to-transparent border border-rose-500/10 flex items-center text-center justify-center mx-auto mb-4">
+              <Trash2 size={28} className="text-rose-500" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
+              Delete Category?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-medium leading-relaxed w-full text-center sm:text-center">
+              This action cannot be undone. Deleting{" "}
+              <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
+              will un-categorize all products in this collection.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="sm:justify-center gap-3 mt-8">
-            <AlertDialogCancel className="h-14 flex-1 rounded-2xl font-bold border-border">Keep it</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => { deleteM.mutate(deleteTarget.id); setDeleteTarget(null); }} 
-              className="h-14 flex-1 rounded-2xl font-bold bg-destructive text-white border-none shadow-lg shadow-destructive/20"
+          <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
+            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold cursor-pointer border-none transition-all flex-1">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
+              onClick={() => {
+                if (deleteTarget !== null) {
+                  deleteM.mutate(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
             >
-              Confirm
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 bg-emerald-600 text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

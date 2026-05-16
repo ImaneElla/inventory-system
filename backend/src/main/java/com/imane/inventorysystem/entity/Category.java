@@ -32,6 +32,8 @@ public class Category {
 
     private String description;
 
+    private String icon;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

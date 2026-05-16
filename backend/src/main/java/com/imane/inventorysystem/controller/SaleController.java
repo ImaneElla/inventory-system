@@ -42,12 +42,17 @@ public class SaleController {
         }
     }
 
-    // Total Revenue
     @GetMapping("/stats/revenue")
     public ResponseEntity<Double> getRevenue() {
 
         return ResponseEntity.ok(
                 saleService.getTotalRevenue()
         );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteSale(@PathVariable Long id) {
+        saleService.deleteSale(id);
+        return ResponseEntity.ok().build();
     }
 }

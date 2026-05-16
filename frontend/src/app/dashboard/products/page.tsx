@@ -254,6 +254,9 @@ export default function ProductsPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [filterBrand, setFilterBrand] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [formError, setFormError] = useState("");
+  const [toast, setToast] = useState("");
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
   const { data: productsData, isLoading } = useQuery({
     queryKey: ["products", search],
@@ -267,12 +270,14 @@ export default function ProductsPage() {
 
   const createM = useMutation({
     mutationFn: createProduct,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product created!"); },
+    onError: (e: any) => setFormError(e?.message || "Failed to create product"),
   });
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateProduct(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product updated!"); },
+    onError: (e: any) => setFormError(e?.message || "Failed to update product"),
   });
 
   const deleteM = useMutation({
@@ -316,13 +321,39 @@ export default function ProductsPage() {
     setShowForm(true);
   };
 
-  const closeForm = () => { setShowForm(false); setEditId(null); setForm(DEFAULT_FORM); };
+  const closeForm = () => { setShowForm(false); setEditId(null); setForm(DEFAULT_FORM); setFormError(""); };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editId !== null) updateM.mutate({ id: editId, data: form });
-    else createM.mutate(form);
-  };
+ const handleSubmit = (e?: React.FormEvent) => {
+  e?.preventDefault();
+
+  // Required fields
+  if (!form.name.trim() || !form.sku.trim() || !form.categoryId) {
+    setFormError("Name, SKU and Category are required");
+    return;
+  }
+
+  // Number validation
+  if (
+    form.purchasePrice <= 0 ||
+    form.sellPrice <= 0 ||
+    form.quantity < 0 ||
+    form.minStockLevel < 0
+  ) {
+    setFormError("Please enter valid values");
+    return;
+  }
+
+  setFormError("");
+
+  if (editId !== null) {
+    updateM.mutate({
+      id: editId,
+      data: form,
+    });
+  } else {
+    createM.mutate(form);
+  }
+};
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -524,16 +555,44 @@ export default function ProductsPage() {
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-muted/5 border border-border/50">
                         <Field label="Cost (DH)">
-                          <input type="number" value={form.purchasePrice} onChange={e => setForm({ ...form, purchasePrice: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                          <input type="number" value={form.purchasePrice} onChange={e =>
+                            setForm({
+                              ...form,
+                              purchasePrice: e.target.value === ""
+                                ? ""
+                                : parseFloat(e.target.value),
+                            })
+                          } className={inputCls} />
                         </Field>
                         <Field label="Price (DH)">
-                          <input type="number" value={form.sellPrice} onChange={e => setForm({ ...form, sellPrice: parseFloat(e.target.value) || 0 })} className={inputCls} />
+                          <input type="number" value={form.sellPrice} onChange={e =>
+                            setForm({
+                              ...form,
+                              sellPrice: e.target.value === ""
+                                ? ""
+                                : parseFloat(e.target.value),
+                            })
+                          } className={inputCls} />
                         </Field>
                         <Field label="Stock">
-                          <input type="number" value={form.quantity} onChange={e => setForm({ ...form, quantity: parseInt(e.target.value) || 0 })} className={inputCls} />
+                          <input type="number" value={form.quantity} onChange={e =>
+                            setForm({
+                              ...form,
+                              quantity: e.target.value === ""
+                                ? ""
+                                : parseInt(e.target.value),
+                            })
+                          } className={inputCls} />
                         </Field>
                         <Field label="Alert At">
-                          <input type="number" value={form.minStockLevel} onChange={e => setForm({ ...form, minStockLevel: parseInt(e.target.value) || 0 })} className={inputCls} />
+                          <input type="number" value={form.minStockLevel} onChange={e =>
+                            setForm({
+                              ...form,
+                              minStockLevel: e.target.value === ""
+                                ? ""
+                                : parseInt(e.target.value),
+                            })
+                          } className={inputCls} />
                         </Field>
                       </div>
                     </div>
@@ -587,12 +646,16 @@ export default function ProductsPage() {
                       </Field>
 
                       <button
-                        type="submit"
+                        type="button"
+                        onClick={() => handleSubmit()}
                         disabled={busy}
                         className="w-60 h-12 btn-gradient rounded-3xl mt-8 font-black text-[14px] transition-all flex items-center justify-center gap-3 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99] shadow-xl shadow-foreground/10 mx-auto"
                       >
                         {busy ? <Loader2 className="animate-spin" size={24} /> : (editId ? "Save Changes" : "Create Product")}
                       </button>
+                      {formError && (
+                        <p className="text-rose-500 text-sm font-semibold mt-3 text-center">{formError}</p>
+                      )}
                     </div>
                   </form>
                 </div>
@@ -689,6 +752,13 @@ export default function ProductsPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 bg-emerald-600 text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

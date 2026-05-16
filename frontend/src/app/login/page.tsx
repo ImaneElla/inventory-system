@@ -71,7 +71,7 @@ export default function LoginPage() {
         className="flex w-full max-w-[900px] min-h-[550px] bg-card/60 backdrop-blur-3xl border border-border/40 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
       >
         <LeftPanel />
-        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-card/40 text-center relative overflow-hidden">
+        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white text-center relative overflow-hidden">
           {/* Ambient Background Glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32" />
@@ -81,14 +81,14 @@ export default function LoginPage() {
               <Logo className="w-16 h-16 drop-shadow-sm" />
             </div>
             
-            <h1 className="text-3xl font-black text-foreground mb-2 tracking-tight">Welcome Back</h1>
-            <p className="text-sm text-muted-foreground mb-6 font-medium">Please enter your credentials to access your workspace</p>
+            <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Welcome Back</h1>
+            <p className="text-sm text-slate-500 mb-6 font-medium">Please enter your credentials to access your workspace</p>
 
             <div className="space-y-5 mb-4">
               <div className="relative group">
-                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+                <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
                 <input 
-                  className={`${inputStyle} pl-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`} 
+                  className={`${inputStyle} pl-12 h-10 rounded-2xl text-slate-900 font-medium shadow-sm bg-slate-50 border-slate-200 focus:bg-white`} 
                   type="email" 
                   placeholder="Email Address" 
                   value={email} 
@@ -97,9 +97,9 @@ export default function LoginPage() {
               </div>
 
               <div className="relative group">
-                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/30 group-focus-within:text-primary transition-colors" />
+                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
                 <input
-                  className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-foreground font-medium shadow-sm`}
+                  className={`${inputStyle} pl-12 pr-12 h-10 rounded-2xl text-slate-900 font-medium shadow-sm bg-slate-50 border-slate-200 focus:bg-white`}
                   type={showPwd ? "text" : "password"}
                   placeholder="Password"
                   value={password}
@@ -108,7 +108,7 @@ export default function LoginPage() {
                 <button 
                   type="button"
                   onClick={() => setShowPwd(v => !v)} 
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center p-1"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer flex items-center p-1"
                   aria-label={showPwd ? "Hide password" : "Show password"}
                 >
                   {showPwd ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -117,12 +117,12 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between mb-10 px-1">
-              <label className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer select-none font-medium hover:text-foreground transition-colors">
+              <label className="flex items-center gap-2.5 text-sm text-slate-600 cursor-pointer select-none font-medium hover:text-slate-900 transition-colors">
                 <input 
                   type="checkbox" 
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-5 h-5 rounded-lg border-border accent-primary cursor-pointer transition-all"
+                  className="w-5 h-5 rounded-lg border-slate-200 accent-primary cursor-pointer transition-all"
                 />
                 Remember me
               </label>
@@ -132,14 +132,14 @@ export default function LoginPage() {
             </div>
 
             <Button 
-              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all"
+              className="w-50 h-10 rounded-2xl text-base font-black shadow-2xl shadow-primary/30 active:scale-[0.98] transition-all bg-primary hover:bg-primary/90 text-white"
               onClick={handleLogin}
               isLoading={isLoading}
             >
               Sign In
             </Button>
 
-            <p className="text-sm text-muted-foreground mt-6 font-medium">
+            <p className="text-sm text-slate-500 mt-6 font-medium">
               New here?{" "}
               <button 
                 type="button"

@@ -25,6 +25,12 @@ public class CategoryController {
     public ResponseEntity<Category> createCategory(@RequestBody Category category) {
         return ResponseEntity.ok(categoryService.saveCategory(category));
     }
+    @PutMapping("/{id}")
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
+        category.setId(id);
+        return ResponseEntity.ok(categoryService.saveCategory(category));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
