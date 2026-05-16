@@ -10,6 +10,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.imane.inventorysystem.dto.ProductRequest;
+import com.imane.inventorysystem.dto.ProductResponse;
 import com.imane.inventorysystem.entity.Product;
 import com.imane.inventorysystem.repository.ProductRepository;
 
@@ -17,24 +19,46 @@ import com.imane.inventorysystem.repository.ProductRepository;
 public class ProductService {
 
     private final ProductRepository repo;
+    private final CategoryService categoryService;
 
-    public ProductService(ProductRepository repo) {
+    public ProductService(ProductRepository repo, CategoryService categoryService) {
         this.repo = repo;
+        this.categoryService = categoryService;
     }
 
-    public Page<Product> getAllProducts(String search, Pageable pageable) {
+    public Page<ProductResponse> getAllProducts(String search, Pageable pageable) {
+        Page<Product> products;
         if (search == null || search.trim().isEmpty()) {
-            return repo.findAll(pageable);
+            products = repo.findAll(pageable);
+        } else {
+            products = repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBrandContainingIgnoreCaseOrColorContainingIgnoreCase(
+                search, search, search, search, pageable
+            );
         }
-        return repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBrandContainingIgnoreCaseOrColorContainingIgnoreCase(
-            search, search, search, search, pageable
-        );
+        return products.map(this::mapToResponse);
     }
 
-    public Product saveProduct(Product product) {
+    public ProductResponse saveProduct(ProductRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Product request must not be null");
+        }
+        Product product = new Product();
+        mapToEntity(request, product);
         validateProduct(product);
         sanitizeProduct(product);
-        return repo.save(product);
+        return mapToResponse(repo.save(product));
+    }
+
+    public ProductResponse updateProduct(Long id, ProductRequest request) {
+        if (id == null) {
+            throw new IllegalArgumentException("Product ID must not be null");
+        }
+        Product product = repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + id));
+        mapToEntity(request, product);
+        validateProduct(product);
+        sanitizeProduct(product);
+        return mapToResponse(repo.save(product));
     }
 
     private void validateProduct(Product product) {
@@ -48,6 +72,12 @@ public class ProductService {
             throw new RuntimeException("Category is required");
         }
 
+        try {
+            categoryService.findById(product.getCategoryId());
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Selected category does not exist");
+        }
+
         repo.findBySku(product.getSku()).ifPresent(existing -> {
             if (product.getId() == null || !existing.getId().equals(product.getId())) {
                 throw new RuntimeException("SKU already exists: " + product.getSku());
@@ -56,26 +86,26 @@ public class ProductService {
     }
 
     private void sanitizeProduct(Product product) {
-        if (product.getQuantity() == null || product.getQuantity() < 0) {
-            product.setQuantity(0);
-        }
-        if (product.getMinStockLevel() == null || product.getMinStockLevel() < 0) {
-            product.setMinStockLevel(0);
-        }
-        if (product.getPurchasePrice() == null || product.getPurchasePrice().compareTo(BigDecimal.ZERO) < 0) {
-            product.setPurchasePrice(BigDecimal.ZERO);
-        }
-        if (product.getSellPrice() == null || product.getSellPrice().compareTo(BigDecimal.ZERO) < 0) {
-            product.setSellPrice(BigDecimal.ZERO);
-        }
+        if (product.getQuantity() == null || product.getQuantity() < 0) product.setQuantity(0);
+        if (product.getMinStockLevel() == null || product.getMinStockLevel() < 0) product.setMinStockLevel(0);
+        if (product.getPurchasePrice() == null) product.setPurchasePrice(BigDecimal.ZERO);
+        if (product.getSellPrice() == null) product.setSellPrice(BigDecimal.ZERO);
     }
 
     public void deleteProduct(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Product ID must not be null");
+        }
+        if (!repo.existsById(id)) throw new IllegalArgumentException("Product not found with ID: " + id);
         repo.deleteById(id);
     }
 
-    public Product findById(Long id) {
-        return repo.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+    public ProductResponse findById(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("Product ID must not be null");
+        }
+        return mapToResponse(repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + id)));
     }
 
     public Map<String, Object> getDashboardStats() {
@@ -84,26 +114,71 @@ public class ProductService {
 
         stats.put("totalProducts", products.size());
 
-        long totalStock = products.stream().mapToInt(Product::getQuantity).sum();
+        long totalStock = products.stream()
+                .mapToInt(p -> p.getQuantity() != null ? p.getQuantity() : 0)
+                .sum();
         stats.put("totalStock", totalStock);
 
         BigDecimal inventoryValue = products.stream()
-                .map(p -> p.getPurchasePrice().multiply(BigDecimal.valueOf(p.getQuantity())))
+                .map(p -> {
+                    BigDecimal price = p.getPurchasePrice() != null ? p.getPurchasePrice() : BigDecimal.ZERO;
+                    int qty = p.getQuantity() != null ? p.getQuantity() : 0;
+                    return price.multiply(BigDecimal.valueOf(qty));
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         stats.put("inventoryValue", inventoryValue);
 
         BigDecimal expectedProfit = products.stream()
-                .map(p -> p.getSellPrice().subtract(p.getPurchasePrice())
-                        .multiply(BigDecimal.valueOf(p.getQuantity())))
+                .map(p -> {
+                    BigDecimal sell = p.getSellPrice() != null ? p.getSellPrice() : BigDecimal.ZERO;
+                    BigDecimal buy = p.getPurchasePrice() != null ? p.getPurchasePrice() : BigDecimal.ZERO;
+                    int qty = p.getQuantity() != null ? p.getQuantity() : 0;
+                    return sell.subtract(buy).multiply(BigDecimal.valueOf(qty));
+                })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
         stats.put("expectedProfit", expectedProfit);
 
         stats.put("lowStockCount", products.stream()
-                .filter(p -> p.getQuantity() <= p.getMinStockLevel())
+                .filter(p -> {
+                    int qty = p.getQuantity() != null ? p.getQuantity() : 0;
+                    int min = p.getMinStockLevel() != null ? p.getMinStockLevel() : 0;
+                    return qty <= min;
+                })
                 .count());
 
         return stats;
     }
-}
+
+    private void mapToEntity(ProductRequest req, Product entity) {
+        entity.setSku(req.getSku());
+        entity.setName(req.getName());
+        entity.setDescription(req.getDescription());
+        entity.setQuantity(req.getQuantity());
+        entity.setCategoryId(req.getCategoryId());
+        entity.setBrand(req.getBrand());
+        entity.setColor(req.getColor());
+        entity.setMinStockLevel(req.getMinStockLevel());
+        entity.setPurchasePrice(req.getPurchasePrice());
+        entity.setSellPrice(req.getSellPrice());
+        entity.setImageUrl(req.getImageUrl());
+    }
+
+    private ProductResponse mapToResponse(Product entity) {
+        ProductResponse res = new ProductResponse();
+        res.setId(entity.getId());
+        res.setSku(entity.getSku());
+        res.setName(entity.getName());
+        res.setDescription(entity.getDescription());
+        res.setQuantity(entity.getQuantity());
+        res.setCategoryId(entity.getCategoryId());
+        res.setBrand(entity.getBrand());
+        res.setColor(entity.getColor());
+        res.setMinStockLevel(entity.getMinStockLevel());
+        res.setPurchasePrice(entity.getPurchasePrice());
+        res.setSellPrice(entity.getSellPrice());
+        res.setImageUrl(entity.getImageUrl());
+        res.setCreatedAt(entity.getCreatedAt());
+        res.setUpdatedAt(entity.getUpdatedAt());
+        return res;
+    }
+}

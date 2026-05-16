@@ -6,16 +6,6 @@ import {
   Edit3, Trash2, Package, ChevronUp, ChevronDown,
   ArrowUpDown, Eye, ChevronLeft, ChevronRight
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 export interface Product {
   id: number;
@@ -37,7 +27,7 @@ interface ProductsTableProps {
   products: Product[];
   isLoading?: boolean;
   onEdit?: (product: Product) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
   deletingId?: number | null;
 }
@@ -83,6 +73,8 @@ function ColHeader({
     </th>
   );
 }
+
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 export default function ProductsTable({
   products, isLoading = false, onEdit, onDelete, onViewDetails, deletingId,
@@ -316,38 +308,24 @@ export default function ProductsTable({
         </div>
       </div>
 
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-3xl border-white/40 bg-background/80 backdrop-blur-3xl p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
-          <div className="absolute top-0 inset-x-0 text-center h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
-          <AlertDialogHeader className="relative z-10 text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10 flex items-center text-center justify-center mx-auto mb-4">
-              <Trash2 size={28} className="text-rose-500" />
-            </div>
-            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
-              Delete Product?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="font-medium leading-relaxed w-full text-center sm:text-center">
-              This action cannot be undone. This will permanently delete <strong className="text-foreground">{deleteTarget?.name}</strong> from the inventory system.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
-            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold cursor-pointer border-none transition-all flex-1">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
-              onClick={() => {
-                if (deleteTarget !== null && onDelete) {
-                  onDelete(deleteTarget.id);
-                  setDeleteTarget(null);
-                }
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Product?"
+        description={(
+          <>
+            This action cannot be undone. This will permanently delete{" "}
+            <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
+            and remove it from your inventory records.
+          </>
+        )}
+        onConfirm={() => {
+          if (deleteTarget && onDelete) {
+            onDelete(deleteTarget);
+            setDeleteTarget(null);
+          }
+        }}
+      />
     </>
   );
 }

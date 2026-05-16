@@ -4,8 +4,15 @@ const BASE_V1_URL = `${BASE_API_URL}/v1`;
 // Helper to handle response errors
 async function handleResponse(res: Response, defaultError: string) {
   if (!res.ok) {
-    const errorMsg = await res.text().catch(() => "");
-    throw new Error(errorMsg || defaultError);
+    let errorMsg = defaultError;
+    try {
+      const data = await res.json();
+      errorMsg = data.error || data.message || defaultError;
+    } catch {
+      const text = await res.text().catch(() => "");
+      errorMsg = text || defaultError;
+    }
+    throw new Error(errorMsg);
   }
   if (res.status === 204) return null;
   return res.json();
@@ -94,12 +101,12 @@ export async function deleteCategory(id: number) {
 // --- Sales ---
 
 export async function fetchSales() {
-  const res = await fetch(`${BASE_API_URL}/sales`);
+  const res = await fetch(`${BASE_V1_URL}/sales`);
   return handleResponse(res, "Failed to fetch sales");
 }
 
 export async function createSale(data: { items: { productId: number; quantity: number }[] }) {
-  const res = await fetch(`${BASE_API_URL}/sales/process`, {
+  const res = await fetch(`${BASE_V1_URL}/sales/process`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -108,7 +115,7 @@ export async function createSale(data: { items: { productId: number; quantity: n
 }
 
 export async function deleteSale(id: number) {
-  const res = await fetch(`${BASE_API_URL}/sales/${id}`, {
+  const res = await fetch(`${BASE_V1_URL}/sales/${id}`, {
     method: "DELETE",
   });
   return handleResponse(res, "Failed to delete sale");

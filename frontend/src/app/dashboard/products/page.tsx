@@ -8,6 +8,16 @@ import {
   Loader2, UploadCloud, CircleSlash, Filter,
   MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye, Pipette
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
@@ -256,6 +266,7 @@ export default function ProductsPage() {
   const [filterCategory, setFilterCategory] = useState("all");
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
   const { data: productsData, isLoading } = useQuery({
@@ -288,9 +299,22 @@ export default function ProductsPage() {
   const products: Product[] = useMemo(() => (productsData as any)?.content || [], [productsData]);
   const busy = createM.isPending || updateM.isPending;
 
-  const totalProducts = products.length;
-  const outOfStock = products.filter(p => p.quantity === 0).length;
-  const available = products.filter(p => p.quantity > 0).length;
+  const totalProducts = useMemo(() => {
+    if (!productsData) return 0;
+    const p = productsData as any;
+    return p.totalElements ?? p.total_elements ?? products.length;
+  }, [productsData, products]);
+
+  const outOfStock = useMemo(() => {
+    // If we only have current page, this is an approximation. 
+    // Ideally we'd have a separate stats endpoint or the backend would return these stats in the Page metadata.
+    // For now, let's use the current page if it's all we have.
+    return products.filter(p => p.quantity === 0).length;
+  }, [products]);
+
+  const available = useMemo(() => {
+    return products.filter(p => p.quantity > 0).length;
+  }, [products]);
 
   const uniqueBrands = useMemo(() => {
     const brands = new Set(products.map(p => p.brand).filter(Boolean));
@@ -440,7 +464,7 @@ export default function ProductsPage() {
                   products={filteredProducts}
                   isLoading={isLoading}
                   onEdit={openEdit}
-                  onDelete={id => deleteM.mutate(id)}
+                  onDelete={p => setDeleteTarget(p)}
                   onViewDetails={setViewProduct}
                   deletingId={deleteM.isPending ? (deleteM.variables as any) : null}
                 />
@@ -463,7 +487,7 @@ export default function ProductsPage() {
                     <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-md rounded-2xl p-1 border border-border shadow-lg">
                       <ProductActions
                         onEdit={() => openEdit(p)}
-                        onDelete={() => deleteM.mutate(p.id)}
+                        onDelete={() => setDeleteTarget(p)}
                         onView={() => setViewProduct(p)}
                         isDeleting={deleteM.isPending && deleteM.variables === p.id}
                       />
@@ -558,9 +582,7 @@ export default function ProductsPage() {
                           <input type="number" value={form.purchasePrice} onChange={e =>
                             setForm({
                               ...form,
-                              purchasePrice: e.target.value === ""
-                                ? ""
-                                : parseFloat(e.target.value),
+                              purchasePrice: e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
                             })
                           } className={inputCls} />
                         </Field>
@@ -568,9 +590,7 @@ export default function ProductsPage() {
                           <input type="number" value={form.sellPrice} onChange={e =>
                             setForm({
                               ...form,
-                              sellPrice: e.target.value === ""
-                                ? ""
-                                : parseFloat(e.target.value),
+                              sellPrice: e.target.value === "" ? 0 : Number.parseFloat(e.target.value),
                             })
                           } className={inputCls} />
                         </Field>
@@ -578,9 +598,7 @@ export default function ProductsPage() {
                           <input type="number" value={form.quantity} onChange={e =>
                             setForm({
                               ...form,
-                              quantity: e.target.value === ""
-                                ? ""
-                                : parseInt(e.target.value),
+                              quantity: e.target.value === "" ? 0 : Number.parseInt(e.target.value),
                             })
                           } className={inputCls} />
                         </Field>
@@ -588,9 +606,7 @@ export default function ProductsPage() {
                           <input type="number" value={form.minStockLevel} onChange={e =>
                             setForm({
                               ...form,
-                              minStockLevel: e.target.value === ""
-                                ? ""
-                                : parseInt(e.target.value),
+                              minStockLevel: e.target.value === "" ? 0 : Number.parseInt(e.target.value),
                             })
                           } className={inputCls} />
                         </Field>
@@ -752,6 +768,42 @@ export default function ProductsPage() {
           )}
         </AnimatePresence>
       </main>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-3xl border-border/40 bg-background/80 backdrop-blur-3xl p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
+          <div className="absolute top-0 inset-x-0 h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
+          <AlertDialogHeader className="relative z-10 text-center space-y-3">
+            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10 flex items-center text-center justify-center mx-auto mb-4">
+              <Trash2 size={28} className="text-rose-500" />
+            </div>
+            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
+              Delete Product?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-medium leading-relaxed w-full text-center sm:text-center">
+              This action cannot be undone. Deleting{" "}
+              <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
+              will permanently remove it from your inventory.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
+            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold cursor-pointer border-none transition-all flex-1">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
+              onClick={() => {
+                if (deleteTarget !== null) {
+                  deleteM.mutate(deleteTarget.id);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Toast */}
       {toast && (

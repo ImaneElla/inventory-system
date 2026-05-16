@@ -1,37 +1,15 @@
-package com.imane.inventorysystem.entity;
+package com.imane.inventorysystem.dto;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Entity
-@Table(name = "sales")
-@Getter
-@Setter
-public class Sale {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class SaleResponse {
     private Long id;
-
-    @Column(unique = true)
     private String transactionId;
-
     private Double totalAmount;
-
     private String status;
-
-    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
-    @JsonManagedReference
-    private List<SaleItem> items;
-
-    @CreationTimestamp
     private LocalDateTime createdAt;
+    private List<SaleItemResponse> items;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -41,7 +19,8 @@ public class Sale {
     public void setTotalAmount(Double totalAmount) { this.totalAmount = totalAmount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public List<SaleItem> getItems() { return items; }
-    public void setItems(List<SaleItem> items) { this.items = items; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public List<SaleItemResponse> getItems() { return items; }
+    public void setItems(List<SaleItemResponse> items) { this.items = items; }
 }

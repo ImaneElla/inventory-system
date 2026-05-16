@@ -11,7 +11,6 @@ import {
   Sparkles,
   TrendingUp,
   ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import {
   Chart as ChartJS,
@@ -46,13 +45,19 @@ export default function DashboardPage() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
-    if (localStorage.getItem("auth") !== "true") {
-      router.replace("/login");
-    } else {
+    if (localStorage.getItem("auth") === "true") {
       setAuthorized(true);
+      // Fetch real stats
+      fetch("http://localhost:8080/api/v1/products/stats")
+        .then(res => res.json())
+        .then(data => setStats(data))
+        .catch(err => console.error("Failed to fetch stats", err));
+    } else {
+      router.replace("/login");
     }
   }, [router]);
 
@@ -112,7 +117,7 @@ export default function DashboardPage() {
           pointStyle: "circle",
           boxWidth: 6,
           boxHeight: 6,
-          font: { family: "Inter, sans-serif", size: 12, weight: '600' },
+          font: { family: "Inter, sans-serif", size: 12, weight: 'bold' as const },
           color: "var(--muted-foreground)",
         },
       },
@@ -139,13 +144,13 @@ export default function DashboardPage() {
       x: {
         grid: { display: false },
         border: { display: false },
-        ticks: { font: { family: "Inter, sans-serif", size: 12, weight: '500' }, color: "var(--muted-foreground)" },
+        ticks: { font: { family: "Inter, sans-serif", size: 12, weight: 'normal' as const }, color: "var(--muted-foreground)" },
       },
       y: {
         grid: { color: "var(--border)", lineWidth: 1 },
         border: { display: false, dash: [4, 4] },
         ticks: {
-          font: { family: "Inter, sans-serif", size: 12, weight: '500' },
+          font: { family: "Inter, sans-serif", size: 12, weight: 'normal' as const },
           color: "var(--muted-foreground)",
           callback: (v: string | number) => `${Number(v).toLocaleString()} DH`,
         },
@@ -194,8 +199,9 @@ export default function DashboardPage() {
     <div className="flex flex-col min-h-full p-4 md:p-8 gap-8">
       {/* ── Page Header ── */}
       <motion.div 
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
@@ -214,27 +220,27 @@ export default function DashboardPage() {
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          label="Inventory Value"
-          value="248,400"
-          sub="+12% from last month"
+          label="Total Products"
+          value={stats?.totalProducts?.toLocaleString() || "..."}
+          sub={`${stats?.totalStock?.toLocaleString() || 0} units in stock`}
           trend="up"
           icon={Box}
           color="bg-blue-500"
           shadow="shadow-blue-500/20"
         />
         <StatCard
-          label="Total Revenue"
-          value="25,800 DH"
-          sub="+31.6% increase"
+          label="Inventory Value"
+          value={`${stats?.inventoryValue?.toLocaleString() || "0"} DH`}
+          sub="Total purchase value"
           trend="up"
           icon={ShoppingCart}
           color="bg-green-500"
           shadow="shadow-green-500/20"
         />
         <StatCard
-          label="Net Profit"
-          value="8,900 DH"
-          sub="+53.4% vs target"
+          label="Expected Profit"
+          value={`${stats?.expectedProfit?.toLocaleString() || "0"} DH`}
+          sub="Based on current stock"
           trend="up"
           icon={DollarSign}
           color="bg-indigo-500"
@@ -242,9 +248,9 @@ export default function DashboardPage() {
         />
         <StatCard
           label="Critical Alerts"
-          value="7 Items"
-          sub="Requires attention"
-          trend="warn"
+          value={`${stats?.lowStockCount || 0} Items`}
+          sub="Low stock levels"
+          trend={stats?.lowStockCount > 0 ? "warn" : "up"}
           icon={AlertTriangle}
           color="bg-amber-500"
           shadow="shadow-amber-500/20"
@@ -255,9 +261,9 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Line Chart */}
         <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
           className="xl:col-span-2 bg-card/60 backdrop-blur-2xl rounded-[32px] border border-border/40 shadow-2xl shadow-black/5 p-8 flex flex-col gap-6"
         >
           <div className="flex items-center justify-between">

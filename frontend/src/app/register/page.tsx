@@ -109,12 +109,12 @@ export default function RegisterPage() {
       <motion.div 
         initial={{ opacity: 0, filter: "blur(16px)", scale: 0.96, y: 15 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
-        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[900px] md:min-h-[450px] bg-card/60 backdrop-blur-2xl border border-border/40 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-10   "
+        transition={{ duration: 0.5, delay: 0.1, ease: [0.25, 0.1, 0.25, 1] }}
+        className="flex w-full min-h-[320px] min-w-[60px] md:max-w-[900px] md:min-h-[450px] bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl flex-col md:flex-row m-10"
       >
         <LeftPanel showBack onBack={() => router.push("/login")} />
         
-        <div className="flex-1 flex flex-col bg-white relative">
+        <div className="flex-1 flex flex-col bg-white text-slate-900 relative">
           <div className="flex justify-center mt-6 mb-2">
             <Logo className="w-14 h-14" />
           </div>
@@ -179,7 +179,7 @@ export default function RegisterPage() {
 
       {/* Terms & Conditions Modal */}
       {showTermsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -260,7 +260,7 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
         ))}
       </div>
 
-      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 text-sm bg-primary text-white hover:bg-primary/90" onClick={onNext}>
+      <Button className="w-60 mx-auto h-10 rounded-2xl text-base font-bold shadow-lg shadow-primary/20 bg-primary text-white hover:bg-primary/90" onClick={onNext}>
         Continue to Details
       </Button>
       
@@ -372,7 +372,7 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
         <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
-        <Button className="flex-2 h-10 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base text-sm" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
+        <Button className="flex-2 h-10 rounded-2xl font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
       </div>
       
       <p className="text-xs text-muted-foreground mt-4 mb-3 text-center font-medium">

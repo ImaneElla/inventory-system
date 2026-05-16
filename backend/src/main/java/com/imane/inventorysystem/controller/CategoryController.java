@@ -1,11 +1,11 @@
 package com.imane.inventorysystem.controller;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.imane.inventorysystem.entity.Category;
+import com.imane.inventorysystem.dto.CategoryRequest;
+import com.imane.inventorysystem.dto.CategoryResponse;
 import com.imane.inventorysystem.service.CategoryService;
 
 @RestController
@@ -13,27 +13,35 @@ import com.imane.inventorysystem.service.CategoryService;
 @CrossOrigin(origins = "http://localhost:3000")
 public class CategoryController {
 
-    @Autowired
-    private CategoryService categoryService;
+    private final CategoryService categoryService;
+
+    public CategoryController(CategoryService categoryService) {
+        this.categoryService = categoryService;
+    }
 
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<CategoryResponse>> getAll() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
+    public ResponseEntity<CategoryResponse> addCategory(@RequestBody CategoryRequest category) {
         return ResponseEntity.ok(categoryService.saveCategory(category));
     }
+
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
-        category.setId(id);
-        return ResponseEntity.ok(categoryService.saveCategory(category));
+    public ResponseEntity<CategoryResponse> updateCategory(@PathVariable Long id, @RequestBody CategoryRequest category) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, category));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponse> getCategoryById(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.findById(id));
     }
 }

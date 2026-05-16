@@ -56,7 +56,10 @@ function ProductSearchInput({
         const results = await fetchProductsByName(query);
         setSuggestions(results);
         setOpen(results.length > 0);
-      } catch { setSuggestions([]); }
+      } catch (err) { 
+        console.error("Search failed:", err);
+        setSuggestions([]); 
+      }
       finally { setLoading(false); }
     }, 250);
     return () => clearTimeout(t);
@@ -107,6 +110,9 @@ function ProductSearchInput({
     </div>
   );
 }
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+
+// ... (ProductSearchInput remains same)
 
 // --- Main Page ---
 export default function SalesPage() {
@@ -131,6 +137,7 @@ export default function SalesPage() {
     mutationFn: createSale,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
       closeForm();
     },
     onError: (e: any) => setError(e.message || "Failed to create sale"),
@@ -138,13 +145,16 @@ export default function SalesPage() {
 
   const deleteM = useMutation({
     mutationFn: deleteSale,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sales"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["products"] });
+    },
   });
 
   const filtered = useMemo(() =>
     sales.filter((s) =>
       s.transactionId?.toLowerCase().includes(search.toLowerCase()) ||
-      s.items?.[0]?.product?.name?.toLowerCase().includes(search.toLowerCase())
+      s.items?.some(item => item.productName?.toLowerCase().includes(search.toLowerCase()))
     ),
     [sales, search],
   );
@@ -356,7 +366,7 @@ export default function SalesPage() {
                           <ShoppingBag size={18} />
                         </div>
                         <span className="font-bold text-foreground capitalize">
-                          {sale.items?.[0]?.product?.name ? capitalize(sale.items[0].product.name) : "—"}
+                          {sale.items?.[0]?.productName ? capitalize(sale.items[0].productName) : "—"}
                         </span>
                       </div>
                     </td>
@@ -399,40 +409,18 @@ export default function SalesPage() {
         </motion.div>
       </div>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <AlertDialogContent className="rounded-3xl border-border/40 bg-background/80 backdrop-blur-3xl p-8 text-center max-w-sm sm:max-w-md overflow-hidden">
-          <div className="absolute top-0 inset-x-0 h-40 bg-linear-to-b from-rose-500/10 to-transparent pointer-events-none" />
-          <AlertDialogHeader className="relative z-10 text-center space-y-3">
-            <div className="w-16 h-16 rounded-3xl bg-linear-to-b from-rose-500/10 to-transparent border border-rose-500/10 flex items-center justify-center mx-auto mb-4">
-              <Trash2 size={28} className="text-rose-500" />
-            </div>
-            <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center">
-              Delete Sale?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="font-medium leading-relaxed w-full text-center">
-              This action cannot be undone. This will permanently delete transaction{" "}
-              <strong className="text-foreground">{deleteTarget?.transactionId}</strong> from the records.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
-            <AlertDialogCancel className="rounded-2xl h-12 px-6 font-semibold cursor-pointer border-none transition-all flex-1">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
-              onClick={() => {
-                if (deleteTarget !== null) {
-                  deleteM.mutate(deleteTarget.id);
-                  setDeleteTarget(null);
-                }
-              }}
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onConfirm={async () => {
+          if (deleteTarget) {
+            await deleteM.mutateAsync(deleteTarget.id);
+            setDeleteTarget(null);
+          }
+        }}
+        title="Delete Sale?"
+        description={`This action cannot be undone. This will permanently delete transaction ${deleteTarget?.transactionId} from the records.`}
+      />
     </div>
   );
 }

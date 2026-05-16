@@ -67,11 +67,11 @@ export default function LoginPage() {
       <motion.div 
         initial={{ opacity: 0, filter: "blur(20px)", scale: 0.95, y: 20 }}
         animate={{ opacity: 1, filter: "blur(0px)", scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex w-full max-w-[900px] min-h-[550px] bg-card/60 backdrop-blur-3xl border border-border/40 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="flex w-full max-w-[900px] min-h-[550px] bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] flex-col md:flex-row z-10"
       >
         <LeftPanel />
-        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white text-center relative overflow-hidden">
+        <div className="flex-1 p-8 md:p-12 flex flex-col justify-center bg-white text-slate-900 text-center relative overflow-hidden">
           {/* Ambient Background Glow */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32" />
