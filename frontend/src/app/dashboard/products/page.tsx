@@ -575,7 +575,7 @@ export default function ProductsPage() {
                       </Field>
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-3xl bg-muted/5 border border-border/50">
-                        <Field label="Cost (DH)">
+                        <Field label="Purchase (DH)">
                           <input type="number" value={form.purchasePrice} onChange={e =>
                             setForm({
                               ...form,
@@ -583,7 +583,7 @@ export default function ProductsPage() {
                             })
                           } className={inputCls} />
                         </Field>
-                        <Field label="Price (DH)">
+                        <Field label="Sell (DH)">
                           <input type="number" value={form.sellPrice} onChange={e =>
                             setForm({
                               ...form,
@@ -804,7 +804,7 @@ export default function ProductsPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 bg-emerald-600 text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 btn-gradient text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
           {toast}
         </div>
       )}

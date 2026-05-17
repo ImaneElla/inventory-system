@@ -134,20 +134,37 @@ export default function SalesPage() {
   const [error, setError] = useState("");
 
   // Fetch sales with filters
-  const { data: salesData, isLoading } = useQuery({
-    queryKey: ["sales", search, status, dateStart, dateEnd, page],
-    queryFn: () => fetchSales({
+const { data: salesData, isLoading } = useQuery({
+  queryKey: ["sales", search, status, dateStart, dateEnd, page],
+
+  queryFn: async () => {
+    const data = await fetchSales({
       search,
       status: status || undefined,
-      start: dateStart ? new Date(dateStart).toISOString() : undefined,
-      end: dateEnd ? new Date(dateEnd).toISOString() : undefined,
+      start: dateStart
+       ? `${dateStart}T00:00:00` 
+      : undefined,
+      end: dateEnd
+        ? `${dateEnd}T23:59:59`
+        : undefined,
       page,
       size
-    }),
-  });
+    });
 
-  const sales = salesData?.content || [];
-  const totalPages = salesData?.totalPages || 0;
+    console.log("SALES DATA:", data);
+
+    return data;
+  },
+});
+
+ const sales = Array.isArray(salesData?.content)
+  ? salesData.content
+  : [];
+
+const totalPages =
+  typeof salesData?.totalPages === "number"
+    ? salesData.totalPages
+    : 0;
 
   const createM = useMutation({
     mutationFn: createSale,
@@ -262,11 +279,11 @@ export default function SalesPage() {
               onClick={() => setShowForm(!showForm)}
               className={cn(
                 "h-12 inline-flex items-center justify-center gap-2 rounded-2xl font-bold px-8 shadow-lg transition-all border-none cursor-pointer",
-                showForm ? "bg-secondary text-foreground" : "bg-primary text-white shadow-primary/20 hover:bg-primary/90"
+                showForm ? "bg-secondary text-foreground" : "btn-gradient text-white shadow-primary/20 hover:bg-primary/90"
               )}
             >
               {showForm ? <X size={18} /> : <Plus size={18} strokeWidth={2.5} />}
-              {showForm ? "Close POS" : "New Transaction"}
+              {showForm ? "Close" : "New Transaction"}
             </motion.button>
           </div>
         </div>
@@ -379,7 +396,7 @@ export default function SalesPage() {
                         whileTap={{ scale: 0.97 }}
                         onClick={handleConfirmOrder}
                         disabled={basket.length === 0 || createM.isPending}
-                        className="h-14 px-10 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/25 border-none cursor-pointer flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="h-14 px-10 rounded-2xl btn-gradient text-white font-black shadow-xl shadow-primary/25 border-none cursor-pointer flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                       >
                         {createM.isPending ? <Loader2 size={20} className="animate-spin" /> : <><Check size={20} /> Checkout Order</>}
                       </motion.button>

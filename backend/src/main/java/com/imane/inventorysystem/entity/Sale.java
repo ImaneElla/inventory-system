@@ -20,7 +20,7 @@ public class Sale {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(columnDefinition = "varchar(255)", unique = true)
     private String transactionId;
 
     @Column(precision = 10, scale = 2)
