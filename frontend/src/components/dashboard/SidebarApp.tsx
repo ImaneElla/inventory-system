@@ -97,14 +97,29 @@ export default function SidebarApp() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
 
-  useEffect(() => { setMounted(true); }, []);
+  const [userRole, setUserRole] = useState("Manager");
+
+  useEffect(() => { 
+    setMounted(true); 
+    const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
+    if (storedRole) {
+      setUserRole(storedRole.toUpperCase());
+    }
+  }, []);
 
   const handleSignOut = () => {
     localStorage.removeItem("auth");
+    localStorage.removeItem("role");
     router.replace("/login");
   };
 
   if (!mounted) return null;
+
+  const filteredMainMenuItems = mainMenuItems.filter(item => {
+    if (item.name === "Users" && userRole !== "ADMIN") return false;
+    if (item.name === "Reports" && userRole !== "ADMIN") return false;
+    return true;
+  });
 
   return (
     <Sidebar
@@ -161,7 +176,7 @@ export default function SidebarApp() {
             </p>
           )}
           <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
-            {mainMenuItems.map((item) => (
+            {filteredMainMenuItems.map((item) => (
               <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
                 <NavItem
                   {...item}

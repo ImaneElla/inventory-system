@@ -1,7 +1,8 @@
 export interface SaleItem {
   id: number;
   quantity: number;
-  price: number;
+  price?: number;
+  unitPrice?: number;
   productId: number;
   productName: string;
 }
@@ -13,4 +14,8 @@ export interface Sale {
   status: string;
   createdAt: string;
   items: SaleItem[];
+  clientName?: string;
+  paymentMethod?: string;
+  discountApplied?: number;
+  amountTendered?: number;
 }

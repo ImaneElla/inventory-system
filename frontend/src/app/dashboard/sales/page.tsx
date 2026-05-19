@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSales, createSale, deleteSale, fetchProductsByName } from "@/lib/api";
+import { useReactToPrint } from "react-to-print";
+import { InvoiceTemplate, InvoiceData } from "@/components/dashboard/sales/InvoiceTemplate";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { cn } from "@/lib/utils";
 import { body, div } from "framer-motion/client";
@@ -122,7 +124,13 @@ export default function SalesPage() {
   const [showForm, setShowForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Sale | null>(null);
   const [expandedId, setExpandedId] = useState<number | string | null>(null); // For Expandable Row
-  const [receiptData, setReceiptData] = useState<any>(null); // For Thermal Receipt
+  const [receiptData, setReceiptData] = useState<InvoiceData | null>(null);
+  const invoiceRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintReceipt = useReactToPrint({
+    contentRef: invoiceRef,
+    documentTitle: "Facture",
+  }); // For Thermal Receipt
 
   // Filters
   const [search, setSearch] = useState("");
@@ -130,12 +138,13 @@ export default function SalesPage() {
   const [dateStart, setDateStart] = useState("");
   const [dateEnd, setDateEnd] = useState("");
   const [page, setPage] = useState(0);
-  const size = 10;
+  const [size, setSize] = useState(10);
 
   // Advanced Checkout State
   const [basket, setBasket] = useState<BasketItem[]>([]);
   const [error, setError] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "MOBILE">("CASH");
+  const [saleStatus, setSaleStatus] = useState<"COMPLETED" | "PENDING">("COMPLETED");
   const [amountTendered, setAmountTendered] = useState<number | "">("");
   const [discount, setDiscount] = useState<number>(0);
   const [clientName, setClientName] = useState("");
@@ -169,7 +178,7 @@ export default function SalesPage() {
 
   // Fetch Sales
   const { data: salesData, isLoading } = useQuery({
-    queryKey: ["sales", search, status, dateStart, dateEnd, page],
+    queryKey: ["sales", search, status, dateStart, dateEnd, page, size],
     queryFn: async () => {
       return await fetchSales({
         search, status: status || undefined,
@@ -226,6 +235,7 @@ export default function SalesPage() {
     setDiscount(0);
     setAmountTendered("");
     setPaymentMethod("CASH");
+    setSaleStatus("COMPLETED");
     setClientName("");
   };
 
@@ -263,12 +273,36 @@ export default function SalesPage() {
       paymentMethod,
       discountApplied: discount,
       amountTendered: Number(amountTendered),
+      status: saleStatus,
       items: basket.map(item => ({
         productId: item.product.id,
         quantity: item.quantity
       }))
     };
     createM.mutate(payload);
+  };
+
+  const handlePrintInvoice = (sale: Sale) => {
+    const mappedBasket = sale.items?.map(item => ({
+      product: {
+        id: item.productId,
+        name: item.productName || "Unknown Product",
+        sellPrice: item.unitPrice || item.price || 0,
+      },
+      quantity: item.quantity
+    })) || [];
+    
+    setReceiptData({
+      transactionId: sale.transactionId,
+      createdAt: sale.createdAt,
+      clientName: sale.clientName || "Walk-in Customer",
+      basket: mappedBasket,
+      finalTotal: sale.totalAmount,
+      discountApplied: sale.discountApplied || 0,
+      paymentMethod: sale.paymentMethod || "CASH",
+      amountTendered: sale.amountTendered || sale.totalAmount,
+      changeDue: (sale.amountTendered || sale.totalAmount) - sale.totalAmount
+    });
   };
 
   // Data Export to CSV
@@ -288,175 +322,8 @@ export default function SalesPage() {
     link.click();
   };
 
-  // Thermal Receipt Print Logic
-const handlePrintReceipt = () => {
-        const printContent = document.getElementById("thermal-receipt");
-        if (!printContent) return;
+  // CSV Export logic
 
-        const win = window.open("", "_blank", "width=350,height=600");
-        win?.document.write(`
-      <html>
-      <head>
-        <title>Receipt</title>
-        <style>
-          body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            background: white;
-            color: #111827;
-            font-size: 14px;
-          }
-
-          .receipt {
-            width: 100%;
-            max-width: 320px;
-            margin: 0 auto;
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid #e2e8f0;
-          }
-
-          .header {
-            text-align: center;
-            border-bottom: 1px solid #cbd5e1;
-            padding-bottom: 10px;
-          }
-
-          .store-name {
-            font-size: 16px;
-            font-weight: 800;
-            margin-bottom: 4px;
-            color: #000;
-          }
-
-          .store-address {
-            font-size: 12px;
-            color: #334155;
-          }
-
-          .transaction-info {
-            margin: 16px 0;
-            text-align: center;
-          }
-
-          .transaction-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            margin-bottom: 6px;
-          }
-
-          .divider {
-            border-top: 1px dashed #cbd5e1;
-            margin: 10px 0;
-          }
-
-          .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 10px 0;
-          }
-
-          .items-table th,
-          .items-table td {
-            text-align: left;
-            padding: 4px 0;
-            font-size: 13px;
-          }
-
-          .items-table th {
-            color: #64748b;
-            border-bottom: 1px solid #cbd5e1;
-          }
-
-          .items-table tr:last-child {
-            border-bottom: none;
-          }
-
-          .total-section {  
-            margin-top: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-          }
-
-          .grand-total {
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px dashed #cbd5e1;
-            display: flex;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: 800;
-          }
-
-          .payment {
-            margin-top: 18px;
-            padding: 12px;
-            border-radius: 12px;
-            background: #f8fafc;
-            font-size: 12px;
-          }
-
-          .payment-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-          }
-
-          .footer {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 11px;
-            color: #64748b;
-            border-top: 1px dashed #cbd5e1;
-            padding-top: 14px;
-          }
-
-          .thank-you {
-            font-size: 13px;
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 6px;
-          }
-
-          @media print {
-            body {
-              padding: 0;
-            }
-
-            .receipt {
-              border: none;
-              border-radius: 0;
-              width: 100%;
-            }
-          }
-        </style>
-      </head>
-
-      <body>
-        <div class="receipt">
-          ${printContent.innerHTML}
-        </div>
-
-        <script>
-          window.onload = function () {
-            window.print();
-            window.close();
-          }
-        </script>
-      </body>
-    </html>
-  `);
-
-  win?.document.close();
-};
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10 space-y-8 relative text-foreground pb-24">
@@ -557,6 +424,12 @@ const handlePrintReceipt = () => {
                         ))}
                       </div>
 
+                      {/* Status Selection */}
+                      <div className="flex gap-2">
+                        <button onClick={() => setSaleStatus("COMPLETED")} className={cn("flex-1 py-2 rounded-xl border text-[10px] font-bold transition-all", saleStatus === "COMPLETED" ? "bg-emerald-500/10 border-emerald-500 text-emerald-600" : "border-border hover:bg-muted/50 text-muted-foreground")}>COMPLETED</button>
+                        <button onClick={() => setSaleStatus("PENDING")} className={cn("flex-1 py-2 rounded-xl border text-[10px] font-bold transition-all", saleStatus === "PENDING" ? "bg-amber-500/10 border-amber-500 text-amber-600" : "border-border hover:bg-muted/50 text-muted-foreground")}>PENDING</button>
+                      </div>
+
                       {/* Cash Calc */}
                       {paymentMethod === "CASH" && (
                         <div className="flex gap-3 items-end">
@@ -603,7 +476,16 @@ const handlePrintReceipt = () => {
 
         {/* Filters & Export Bar */}
         <div className="bg-card border border-border p-4 sm:p-6 rounded-[2rem] shadow-sm flex flex-wrap items-center gap-4">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-muted-foreground uppercase hidden sm:inline">Show:</span>
+            <select value={size} onChange={e => { setSize(Number(e.target.value)); setPage(0); }} className="h-11 px-3 rounded-xl border border-border bg-muted/20 outline-none text-sm font-medium focus:border-primary">
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+          <div className="relative flex-1 min-w-[150px]">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input value={search} onChange={e => { setSearch(e.target.value); setPage(0); }} placeholder="Search transactions..."
               className="h-11 w-full pl-11 pr-4 rounded-xl border border-border bg-muted/20 outline-none focus:border-primary text-sm" />
@@ -747,180 +629,19 @@ const handlePrintReceipt = () => {
         
         {receiptData && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-card border border-border p-6 rounded-3xl shadow-2xl max-w-sm w-full relative">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-card border border-border p-6 rounded-3xl shadow-2xl max-w-4xl w-full relative">
               <button onClick={() => setReceiptData(null)} className="absolute top-4 right-4 p-2 text-muted-foreground hover:bg-muted rounded-full"><X size={16}/></button>
               
-{/* Hidden/Printable Layout Container */}
-<div
-  id="thermal-receipt"
-  className="bg-card rounded-2xl p-6 border border-slate-200"
->
-  {/* Header */}
-  <div className="text-center border-b border-dashed border-slate-300 pb-4">
-    
-    <img
-      src="/icon.svg"
-      alt="Logo"
-      className="w-10 h-10 object-contain mx-auto mb-3"
-    />
-
-    <h1 className="text-xl font-black tracking-wide">
-      IMANE TECH STORE
-    </h1>
-
-    <p className="text-xs text-slate-500 mt-0.5">
-      Gaming • Hardware • Accessories
-    </p>
-
-    <p className="text-xs text-slate-500">
-      Casablanca, Morocco
-    </p>
-
-    <p className="text-xs text-slate-500">
-      +212 6 00 00 00 00
-    </p>
-  </div>
-
-  {/* Receipt Info */}
-  <div className="py-4 space-y-2 text-xs border-b border-dashed border-slate-300">
-    
-    <div className="flex justify-between">
-      <span className="text-slate-500">Receipt ID</span>
-      <span className="font-bold">
-        {receiptData.transactionId || "NEW"}
-      </span>
-    </div>
-
-    <div className="flex justify-between">
-      <span className="text-slate-500">Date</span>
-      <span>
-        {new Date().toLocaleDateString()}
-      </span>
-    </div>
-
-    <div className="flex justify-between">
-      <span className="text-slate-500">Time</span>
-      <span>
-        {new Date().toLocaleTimeString()}
-      </span>
-    </div>
-
-    <div className="flex justify-between">
-      <span className="text-slate-500">Customer</span>
-      <span>
-        {clientName || "Client non specifie"}
-      </span>
-    </div>
-  </div>
-
-  {/* Items */}
-  <div className="py-4 space-y-4 border-b border-dashed border-slate-300">
-    
-    {receiptData.basket?.map((item: any, i: number) => (
-      <div key={i}>
-        
-        <div className="flex justify-between gap-4 font-bold text-sm">
-          <span className="flex-1">
-            {item.product.name}
-          </span>
-
-          <span>
-            {(item.product.sellPrice * item.quantity).toFixed(2)} DH
-          </span>
-        </div>
-
-        <div className="flex justify-between text-xs text-slate-500 mt-1">
-          <span>
-            {item.quantity} × {item.product.sellPrice.toFixed(2)} DH
-          </span>
-
-          <span>
-            SKU #{item.product.id}
-          </span>
-        </div>
-
-      </div>
-    ))}
-
-  </div>
-
-  {/* Totals */}
-  <div className="py-4 space-y-2 border-b border-dashed border-slate-300">
-    
-    <div className="flex justify-between text-sm">
-      <span className="text-slate-500">Subtotal</span>
-      <span>{basketTotal.toFixed(2)} DH</span>
-    </div>
-
-    <div className="flex justify-between text-sm">
-      <span className="text-slate-500">Discount</span>
-      <span>{discount.toFixed(2)} DH</span>
-    </div>
-
-    <div className="flex justify-between text-lg font-black pt-2">
-      <span>TOTAL</span>
-
-      <span>
-        {receiptData.finalTotal?.toFixed(2)} DH
-      </span>
-    </div>
-  </div>
-
-  {/* Payment */}
-  <div className="py-4 space-y-2 text-sm">
-    
-    <div className="flex justify-between">
-      <span className="text-slate-500">
-        Payment Method
-      </span>
-
-      <span className="font-bold">
-        {receiptData.paymentMethod}
-      </span>
-    </div>
-
-    {receiptData.paymentMethod === "CASH" && (
-      <>
-        <div className="flex justify-between">
-          <span className="text-slate-500">
-            Tendered
-          </span>
-
-          <span>
-            {receiptData.amountTendered?.toFixed(2)} DH
-          </span>
-        </div>
-
-        <div className="flex justify-between">
-          <span className="text-slate-500">
-            Change
-          </span>
-
-          <span className="font-bold text-emerald-600">
-            {receiptData.changeDue?.toFixed(2)} DH
-          </span>
-        </div>
-      </>
-    )}
-  </div>
-
-  {/* Footer */}
-  <div className="pt-4 text-center border-t border-dashed border-slate-300">
-    
-    <p className="font-bold text-sm">
-      Thank You For Your Purchase 
-    </p>
-
-    <p className="text-[11px] text-slate-500 mt-1">
-      Powered by Imane Inventory System
-    </p>
-
-  </div>
-</div>
+              {/* Printable Component (hidden visually, or we can just render the template inside a scrollable container for preview) */}
+              <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-slate-100 p-2 relative custom-scrollbar">
+                <div className="scale-[0.55] sm:scale-75 md:scale-90 origin-top">
+                  <InvoiceTemplate data={receiptData} ref={invoiceRef} />
+                </div>
+              </div>
               {/* Print and Share Buttons */}
               <div className="mt-6 flex gap-6 mx-auto w-full">
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => handlePrintReceipt()}
                   className="flex-1 items-center justify-center gap-2 w-full btn-gradient text-white px-1 py-1 rounded-2xl font-medium hover:bg-primary/90 transition-all shadow-lg h-12 cursor-pointer"
                 >
                   <Printer size={18} className="mx-auto" />

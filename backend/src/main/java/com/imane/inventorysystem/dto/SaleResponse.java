@@ -11,6 +11,10 @@ public class SaleResponse {
     private String status;
     private LocalDateTime createdAt;
     private List<SaleItemResponse> items;
+    private String clientName;
+    private String paymentMethod;
+    private BigDecimal discountApplied;
+    private BigDecimal amountTendered;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -24,4 +28,12 @@ public class SaleResponse {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public List<SaleItemResponse> getItems() { return items; }
     public void setItems(List<SaleItemResponse> items) { this.items = items; }
+    public String getClientName() { return clientName; }
+    public void setClientName(String clientName) { this.clientName = clientName; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public BigDecimal getDiscountApplied() { return discountApplied; }
+    public void setDiscountApplied(BigDecimal discountApplied) { this.discountApplied = discountApplied; }
+    public BigDecimal getAmountTendered() { return amountTendered; }
+    public void setAmountTendered(BigDecimal amountTendered) { this.amountTendered = amountTendered; }
 }

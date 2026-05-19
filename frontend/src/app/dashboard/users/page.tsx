@@ -1,40 +1,298 @@
 "use client";
 
-import { Users, Plus, Search, Shield, UserCheck } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAllUsers, deleteUser } from "@/lib/api";
+import {
+  Users,
+  Plus,
+  Search,
+  Mail,
+  ShieldCheck,
+  Trash2,
+  Loader2,
+} from "lucide-react";
+import { useState } from "react";
+import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function UsersPage() {
+  const queryClient = useQueryClient();
+
+  // =========================
+  // STATES
+  // =========================
+
+  const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  // =========================
+  // FETCH USERS
+  // =========================
+
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["users"],
+    queryFn: fetchAllUsers,
+  });
+
+  // =========================
+  // DELETE USER
+  // =========================
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["users"],
+      });
+
+      setDeleteTarget(null);
+    },
+
+    onError: (error) => {
+      console.error("Delete failed:", error);
+    },
+  });
+
+  // =========================
+  // FILTER USERS
+  // =========================
+
+  const filteredUsers =
+    users?.filter(
+      (u: any) =>
+        u.username
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        u.email
+          .toLowerCase()
+          .includes(search.toLowerCase())
+    ) || [];
+
   return (
-    <div className="flex flex-col h-full p-6 gap-6">
+    <div className="flex flex-col h-full p-6 gap-6 overflow-hidden">
+
+      {/* ========================= */}
+      {/* HEADER */}
+      {/* ========================= */}
+
       <div className="flex items-center justify-between">
+
         <div>
-          <h1 className="text-2xl font-semibold text-[#1c1c1e] tracking-tight">Users</h1>
-          <p className="text-sm text-[#1c1c1e]/50 mt-0.5">Manage team members and permissions</p>
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
+            Users
+          </h1>
+
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage team members and permissions
+          </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/30">
-          <Plus size={16} strokeWidth={2.5} /> Invite User
+
+        <button className="h-11 px-5 rounded-2xl bg-primary text-white font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+          <Plus size={16} />
+          Invite User
         </button>
+
       </div>
-      <div className="flex items-center gap-2 bg-black/[0.04] rounded-xl px-3 py-2.5 border border-black/[0.06]">
-        <Search size={16} className="text-[#1c1c1e]/40 shrink-0" />
-        <input type="text" placeholder="Search users…" className="flex-1 bg-transparent text-sm text-[#1c1c1e] placeholder:text-[#1c1c1e]/40 outline-none" />
+
+      {/* ========================= */}
+      {/* SEARCH */}
+      {/* ========================= */}
+
+      <div className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 h-12 shadow-sm">
+
+        <Search
+          size={16}
+          className="text-muted-foreground"
+        />
+
+        <input
+          type="text"
+          placeholder="Search users..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          className="flex-1 bg-transparent outline-none text-sm"
+        />
+
       </div>
-      <div className="flex items-center gap-3">
-        {[{ label: "Admin", color: "bg-purple-500" }, { label: "Member", color: "bg-blue-500" }].map((role) => (
-          <div key={role.label} className="flex items-center gap-1.5 text-xs text-[#1c1c1e]/50">
-            <span className={`w-2 h-2 rounded-full ${role.color}`} />{role.label}
+
+      {/* ========================= */}
+      {/* LOADING */}
+      {/* ========================= */}
+
+      {isLoading ? (
+
+        <div className="flex-1 flex items-center justify-center">
+
+          <Loader2
+            size={30}
+            className="animate-spin text-primary"
+          />
+
+        </div>
+
+      ) : filteredUsers.length === 0 ? (
+
+        // =========================
+        // EMPTY STATE
+        // =========================
+
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border bg-muted/10">
+
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Users
+              size={30}
+              className="text-primary"
+            />
           </div>
-        ))}
-      </div>
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-black/10 bg-black/[0.01]">
-        <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-500 shadow-lg shadow-purple-500/25">
-          <Users size={32} className="text-white" strokeWidth={1.5} />
+
+          <div className="text-center">
+            <h2 className="font-bold text-lg">
+              No users found
+            </h2>
+
+            <p className="text-sm text-muted-foreground mt-1">
+              Try changing your search query
+            </p>
+          </div>
+
         </div>
-        <p className="text-[15px] font-semibold text-[#1c1c1e]">No users yet</p>
-        <p className="text-sm text-[#1c1c1e]/50">Invite team members to collaborate</p>
-        <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
-          <Plus size={16} strokeWidth={2.5} /> Invite User
-        </button>
-      </div>
+
+      ) : (
+
+        // =========================
+        // USERS GRID
+        // =========================
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 overflow-y-auto pb-20">
+
+          <AnimatePresence>
+
+            {filteredUsers.map((user: any) => (
+
+              <motion.div
+                key={user.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border rounded-3xl p-5 shadow-sm hover:shadow-lg transition-all"
+              >
+
+                {/* TOP */}
+                <div className="flex items-start gap-4">
+
+                  {/* AVATAR */}
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-black shrink-0">
+
+                    {user.imageUrl ? (
+                      <img
+                        src={`http://localhost:8080/uploads/profiles/${user.imageUrl}`}
+                        alt={user.username}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      user.username
+                        .charAt(0)
+                        .toUpperCase()
+                    )}
+
+                  </div>
+
+                  {/* INFO */}
+                  <div className="flex-1 min-w-0">
+
+                    <h2 className="font-black text-base truncate">
+                      {user.username}
+                    </h2>
+
+                    <div className="mt-2">
+
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          user.role === "ADMIN"
+                            ? "bg-purple-500/10 text-purple-600"
+                            : "bg-blue-500/10 text-blue-600"
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                  {/* DELETE BUTTON */}
+                  <button
+                    onClick={() =>
+                      setDeleteTarget(user)
+                    }
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all"
+                  >
+
+                    <Trash2 size={16} />
+
+                  </button>
+
+                </div>
+
+                {/* DETAILS */}
+                <div className="mt-5 pt-5 border-t border-border/60 space-y-3">
+
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+
+                    <Mail size={14} />
+
+                    <span className="truncate">
+                      {user.email}
+                    </span>
+
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+
+                    <ShieldCheck size={14} />
+
+                    <span>
+                      User ID: #{user.id}
+                    </span>
+
+                  </div>
+
+                </div>
+
+              </motion.div>
+
+            ))}
+
+          </AnimatePresence>
+
+        </div>
+
+      )}
+
+      {/* DELETE DIALOG */}
+      <DeleteConfirmationDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+          }
+        }}
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+
+          await deleteMutation.mutateAsync(
+            deleteTarget.id
+          );
+        }}
+        title="Delete User"
+        description={`Are you sure you want to permanently remove ${deleteTarget?.username}?`}
+        isLoading={deleteMutation.isPending}
+      />
+
     </div>
   );
 }

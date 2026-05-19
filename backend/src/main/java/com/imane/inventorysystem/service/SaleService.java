@@ -41,8 +41,12 @@ public SaleResponse processSale(SaleRequest request) {
     sale.setTransactionId(
             "TRX-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
     );
-    sale.setStatus("COMPLETED");
+    sale.setStatus(request.getStatus() != null ? request.getStatus() : "COMPLETED");
     sale.setCreatedAt(LocalDateTime.now());
+    sale.setClientName(request.getClientName());
+    sale.setPaymentMethod(request.getPaymentMethod());
+    sale.setDiscountApplied(request.getDiscountApplied());
+    sale.setAmountTendered(request.getAmountTendered());
 
     List<SaleItem> items = new ArrayList<>();
     BigDecimal totalAmount = BigDecimal.ZERO;
@@ -55,6 +59,10 @@ public SaleResponse processSale(SaleRequest request) {
                                 "Product not found: " + itemReq.getProductId()
                         )
                 );
+        
+        if (product.getIsActive() != null && !product.getIsActive()) {
+            throw new IllegalArgumentException("Cannot sell deactivated product: " + product.getName());
+        }
 
         if (product.getQuantity() < itemReq.getQuantity()) {
             throw new IllegalArgumentException(
@@ -81,6 +89,13 @@ public SaleResponse processSale(SaleRequest request) {
                         .multiply(BigDecimal.valueOf(itemReq.getQuantity()));
 
         totalAmount = totalAmount.add(lineTotal);
+    }
+
+    if (request.getDiscountApplied() != null) {
+        totalAmount = totalAmount.subtract(request.getDiscountApplied());
+        if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            totalAmount = BigDecimal.ZERO;
+        }
     }
 
     // Attach items to sale
@@ -129,6 +144,10 @@ public SaleResponse processSale(SaleRequest request) {
         res.setTotalAmount(sale.getTotalAmount());
         res.setStatus(sale.getStatus());
         res.setCreatedAt(sale.getCreatedAt());
+        res.setClientName(sale.getClientName());
+        res.setPaymentMethod(sale.getPaymentMethod());
+        res.setDiscountApplied(sale.getDiscountApplied());
+        res.setAmountTendered(sale.getAmountTendered());
         
         if (sale.getItems() != null) {
             res.setItems(sale.getItems().stream().map(item -> {

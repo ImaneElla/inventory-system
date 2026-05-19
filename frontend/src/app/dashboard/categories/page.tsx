@@ -69,7 +69,7 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
   const [sortKey, setSortKey]           = useState<"name" | "count" | "id">("name");
   const [filter, setFilter]             = useState<"all" | "active" | "empty">("all");
-  const [viewMode, setViewMode]         = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode]         = useState<"grid" | "list">("grid");
   const [formError, setFormError]       = useState("");
   const [toast, setToast]               = useState("");
 

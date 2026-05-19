@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { fetchProducts } from "@/lib/api";
 import {
   ChevronRight,
   Search,
@@ -51,11 +53,7 @@ function getInitials(name: string) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-const mockNotifications = [
-  { id: 1, title: "Low stock alert",    desc: "Product 'USB-C Hub' is below 5 units",      time: "2m ago",  unread: true },
-  { id: 2, title: "New sale recorded",  desc: "Order #1042 was completed successfully",     time: "18m ago", unread: true },
-  { id: 3, title: "New user registered",desc: "Sarah joined as a Manager",                  time: "1h ago",  unread: false },
-];
+// Real notifications will be fetched from API
 
 export default function DashboardHeader() {
   const pathname = usePathname();
@@ -65,7 +63,40 @@ export default function DashboardHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [readNotifIds, setReadNotifIds] = useState<Set<string>>(new Set());
+
+  // Fetch real products to generate low/out of stock alerts
+  const { data: productsData } = useQuery({
+    queryKey: ["products-notifications"],
+    queryFn: () => fetchProducts("", 0, 100),
+    refetchInterval: 30000, // Refresh every 30s
+  });
+
+  const notifications = useMemo(() => {
+    if (!productsData?.content) return [];
+    const notifs: any[] = [];
+    productsData.content.forEach((p: any) => {
+      if (!p.isActive) return;
+      if (p.quantity === 0) {
+        notifs.push({
+          id: `oos-${p.id}`,
+          title: "Out of Stock",
+          desc: `${p.name} has run out of stock!`,
+          time: "System",
+          unread: !readNotifIds.has(`oos-${p.id}`)
+        });
+      } else if (p.minStockLevel > 0 && p.quantity <= p.minStockLevel) {
+        notifs.push({
+          id: `low-${p.id}`,
+          title: "Low Stock Alert",
+          desc: `${p.name} is running low (${p.quantity} left)`,
+          time: "System",
+          unread: !readNotifIds.has(`low-${p.id}`)
+        });
+      }
+    });
+    return notifs;
+  }, [productsData, readNotifIds]);
 
   // User info from localStorage (set at login/register)
   const [userName, setUserName] = useState("User");
@@ -126,8 +157,11 @@ export default function DashboardHeader() {
     router.replace("/login");
   };
 
-  const markAllRead = () =>
-    setNotifications((prev: typeof mockNotifications) => prev.map((n) => ({ ...n, unread: false })));
+  const markAllRead = () => {
+    const newRead = new Set(readNotifIds);
+    notifications.forEach(n => newRead.add(n.id));
+    setReadNotifIds(newRead);
+  };
 
   return (
     <header

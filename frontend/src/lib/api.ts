@@ -15,16 +15,34 @@ async function handleResponse(res: Response, defaultError: string) {
     throw new Error(errorMsg);
   }
   if (res.status === 204) return null;
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
 // --- Products ---
 
-export async function fetchProducts(search?: string, page = 0, size = 5) {
+export async function fetchProducts(
+  search?: string, 
+  page = 0, 
+  size = 5,
+  filters?: {
+    isActive?: boolean | string;
+    stockStatus?: string;
+    categoryId?: number;
+    brand?: string;
+  }
+) {
   const url = new URL(`${BASE_V1_URL}/products`);
   if (search) url.searchParams.append("search", search);
   url.searchParams.append("page", page.toString());
   url.searchParams.append("size", size.toString());
+  
+  if (filters) {
+    if (filters.isActive !== undefined && filters.isActive !== "") url.searchParams.append("isActive", filters.isActive.toString());
+    if (filters.stockStatus) url.searchParams.append("stockStatus", filters.stockStatus);
+    if (filters.categoryId) url.searchParams.append("categoryId", filters.categoryId.toString());
+    if (filters.brand) url.searchParams.append("brand", filters.brand);
+  }
 
   const res = await fetch(url.toString());
   return handleResponse(res, "Failed to fetch products");
@@ -33,6 +51,7 @@ export async function fetchProducts(search?: string, page = 0, size = 5) {
 export async function fetchProductsByName(name: string) {
   const url = new URL(`${BASE_V1_URL}/products`);
   if (name) url.searchParams.append("search", name);
+  url.searchParams.append("isActive", "true"); // Only fetch active products for sales
   url.searchParams.append("page", "0");
   url.searchParams.append("size", "10");
   
@@ -64,6 +83,13 @@ export async function deleteProduct(id: number) {
     method: "DELETE",
   });
   return handleResponse(res, "Failed to delete product");
+}
+
+export async function toggleProductActive(id: number) {
+  const res = await fetch(`${BASE_V1_URL}/products/${id}/toggle-active`, {
+    method: "PATCH",
+  });
+  return handleResponse(res, "Failed to toggle product status");
 }
 
 // --- Categories ---
@@ -139,4 +165,18 @@ export async function deleteSale(id: number) {
 export async function fetchDashboardStats() {
   const res = await fetch(`${BASE_V1_URL}/products/stats`);
   return handleResponse(res, "Failed to fetch dashboard statistics");
+}
+
+// --- Users ---
+
+export async function fetchAllUsers() {
+  const res = await fetch(`${BASE_API_URL}/auth/users`);
+  return handleResponse(res, "Failed to fetch users");
+}
+
+export async function deleteUser(id: number) {
+  const res = await fetch(`${BASE_API_URL}/auth/users/${id}`, {
+    method: "DELETE",
+  });
+  return handleResponse(res, "Failed to delete user");
 }

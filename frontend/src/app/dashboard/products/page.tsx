@@ -6,7 +6,8 @@ import {
   Plus, Search, X, Package2, Hash, Tag,
   Boxes, ImagePlus, Check, Palette,
   Loader2, UploadCloud, CircleSlash, Filter,
-  MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye, Pipette
+  MoreVertical, LayoutGrid, List, Edit3, Trash2, Eye, Pipette,
+  PowerOff, Power
 } from "lucide-react";
 import {
   AlertDialog,
@@ -19,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories } from "@/lib/api";
+import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, fetchDashboardStats, toggleProductActive } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
 
 const PALETTES = [
@@ -43,9 +44,9 @@ const inputCls = `h-12 w-full rounded-2xl border border-border bg-card/50 px-5 t
 
 // --- Actions Menu ---
 function ProductActions({
-  onEdit, onDelete, onView, isDeleting,
+  onEdit, onDelete, onView, onToggleActive, isDeleting, isToggling, isActive
 }: {
-  onEdit: () => void; onDelete: () => void; onView: () => void; isDeleting?: boolean;
+  onEdit: () => void; onDelete: () => void; onView: () => void; onToggleActive: () => void; isDeleting?: boolean; isToggling?: boolean; isActive: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -78,14 +79,28 @@ function ProductActions({
               <button onClick={() => { onView(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all cursor-pointer">
                 <Eye size={16} /> View Details
               </button>
-              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1 text-sm font-bold hover:bg-muted/10 rounded-xl transition-all cursor-pointer">
-                <Edit3 size={16} /> Edit Product
+              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-foreground hover:bg-muted/10 rounded-xl transition-all cursor-pointer">
+                <Edit3 size={16} className="text-amber-500" /> Edit Product
               </button>
+              
+              <div className="h-px bg-border my-1" />
+              
+              <button
+                disabled={isToggling}
+                onClick={() => { onToggleActive(); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-foreground hover:bg-muted/10 rounded-xl transition-all cursor-pointer"
+              >
+                {isToggling ? <Loader2 size={16} className="animate-spin text-slate-500" /> : 
+                  isActive ? <PowerOff size={16} className="text-slate-500" /> : <Power size={16} className="text-emerald-500" />
+                }
+                {isActive ? "Deactivate" : "Activate"}
+              </button>
+              
               <div className="h-px bg-border my-1" />
               <button
                 disabled={isDeleting}
                 onClick={() => { onDelete(); setOpen(false); }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
               >
                 {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
                 Delete
@@ -264,14 +279,26 @@ export default function ProductsPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [filterBrand, setFilterBrand] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
+  const [filterActive, setFilterActive] = useState("all");
+  const [filterStock, setFilterStock] = useState("all");
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
   const { data: productsData, isLoading } = useQuery({
-    queryKey: ["products", search],
-    queryFn: () => fetchProducts(search),
+    queryKey: ["products", search, filterActive, filterStock, filterCategory, filterBrand],
+    queryFn: () => fetchProducts(search, 0, 100, {
+      isActive: filterActive !== "all" ? filterActive : undefined,
+      stockStatus: filterStock !== "all" ? filterStock : undefined,
+      categoryId: filterCategory !== "all" ? Number(filterCategory) : undefined,
+      brand: filterBrand !== "all" ? filterBrand : undefined,
+    }),
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: ["dashboardStats"],
+    queryFn: fetchDashboardStats,
   });
 
   const { data: categories = [] } = useQuery<any[]>({
@@ -293,38 +320,19 @@ export default function ProductsPage() {
 
   const deleteM = useMutation({
     mutationFn: deleteProduct,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }) },
+  });
+
+  const toggleActiveM = useMutation({
+    mutationFn: toggleProductActive,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); showToast("Product status updated!") },
+    onError: (e: any) => setFormError(e?.message || "Failed to toggle status"),
   });
 
   const products: Product[] = useMemo(() => (productsData as any)?.content || [], [productsData]);
   const busy = createM.isPending || updateM.isPending;
 
-  const totalProducts = useMemo(() => {
-    if (!productsData) return 0;
-    const p = productsData as any;
-    return p.totalElements ?? p.total_elements ?? products.length;
-  }, [productsData, products]);
-
-  const outOfStock = useMemo(() => {
-    return products.filter(p => p.quantity === 0).length;
-  }, [products]);
-
-  const available = useMemo(() => {
-    return products.filter(p => p.quantity > 0).length;
-  }, [products]);
-
-  const uniqueBrands = useMemo(() => {
-    const brands = new Set(products.map(p => p.brand).filter(Boolean));
-    return Array.from(brands);
-  }, [products]);
-
-  const filteredProducts = useMemo(() => {
-    return products.filter(p => {
-      const matchBrand = filterBrand === "all" || p.brand === filterBrand;
-      const matchCat = filterCategory === "all" || p.categoryId.toString() === filterCategory;
-      return matchBrand && matchCat;
-    });
-  }, [products, filterBrand, filterCategory]);
+  const filteredProducts = products; // Backend already does filtering
 
   const toggleForm = () => {
     if (showForm && !editId) setShowForm(false);
@@ -369,10 +377,10 @@ export default function ProductsPage() {
   if (editId !== null) {
     updateM.mutate({
       id: editId,
-      data: form,
+      data: { ...form, isActive: products.find(p => p.id === editId)?.isActive ?? true },
     });
   } else {
-    createM.mutate(form);
+    createM.mutate({ ...form, isActive: true });
   }
 };
 
@@ -393,10 +401,11 @@ export default function ProductsPage() {
 
       <main className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-12 space-y-10">
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <StatCard icon={<Package2 size={24} />} label="Total Inventory" value={totalProducts} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-foreground" primary />
-          <StatCard icon={<Check size={24} />} label="In Stock" value={available} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
-          <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={outOfStock} iconBg="bg-rose-500/10" iconColor="text-rose-500" valueColor="text-rose-500" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <StatCard icon={<Package2 size={24} />} label="Total" value={statsData?.totalProducts || 0} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-foreground" primary />
+          <StatCard icon={<Check size={24} />} label="Available" value={statsData?.availableCount || 0} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
+          <StatCard icon={<PowerOff size={24} />} label="Deactivated" value={statsData?.deactivatedCount || 0} iconBg="bg-slate-500/10" iconColor="text-slate-500" valueColor="text-slate-500" />
+          <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={statsData?.outOfStockCount || 0} iconBg="bg-rose-500/10" iconColor="text-rose-500" valueColor="text-rose-500" />
         </div>
 
         <div className="flex flex-col gap-6">
@@ -432,20 +441,41 @@ export default function ProductsPage() {
               </div>
 
               <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
+                <Power size={14} className="text-muted-foreground" />
+                <select value={filterActive} onChange={e => setFilterActive(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
+                  <option value="all" className="bg-background text-foreground">Status</option>
+                  <option value="true" className="bg-background text-foreground">Active</option>
+                  <option value="false" className="bg-background text-foreground">Deactivated</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
+                <Check size={14} className="text-muted-foreground" />
+                <select value={filterStock} onChange={e => setFilterStock(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
+                  <option value="all" className="bg-background text-foreground">Stock</option>
+                  <option value="IN_STOCK" className="bg-background text-foreground">In Stock</option>
+                  <option value="LOW_STOCK" className="bg-background text-foreground">Low Stock</option>
+                  <option value="OUT_OF_STOCK" className="bg-background text-foreground">Out of Stock</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
                 <Filter size={14} className="text-muted-foreground" />
-                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
-                  <option value="all" className="bg-background text-foreground">All Categories</option>
+                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2 max-w-[120px]">
+                  <option value="all" className="bg-background text-foreground">Categories</option>
                   {categories.map((c: any) => <option key={c.id} value={c.id} className="bg-background text-foreground">{c.name}</option>)}
                 </select>
               </div>
 
               <div className="flex items-center gap-2 px-3 py-2 bg-background border border-border rounded-2xl">
                 <Boxes size={14} className="text-muted-foreground" />
-                <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2">
-                  <option value="all" className="bg-background text-foreground">All Brands</option>
-                  {uniqueBrands.map((b: any) => (
-                    <option key={b} value={b} className="bg-background text-foreground">{b}</option>
-                  ))}
+                <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2 max-w-[120px]">
+                  <option value="all" className="bg-background text-foreground">Brands</option>
+                  {/* We can't derive uniqueBrands easily from paginated products, we'll let user type or just omit brands dynamically if backend provides it. For now let's keep it simple or remove the dynamic list */}
+                  <option value="Apple" className="bg-background text-foreground">Apple</option>
+                  <option value="Samsung" className="bg-background text-foreground">Samsung</option>
+                  <option value="Sony" className="bg-background text-foreground">Sony</option>
+                  <option value="LG" className="bg-background text-foreground">LG</option>
                 </select>
               </div>
             </div>
@@ -463,7 +493,9 @@ export default function ProductsPage() {
                   onEdit={openEdit}
                   onDelete={p => setDeleteTarget(p)}
                   onViewDetails={setViewProduct}
+                  onToggleActive={(p) => toggleActiveM.mutate(p.id)}
                   deletingId={deleteM.isPending ? (deleteM.variables as any) : null}
+                  togglingId={toggleActiveM.isPending ? (toggleActiveM.variables as any) : null}
                 />
               </div>
             </div>
@@ -486,11 +518,19 @@ export default function ProductsPage() {
                         onEdit={() => openEdit(p)}
                         onDelete={() => setDeleteTarget(p)}
                         onView={() => setViewProduct(p)}
+                        onToggleActive={() => toggleActiveM.mutate(p.id)}
                         isDeleting={deleteM.isPending && deleteM.variables === p.id}
+                        isToggling={toggleActiveM.isPending && toggleActiveM.variables === p.id}
+                        isActive={p.isActive !== false}
                       />
                     </div>
-                    {p.quantity <= p.minStockLevel && (
-                      <div className="absolute top-4 left-4 bg-rose-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Low Stock</div>
+                    {p.quantity === 0 ? (
+                      <div className="absolute top-4 left-4 bg-rose-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Out of Stock</div>
+                    ) : p.quantity <= p.minStockLevel ? (
+                      <div className="absolute top-4 left-4 bg-amber-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Low Stock</div>
+                    ) : null}
+                    {p.quantity > p.minStockLevel && p.isActive && (
+                      <div className="absolute top-4 left-4 bg-blue-500 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Available</div>
                     )}
                   </div>
                   <div className="p-6 space-y-4">

@@ -23,8 +23,17 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<Page<ProductResponse>> getAll(
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(required = false) String stockStatus,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String brand,
             Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(search, pageable));
+        return ResponseEntity.ok(productService.getAllProducts(search, isActive, stockStatus, categoryId, brand, pageable));
+    }
+
+    @PatchMapping("/{id}/toggle-active")
+    public ResponseEntity<ProductResponse> toggleActive(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.toggleActive(id));
     }
 
     @GetMapping("/stats")

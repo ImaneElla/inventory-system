@@ -35,6 +35,18 @@ public class Sale {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    @Column(name = "client_name")
+    private String clientName;
+
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
+    @Column(name = "amount_tendered", precision = 10, scale = 2)
+    private BigDecimal amountTendered;
+
+    @Column(name = "discount_applied", precision = 10, scale = 2)
+    private BigDecimal discountApplied;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTransactionId() { return transactionId; }
@@ -47,4 +59,12 @@ public class Sale {
     public void setItems(List<SaleItem> items) { this.items = items; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getClientName() { return clientName; }
+    public void setClientName(String clientName) { this.clientName = clientName; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public BigDecimal getAmountTendered() { return amountTendered; }
+    public void setAmountTendered(BigDecimal amountTendered) { this.amountTendered = amountTendered; }
+    public BigDecimal getDiscountApplied() { return discountApplied; }
+    public void setDiscountApplied(BigDecimal discountApplied) { this.discountApplied = discountApplied; }
 }

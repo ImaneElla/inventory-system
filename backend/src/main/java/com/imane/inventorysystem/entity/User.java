@@ -21,10 +21,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(nullable = false)
     private String password;
 
-    // Added to store the path of the profile picture
     @Column(nullable = true)
     private String imageUrl;
 

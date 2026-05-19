@@ -14,6 +14,7 @@ public class ProductRequest {
     private BigDecimal purchasePrice;
     private BigDecimal sellPrice;
     private String imageUrl;
+    private Boolean isActive;
 
     public String getSku() { return sku; }
     public void setSku(String sku) { this.sku = sku; }
@@ -37,4 +38,6 @@ public class ProductRequest {
     public void setSellPrice(BigDecimal sellPrice) { this.sellPrice = sellPrice; }
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
   Edit3, Trash2, Package, ChevronUp, ChevronDown,
-  ArrowUpDown, Eye, ChevronLeft, ChevronRight
+  ArrowUpDown, Eye, ChevronLeft, ChevronRight,
+  MoreVertical, Loader2, PowerOff, Power
 } from "lucide-react";
 
 export interface Product {
@@ -21,6 +22,7 @@ export interface Product {
   minStockLevel: number;
   categoryId: number;
   createdAt?: string;
+  isActive?: boolean;
 }
 
 interface ProductsTableProps {
@@ -29,13 +31,20 @@ interface ProductsTableProps {
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
   onViewDetails?: (product: Product) => void;
+  onToggleActive?: (product: Product) => void;
   deletingId?: number | null;
+  togglingId?: number | null;
 }
 
 function StockBadge({ qty, min }: { qty: number; min: number }) {
   if (qty === 0)  return <Badge cls="bg-rose-50 text-rose-500 border-rose-100">Out of Stock</Badge>;
   if (qty <= min) return <Badge cls="bg-amber-50 text-amber-600 border-amber-100">Low Stock</Badge>;
   return               <Badge cls="bg-emerald-50 text-emerald-600 border-emerald-100">In Stock</Badge>;
+}
+
+function StatusBadge({ isActive }: { isActive?: boolean }) {
+  if (isActive === false) return <Badge cls="bg-slate-100 text-slate-500 border-slate-200">Deactivated</Badge>;
+  return <Badge cls="bg-indigo-50 text-indigo-600 border-indigo-100">Available</Badge>;
 }
 
 function Badge({ cls, children }: { cls: string; children: React.ReactNode }) {
@@ -77,7 +86,7 @@ function ColHeader({
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 export default function ProductsTable({
-  products, isLoading = false, onEdit, onDelete, onViewDetails, deletingId,
+  products, isLoading = false, onEdit, onDelete, onViewDetails, onToggleActive, deletingId, togglingId
 }: ProductsTableProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
@@ -238,28 +247,23 @@ export default function ProductsTable({
                     ) : <span className="text-slate-300">—</span>}
                   </td>}
 
-                  {isVisible("status") && <td className="px-6 py-4 text-center text-[11px] max-w-[150px] truncate">
-                    <StockBadge qty={p.quantity} min={p.minStockLevel} />
+                  {isVisible("status") && <td className="px-6 py-4 text-[11px] space-y-1 max-w-[150px] truncate">
+                    <div><StockBadge qty={p.quantity} min={p.minStockLevel} /></div>
+                    <div><StatusBadge isActive={p.isActive} /></div>
                   </td>}
 
                   {isVisible("action") && (
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-end gap-2 opacity-100 transition-opacity">
-                        {onViewDetails && (
-                          <button onClick={() => onViewDetails(p)} className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors" title="View Details">
-                            <Eye size={16} />
-                          </button>
-                        )}
-                        {onEdit && (
-                          <button onClick={() => onEdit(p)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors" title="Edit">
-                            <Edit3 size={16} />
-                          </button>
-                        )}
-                        {onDelete && (
-                          <button onClick={() => setDeleteTarget(p)} disabled={deletingId === p.id} className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors disabled:opacity-50 cursor-pointer" title="Delete">
-                            <Trash2 size={16} />
-                          </button>
-                        )}
+                      <div className="flex items-center justify-end">
+                        <ProductActionsMenu
+                          product={p}
+                          onViewDetails={() => onViewDetails?.(p)}
+                          onEdit={() => onEdit?.(p)}
+                          onDelete={() => setDeleteTarget(p)}
+                          onToggleActive={() => onToggleActive?.(p)}
+                          isDeleting={deletingId === p.id}
+                          isToggling={togglingId === p.id}
+                        />
                       </div>
                     </td>
                   )}
@@ -273,7 +277,6 @@ export default function ProductsTable({
       <div className="border-t border-slate-100/80 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="text-xs text-slate-400 font-medium">
-            Showing {products.length > 0 ? (page - 1) * pageSize + 1 : 0} – {Math.min(page * pageSize, products.length)} of {products.length} products
           </span>
           <div className="flex items-center gap-2 text-xs text-slate-400">
             Rows per page:
@@ -327,5 +330,84 @@ export default function ProductsTable({
         }}
       />
     </>
+  );
+}
+
+function ProductActionsMenu({
+  product, onViewDetails, onEdit, onDelete, onToggleActive, isDeleting, isToggling
+}: {
+  product: Product;
+  onViewDetails: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onToggleActive: () => void;
+  isDeleting: boolean;
+  isToggling: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const isActive = product.isActive !== false;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-700"
+      >
+        <MoreVertical size={20} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-2xl shadow-2xl z-50 overflow-hidden backdrop-blur-xl cursor-default"
+          >
+            <div className="p-2 space-y-1">
+              <button onClick={() => { onViewDetails(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-foreground hover:bg-muted/50 rounded-xl transition-all cursor-pointer">
+                <Eye size={16} className="text-indigo-500" /> View Details
+              </button>
+              <button onClick={() => { onEdit(); setOpen(false); }} className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-foreground hover:bg-muted/50 rounded-xl transition-all cursor-pointer">
+                <Edit3 size={16} className="text-amber-500" /> Edit Product
+              </button>
+              
+              <div className="h-px bg-border my-1" />
+              
+              <button
+                disabled={isToggling}
+                onClick={() => { onToggleActive(); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-foreground hover:bg-muted/50 rounded-xl transition-all cursor-pointer"
+              >
+                {isToggling ? <Loader2 size={16} className="animate-spin text-slate-500" /> : 
+                  isActive ? <PowerOff size={16} className="text-slate-500" /> : <Power size={16} className="text-emerald-500" />
+                }
+                {isActive ? "Deactivate" : "Activate"}
+              </button>
+
+              <div className="h-px bg-border my-1" />
+              
+              <button
+                disabled={isDeleting}
+                onClick={() => { onDelete(); setOpen(false); }}
+                className="w-full flex items-center gap-3 px-3 py-1.5 text-sm font-bold text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all cursor-pointer"
+              >
+                {isDeleting ? <Loader2 size={16} className="animate-spin text-rose-500" /> : <Trash2 size={16} className="text-rose-500" />}
+                Delete
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

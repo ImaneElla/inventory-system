@@ -26,15 +26,13 @@ public class ProductService {
         this.categoryService = categoryService;
     }
 
-    public Page<ProductResponse> getAllProducts(String search, Pageable pageable) {
-        Page<Product> products;
-        if (search == null || search.trim().isEmpty()) {
-            products = repo.findAll(pageable);
-        } else {
-            products = repo.findByNameContainingIgnoreCaseOrSkuContainingIgnoreCaseOrBrandContainingIgnoreCaseOrColorContainingIgnoreCase(
-                search, search, search, search, pageable
-            );
-        }
+    public Page<ProductResponse> getAllProducts(String search, Boolean isActive, String stockStatus, Long categoryId, String brand, Pageable pageable) {
+        String safeSearch = search == null ? "" : search;
+        String safeBrand = brand == null ? "" : brand;
+        String safeStockStatus = stockStatus == null ? "" : stockStatus;
+        Long safeCategoryId = categoryId == null ? -1L : categoryId;
+        
+        Page<Product> products = repo.findWithFilters(safeSearch, isActive, safeCategoryId, safeBrand, safeStockStatus, pageable);
         return products.map(this::mapToResponse);
     }
 
@@ -108,6 +106,13 @@ public class ProductService {
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + id)));
     }
 
+    public ProductResponse toggleActive(Long id) {
+        Product product = repo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + id));
+        product.setIsActive(product.getIsActive() == null || !product.getIsActive());
+        return mapToResponse(repo.save(product));
+    }
+
     public Map<String, Object> getDashboardStats() {
         Map<String, Object> stats = new HashMap<>();
         List<Product> products = repo.findAll();
@@ -145,6 +150,24 @@ public class ProductService {
                     return qty <= min;
                 })
                 .count());
+                
+        long deactivatedCount = products.stream()
+                .filter(p -> p.getIsActive() != null && !p.getIsActive())
+                .count();
+        stats.put("deactivatedCount", deactivatedCount);
+
+        long outOfStockCount = products.stream()
+                .filter(p -> {
+                    int qty = p.getQuantity() != null ? p.getQuantity() : 0;
+                    return qty <= 0;
+                })
+                .count();
+        stats.put("outOfStockCount", outOfStockCount);
+
+        long availableCount = products.stream()
+                .filter(p -> (p.getIsActive() == null || p.getIsActive()) && (p.getQuantity() != null && p.getQuantity() > 0))
+                .count();
+        stats.put("availableCount", availableCount);
 
         return stats;
     }
@@ -161,6 +184,9 @@ public class ProductService {
         entity.setPurchasePrice(req.getPurchasePrice());
         entity.setSellPrice(req.getSellPrice());
         entity.setImageUrl(req.getImageUrl());
+        if (req.getIsActive() != null) {
+            entity.setIsActive(req.getIsActive());
+        }
     }
 
     private ProductResponse mapToResponse(Product entity) {
@@ -179,6 +205,7 @@ public class ProductService {
         res.setImageUrl(entity.getImageUrl());
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
+        res.setIsActive(entity.getIsActive() == null ? true : entity.getIsActive());
         return res;
     }
 }
