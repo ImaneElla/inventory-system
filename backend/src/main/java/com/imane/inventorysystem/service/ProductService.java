@@ -12,18 +12,22 @@ import org.springframework.stereotype.Service;
 
 import com.imane.inventorysystem.dto.ProductRequest;
 import com.imane.inventorysystem.dto.ProductResponse;
+import com.imane.inventorysystem.entity.MovementType;
 import com.imane.inventorysystem.entity.Product;
 import com.imane.inventorysystem.repository.ProductRepository;
+import com.imane.inventorysystem.service.StockMovementService;
 
 @Service
 public class ProductService {
 
     private final ProductRepository repo;
     private final CategoryService categoryService;
+    private final StockMovementService stockMovementService;
 
-    public ProductService(ProductRepository repo, CategoryService categoryService) {
+    public ProductService(ProductRepository repo, CategoryService categoryService, StockMovementService stockMovementService) {
         this.repo = repo;
         this.categoryService = categoryService;
+        this.stockMovementService = stockMovementService;
     }
 
     public Page<ProductResponse> getAllProducts(String search, Boolean isActive, String stockStatus, Long categoryId, String brand, Pageable pageable) {
@@ -44,7 +48,12 @@ public class ProductService {
         mapToEntity(request, product);
         validateProduct(product);
         sanitizeProduct(product);
-        return mapToResponse(repo.save(product));
+        Product saved = repo.save(product);
+        if (saved.getQuantity() != null && saved.getQuantity() > 0) {
+            stockMovementService.record(saved, saved.getQuantity(), MovementType.RESTOCK,
+                    "Initial stock for new product");
+        }
+        return mapToResponse(saved);
     }
 
     public ProductResponse updateProduct(Long id, ProductRequest request) {
@@ -53,10 +62,21 @@ public class ProductService {
         }
         Product product = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + id));
+        int oldQuantity = product.getQuantity() != null ? product.getQuantity() : 0;
         mapToEntity(request, product);
         validateProduct(product);
         sanitizeProduct(product);
-        return mapToResponse(repo.save(product));
+        Product saved = repo.save(product);
+
+        int newQuantity = saved.getQuantity() != null ? saved.getQuantity() : 0;
+        int delta = newQuantity - oldQuantity;
+        if (delta != 0) {
+            MovementType movementType = delta > 0 ? MovementType.RESTOCK : MovementType.SALE;
+            stockMovementService.record(saved, delta, movementType,
+                    "Manual inventory adjustment");
+        }
+
+        return mapToResponse(saved);
     }
 
     private void validateProduct(Product product) {
@@ -208,4 +228,4 @@ public class ProductService {
         res.setIsActive(entity.getIsActive() == null ? true : entity.getIsActive());
         return res;
     }
-}
+}

@@ -11,7 +11,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -24,6 +24,18 @@ export default function UsersPage() {
 
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [toast, setToast] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const id = localStorage.getItem("userId");
+    if (id) setCurrentUserId(Number(id));
+  }, []);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(""), 3000);
+  };
 
   // =========================
   // FETCH USERS
@@ -49,8 +61,9 @@ export default function UsersPage() {
       setDeleteTarget(null);
     },
 
-    onError: (error) => {
-      console.error("Delete failed:", error);
+    onError: (error: Error) => {
+      showToast(error.message || "Failed to delete user");
+      setDeleteTarget(null);
     },
   });
 
@@ -189,7 +202,7 @@ export default function UsersPage() {
 
                     {user.imageUrl ? (
                       <img
-                        src={`http://localhost:8080/uploads/profiles/${user.imageUrl}`}
+                        src={`http://127.0.0.1:8080/uploads/profiles/${user.imageUrl}`}
                         alt={user.username}
                         className="w-full h-full object-cover"
                       />
@@ -290,8 +303,13 @@ export default function UsersPage() {
         }}
         title="Delete User"
         description={`Are you sure you want to permanently remove ${deleteTarget?.username}?`}
-        isLoading={deleteMutation.isPending}
       />
+
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-foreground text-background px-6 py-3 rounded-full text-sm font-bold shadow-xl">
+          {toast}
+        </div>
+      )}
 
     </div>
   );

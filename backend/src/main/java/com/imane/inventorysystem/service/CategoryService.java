@@ -1,6 +1,8 @@
 package com.imane.inventorysystem.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -9,18 +11,32 @@ import com.imane.inventorysystem.dto.CategoryRequest;
 import com.imane.inventorysystem.dto.CategoryResponse;
 import com.imane.inventorysystem.entity.Category;
 import com.imane.inventorysystem.repository.CategoryRepository;
+import com.imane.inventorysystem.repository.ProductRepository;
 
 @Service
 public class CategoryService {
     private final CategoryRepository repo;
+    private final ProductRepository productRepo;
 
-    public CategoryService(CategoryRepository repo) {
+    public CategoryService(CategoryRepository repo, ProductRepository productRepo) {
         this.repo = repo;
+        this.productRepo = productRepo;
     }
     
     public List<CategoryResponse> getAllCategories() {
+        List<Object[]> stats = productRepo.getCategoryStats();
+        Map<Long, Long[]> statsMap = new HashMap<>();
+        for (Object[] row : stats) {
+            if (row[0] != null) {
+                Long catId = ((Number) row[0]).longValue();
+                Long count = ((Number) row[1]).longValue();
+                Long stock = ((Number) row[2]).longValue();
+                statsMap.put(catId, new Long[]{count, stock});
+            }
+        }
+
         return repo.findAll().stream()
-                .map(this::mapToResponse)
+                .map(cat -> mapToResponseWithStats(cat, statsMap))
                 .collect(Collectors.toList());
     }
     
@@ -35,7 +51,7 @@ public class CategoryService {
         if (saved == null) {
             throw new RuntimeException("Failed to save category");
         }
-        return mapToResponse(saved);
+        return mapToResponseWithStats(saved, getStatsMapForSingle(saved.getId()));
     }
 
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
@@ -50,7 +66,7 @@ public class CategoryService {
         if (updated == null) {
             throw new RuntimeException("Failed to update category");
         }
-        return mapToResponse(updated);
+        return mapToResponseWithStats(updated, getStatsMapForSingle(updated.getId()));
     }
 
     private void validateCategory(Category category) {
@@ -67,8 +83,9 @@ public class CategoryService {
     }
 
     public CategoryResponse findById(Long id) {
-        return mapToResponse(repo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id)));
+        Category cat = repo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+        return mapToResponseWithStats(cat, getStatsMapForSingle(id));
     }
 
     private void mapToEntity(CategoryRequest req, Category entity) {
@@ -86,5 +103,26 @@ public class CategoryService {
         res.setCreatedAt(entity.getCreatedAt());
         res.setUpdatedAt(entity.getUpdatedAt());
         return res;
+    }
+
+    private CategoryResponse mapToResponseWithStats(Category entity, Map<Long, Long[]> statsMap) {
+        CategoryResponse res = mapToResponse(entity);
+        Long[] stats = statsMap.get(entity.getId());
+        if (stats != null) {
+            res.setProductCount(stats[0]);
+            res.setStockCount(stats[1]);
+        } else {
+            res.setProductCount(0L);
+            res.setStockCount(0L);
+        }
+        return res;
+    }
+
+    private Map<Long, Long[]> getStatsMapForSingle(Long id) {
+        Map<Long, Long[]> statsMap = new HashMap<>();
+        Long count = productRepo.countByCategoryId(id);
+        Long stock = productRepo.sumQuantityByCategoryId(id);
+        statsMap.put(id, new Long[]{count != null ? count : 0L, stock != null ? stock : 0L});
+        return statsMap;
     }
 }

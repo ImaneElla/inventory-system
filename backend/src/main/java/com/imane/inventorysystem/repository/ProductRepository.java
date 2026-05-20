@@ -25,6 +25,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT p.categoryId, COUNT(p), COALESCE(SUM(p.quantity), 0) FROM Product p GROUP BY p.categoryId")
+    List<Object[]> getCategoryStats();
+
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.categoryId = :categoryId")
+    Long countByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("SELECT COALESCE(SUM(p.quantity), 0) FROM Product p WHERE p.categoryId = :categoryId")
+    Long sumQuantityByCategoryId(@Param("categoryId") Long categoryId);
+
     @Query("SELECT p FROM Product p WHERE " +
            "(:search = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :search, '%'))) AND " +
            "(:isActive IS NULL OR p.isActive = :isActive) AND " +

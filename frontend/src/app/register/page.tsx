@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, User, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle } from "@/components/AuthComponents";
-import { Logo } from "@/components/logo/logo";
+import { AuthLogo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -87,6 +87,8 @@ export default function RegisterPage() {
       if (response.ok) {
         showToast(data.message || "Registration successful!"); 
         localStorage.setItem("auth", "true");
+        if (data.userId)   localStorage.setItem("userId",   data.userId);
+        if (data.email)    localStorage.setItem("email",    email);
         if (data.userName) localStorage.setItem("userName", data.userName);
         if (data.role)     localStorage.setItem("role",     data.role);
         if (data.imageUrl) localStorage.setItem("userImage", data.imageUrl);
@@ -116,7 +118,7 @@ export default function RegisterPage() {
         
         <div className="flex-1 flex flex-col bg-white/60 text-slate-900 relative">
           <div className="flex justify-center mt-6 mb-2">
-            <Logo className="w-14 h-14" />
+            <AuthLogo className="w-14 h-14" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-1 tracking-tight text-center">
             Join Inventory System

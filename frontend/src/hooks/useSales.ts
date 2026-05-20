@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { fetchSales } from "@/lib/api";
 
 export interface Sale {
   id: number;
@@ -13,13 +13,9 @@ export interface Sale {
 export const useSales = () => {
   return useQuery<Sale[]>({
     queryKey: ["sales"],
-
     queryFn: async () => {
-      const res = await axios.get<Sale[]>(
-        "http://localhost:8080/api/sales"
-      );
-
-      return res.data;
+      const res = await fetchSales();
+      return res.content as Sale[];
     },
   });
 };

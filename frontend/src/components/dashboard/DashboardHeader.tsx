@@ -74,6 +74,13 @@ export default function DashboardHeader() {
 
   const notifications = useMemo(() => {
     if (!productsData?.content) return [];
+    let settings = { push: true, lowStock: true, emailReports: false };
+    try {
+      const stored = localStorage.getItem("notificationSettings");
+      if (stored) settings = { ...settings, ...JSON.parse(stored) };
+    } catch { /* ignore */ }
+    if (!settings.push || !settings.lowStock) return [];
+
     const notifs: any[] = [];
     productsData.content.forEach((p: any) => {
       if (!p.isActive) return;
@@ -128,18 +135,24 @@ export default function DashboardHeader() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [searchOpen]);
 
-  useEffect(() => {
+  const loadUserFromStorage = () => {
     const storedName = localStorage.getItem("userName") || localStorage.getItem("username") || "User";
     const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole") || "Member";
     const storedImage = localStorage.getItem("userImage");
-    
     setUserName(storedName);
     setUserRole(storedRole.charAt(0).toUpperCase() + storedRole.slice(1).toLowerCase());
     if (storedImage) {
-      // Ensure the image URL points to the backend
-      const backendUrl = "http://localhost:8080";
+      const backendUrl = "http://127.0.0.1:8080";
       setUserImage(storedImage.startsWith("http") ? storedImage : backendUrl + storedImage);
+    } else {
+      setUserImage(null);
     }
+  };
+
+  useEffect(() => {
+    loadUserFromStorage();
+    window.addEventListener("storage", loadUserFromStorage);
+    return () => window.removeEventListener("storage", loadUserFromStorage);
   }, []);
 
   const initials = useMemo(() => getInitials(userName), [userName]);
@@ -150,10 +163,13 @@ export default function DashboardHeader() {
 
   const handleSignOut = () => {
     localStorage.removeItem("auth");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
     localStorage.removeItem("userName");
     localStorage.removeItem("role");
     localStorage.removeItem("userImage");
     localStorage.removeItem("rememberMe");
+    localStorage.removeItem("notificationSettings");
     router.replace("/login");
   };
 

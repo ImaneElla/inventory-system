@@ -303,8 +303,8 @@ export default function CategoriesPage() {
                     category={cat}
                     index={i}
                     viewMode={viewMode}
-                    productCount={prodCounts[cat.id] || 0}
-                    stockCount={prodStock[cat.id] || 0}
+                    productCount={cat.productCount ?? prodCounts[cat.id] ?? 0}
+                    stockCount={cat.stockCount ?? prodStock[cat.id] ?? 0}
                     onEdit={openEdit}
                     onDelete={setDeleteTarget}
                   />

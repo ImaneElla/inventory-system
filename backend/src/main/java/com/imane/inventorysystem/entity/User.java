@@ -21,9 +21,15 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @Getter(lombok.AccessLevel.NONE)
+    @Setter
     @Column(nullable = false)
     private String password;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public String getPassword() {
+        return password;
+    }
 
     @Column(nullable = true)
     private String imageUrl;

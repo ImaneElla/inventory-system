@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { LeftPanel, inputStyle } from "@/components/AuthComponents";
-import { Logo } from "@/components/logo/logo";
+import { AuthLogo } from "@/components/logo/logo";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
@@ -37,12 +37,15 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
       });
-      let data: { userName?: string; role?: string; message?: string; imageUrl?: string } = {};
-      try { data = await response.json(); } catch { data = { message: await response.text() }; }
+      let data: { userId?: string; userName?: string; role?: string; email?: string; message?: string; imageUrl?: string } = {};
+      const text = await response.text();
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
       
       if (response.ok) {
         showToast("Login Successful ");
         localStorage.setItem("auth", "true");
+        if (data.userId)   localStorage.setItem("userId",   data.userId);
+        if (data.email)    localStorage.setItem("email",    data.email);
         if (data.userName) localStorage.setItem("userName", data.userName);
         if (data.role)     localStorage.setItem("role",     data.role);
         if (data.imageUrl) localStorage.setItem("userImage", data.imageUrl);
@@ -78,7 +81,7 @@ export default function LoginPage() {
 
           <div className="relative z-10 max-w-[420px] mx-auto">
             <div className="flex justify-center mb-6">
-              <Logo className="w-16 h-16 drop-shadow-sm" />
+              <AuthLogo className="w-16 h-16 drop-shadow-sm" />
             </div>
             
             <h1 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Welcome Back</h1>

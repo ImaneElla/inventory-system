@@ -36,4 +36,32 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query("SELECT SUM(s.totalAmount) FROM Sale s WHERE s.status = 'COMPLETED'")
     BigDecimal getTotalRevenue();
+
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.status = 'COMPLETED'")
+    long countCompletedSales();
+
+    @Query(value = "SELECT CAST(EXTRACT(DOW FROM s.created_at) AS int), COUNT(*) " +
+            "FROM sales s WHERE s.status = 'COMPLETED' GROUP BY EXTRACT(DOW FROM s.created_at)",
+            nativeQuery = true)
+    java.util.List<Object[]> countSalesByDayOfWeek();
+
+    @Query(value = "SELECT TO_CHAR(DATE_TRUNC('month', s.created_at), 'Mon') AS month_label, " +
+            "COALESCE(SUM(s.total_amount), 0) " +
+            "FROM sales s WHERE s.status = 'COMPLETED' AND s.created_at >= :since " +
+            "GROUP BY DATE_TRUNC('month', s.created_at), TO_CHAR(DATE_TRUNC('month', s.created_at), 'Mon') " +
+            "ORDER BY DATE_TRUNC('month', s.created_at)",
+            nativeQuery = true)
+    java.util.List<Object[]> revenueByMonth(@Param("since") LocalDateTime since);
+
+    @Query(value = "SELECT COUNT(DISTINCT s.client_name) FROM sales s " +
+            "WHERE s.status = 'COMPLETED' AND s.client_name IS NOT NULL AND TRIM(s.client_name) <> ''",
+            nativeQuery = true)
+    long countDistinctClients();
+
+    @Query(value = "SELECT COUNT(*) FROM (" +
+            "SELECT s.client_name FROM sales s " +
+            "WHERE s.status = 'COMPLETED' AND s.client_name IS NOT NULL AND TRIM(s.client_name) <> '' " +
+            "GROUP BY s.client_name HAVING COUNT(*) > 1" +
+            ") repeat_clients", nativeQuery = true)
+    long countRepeatClients();
 }

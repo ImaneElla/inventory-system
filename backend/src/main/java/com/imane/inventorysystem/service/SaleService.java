@@ -3,21 +3,30 @@ package com.imane.inventorysystem.service;
 import com.imane.inventorysystem.dto.SaleRequest;
 import com.imane.inventorysystem.dto.SaleResponse;
 import com.imane.inventorysystem.dto.SaleItemResponse;
+import com.imane.inventorysystem.entity.MovementType;
 import com.imane.inventorysystem.entity.Product;
 import com.imane.inventorysystem.entity.Sale;
 import com.imane.inventorysystem.entity.SaleItem;
+import com.imane.inventorysystem.dto.DashboardAnalyticsResponse;
 import com.imane.inventorysystem.repository.ProductRepository;
+import com.imane.inventorysystem.repository.SaleItemRepository;
 import com.imane.inventorysystem.repository.SaleRepository;
+import com.imane.inventorysystem.service.StockMovementService;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -25,10 +34,17 @@ public class SaleService {
 
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
+    private final SaleItemRepository saleItemRepository;
+    private final StockMovementService stockMovementService;
 
-    public SaleService(SaleRepository saleRepository, ProductRepository productRepository) {
+    private static final String[] DAY_LABELS = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+
+    public SaleService(SaleRepository saleRepository, ProductRepository productRepository,
+                       SaleItemRepository saleItemRepository, StockMovementService stockMovementService) {
         this.saleRepository = saleRepository;
         this.productRepository = productRepository;
+        this.saleItemRepository = saleItemRepository;
+        this.stockMovementService = stockMovementService;
     }
 @Transactional
 public SaleResponse processSale(SaleRequest request) {
@@ -73,6 +89,8 @@ public SaleResponse processSale(SaleRequest request) {
         // Update stock
         product.setQuantity(product.getQuantity() - itemReq.getQuantity());
         productRepository.save(product);
+        stockMovementService.record(product, -itemReq.getQuantity(), MovementType.SALE,
+                "Sale " + sale.getTransactionId());
 
         // Create sale item
         SaleItem item = new SaleItem();
@@ -112,12 +130,71 @@ public SaleResponse processSale(SaleRequest request) {
     return mapToResponse(savedSale);
 }
     public Page<SaleResponse> getAllSales(String search, String status, LocalDateTime start, LocalDateTime end, Pageable pageable) {
-        return saleRepository.findWithFilters(search, status, start, end, pageable)
+        String safeSearch = (search == null || search.trim().isEmpty()) ? null : search;
+        String safeStatus = (status == null || status.trim().isEmpty() || "all".equalsIgnoreCase(status)) ? null : status;
+        return saleRepository.findWithFilters(safeSearch, safeStatus, start, end, pageable)
                 .map(this::mapToResponse);
     }
 
     public BigDecimal getTotalRevenue() {
-        return saleRepository.getTotalRevenue();
+        BigDecimal revenue = saleRepository.getTotalRevenue();
+        return revenue != null ? revenue : BigDecimal.ZERO;
+    }
+
+    public DashboardAnalyticsResponse getDashboardAnalytics() {
+        DashboardAnalyticsResponse response = new DashboardAnalyticsResponse();
+
+        BigDecimal revenue = getTotalRevenue();
+        long totalOrders = saleRepository.countCompletedSales();
+        response.setTotalRevenue(revenue);
+        response.setTotalOrders(totalOrders);
+
+        long distinctClients = saleRepository.countDistinctClients();
+        long repeatClients = saleRepository.countRepeatClients();
+        double repeatRate = distinctClients == 0
+                ? 0.0
+                : Math.round((repeatClients * 100.0 / distinctClients) * 10.0) / 10.0;
+        response.setRepeatCustomerRate(repeatRate);
+
+        Map<Integer, Long> dowCounts = new HashMap<>();
+        for (Object[] row : saleRepository.countSalesByDayOfWeek()) {
+            int dow = ((Number) row[0]).intValue();
+            long count = ((Number) row[1]).longValue();
+            dowCounts.put(dow, count);
+        }
+        List<DashboardAnalyticsResponse.DayActivityDto> activity = new ArrayList<>();
+        for (int i = 0; i < DAY_LABELS.length; i++) {
+            activity.add(new DashboardAnalyticsResponse.DayActivityDto(
+                    DAY_LABELS[i], dowCounts.getOrDefault(i, 0L)));
+        }
+        response.setActivityByDay(activity);
+
+        LocalDateTime since = LocalDateTime.now().minusMonths(6);
+        List<DashboardAnalyticsResponse.RevenuePointDto> trend = new ArrayList<>();
+        for (Object[] row : saleRepository.revenueByMonth(since)) {
+            String label = row[0] != null ? row[0].toString() : "";
+            BigDecimal monthRevenue = row[1] != null
+                    ? new BigDecimal(row[1].toString()).setScale(2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            trend.add(new DashboardAnalyticsResponse.RevenuePointDto(label, monthRevenue));
+        }
+        response.setRevenueTrend(trend);
+
+        List<DashboardAnalyticsResponse.TopProductDto> topProducts = new ArrayList<>();
+        for (Object[] row : saleItemRepository.findTopSellingProducts(PageRequest.of(0, 5))) {
+            Long productId = row[0] != null ? ((Number) row[0]).longValue() : null;
+            String name = row[1] != null ? row[1].toString() : "Unknown";
+            String imageUrl = row[2] != null ? row[2].toString() : null;
+            long sold = row[3] != null ? ((Number) row[3]).longValue() : 0L;
+            BigDecimal productRevenue = row[4] != null
+                    ? new BigDecimal(row[4].toString()).setScale(2, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            topProducts.add(new DashboardAnalyticsResponse.TopProductDto(
+                    productId, name, sold, productRevenue, imageUrl));
+        }
+        response.setTopProducts(topProducts);
+
+        return response;
     }
 
     @Transactional
@@ -131,6 +208,8 @@ public SaleResponse processSale(SaleRequest request) {
             if (product != null) {
                 product.setQuantity(product.getQuantity() + item.getQuantity());
                 productRepository.save(product);
+                stockMovementService.record(product, item.getQuantity(), MovementType.RESTOCK,
+                        "Sale reversal " + sale.getTransactionId());
             }
         }
 

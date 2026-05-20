@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { BookOpen, Server, Shield, Bell, LayoutDashboard, Search, User, Code, ChevronRight, Zap } from "lucide-react";
+import { BookOpen, Server, Shield, Bell, LayoutDashboard, Search, User, Code, ChevronRight, Zap, Mail, MessageCircle, Settings, Users } from "lucide-react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -107,6 +108,49 @@ export default function HelpPage() {
                 desc="Platform-aware Ctrl+F search engine and seamless system-synchronized theme engine."
               />
             </div>
+          </div>
+        </motion.section>
+
+        {/* Support shortcuts */}
+        <motion.section variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/dashboard/settings" className="p-6 rounded-3xl bg-card border border-border/40 hover:border-primary/40 hover:shadow-lg transition-all group">
+            <Settings className="text-primary mb-4 group-hover:scale-110 transition-transform" size={28} />
+            <h3 className="font-black text-sm mb-1">Account Settings</h3>
+            <p className="text-[11px] text-muted-foreground">Profile photo, notifications & theme</p>
+          </Link>
+          <Link href="/dashboard/users" className="p-6 rounded-3xl bg-card border border-border/40 hover:border-primary/40 hover:shadow-lg transition-all group">
+            <Users className="text-indigo-500 mb-4 group-hover:scale-110 transition-transform" size={28} />
+            <h3 className="font-black text-sm mb-1">Team Management</h3>
+            <p className="text-[11px] text-muted-foreground">Invite, manage roles & permissions</p>
+          </Link>
+          <a href="mailto:support@imn-inventory.local" className="p-6 rounded-3xl bg-primary/5 border border-primary/20 hover:bg-primary/10 hover:shadow-lg transition-all group">
+            <Mail className="text-primary mb-4 group-hover:scale-110 transition-transform" size={28} />
+            <h3 className="font-black text-sm mb-1 text-primary">Email Support</h3>
+            <p className="text-[11px] text-muted-foreground">support@imn-inventory.local</p>
+          </a>
+        </motion.section>
+
+        {/* FAQ */}
+        <motion.section variants={item} className="bg-card/60 backdrop-blur-2xl rounded-[32px] border border-border/40 p-8 md:p-10">
+          <div className="flex items-center gap-3 mb-8">
+            <MessageCircle className="text-primary" size={24} />
+            <h2 className="text-2xl font-black tracking-tight">Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-4">
+            {[
+              { q: "Why can't I delete my own account?", a: "For security, your own account is protected. You can delete other team members (including other admins) from the Users page." },
+              { q: "How do low-stock alerts work?", a: "Enable Low Stock Warnings in Settings → Notifications. Alerts appear in the header bell when product quantity hits the minimum threshold." },
+              { q: "Where does dashboard data come from?", a: "All charts use live sales and inventory data from your database — revenue trends, busiest days, and top sellers update automatically." },
+              { q: "How do I change my profile picture?", a: "Go to Settings → Account Profile → Change Photo, then click Save Changes to upload to the server." },
+            ].map((faq, i) => (
+              <details key={i} className="group rounded-2xl border border-border/40 bg-background/50 open:bg-primary/5 open:border-primary/20 transition-all">
+                <summary className="cursor-pointer p-5 font-bold text-sm list-none flex items-center justify-between">
+                  {faq.q}
+                  <ChevronRight size={16} className="text-muted-foreground group-open:rotate-90 transition-transform" />
+                </summary>
+                <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+              </details>
+            ))}
           </div>
         </motion.section>
 

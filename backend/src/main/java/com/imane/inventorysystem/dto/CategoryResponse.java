@@ -9,6 +9,8 @@ public class CategoryResponse {
     private String icon;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Long productCount;
+    private Long stockCount;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -22,4 +24,8 @@ public class CategoryResponse {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public Long getProductCount() { return productCount; }
+    public void setProductCount(Long productCount) { this.productCount = productCount; }
+    public Long getStockCount() { return stockCount; }
+    public void setStockCount(Long stockCount) { this.stockCount = stockCount; }
 }

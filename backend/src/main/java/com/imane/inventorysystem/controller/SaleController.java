@@ -1,5 +1,6 @@
 package com.imane.inventorysystem.controller;
 
+import com.imane.inventorysystem.dto.DashboardAnalyticsResponse;
 import com.imane.inventorysystem.dto.SaleRequest;
 import com.imane.inventorysystem.dto.SaleResponse;
 import com.imane.inventorysystem.service.SaleService;
@@ -43,6 +44,11 @@ public class SaleController {
     @GetMapping("/stats/revenue")
     public ResponseEntity<BigDecimal> getRevenue() {
         return ResponseEntity.ok(saleService.getTotalRevenue());
+    }
+
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<DashboardAnalyticsResponse> getDashboardAnalytics() {
+        return ResponseEntity.ok(saleService.getDashboardAnalytics());
     }
 
     @DeleteMapping("/{id}")
