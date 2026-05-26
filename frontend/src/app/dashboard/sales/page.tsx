@@ -11,7 +11,7 @@ import {
   Download, Printer, ChevronDown, ChevronUp,
   Share2
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@/lib/react-query-custom";
 import { fetchSales, createSale, deleteSale, fetchProductsByName } from "@/lib/api";
 import { useReactToPrint } from "react-to-print";
 import { InvoiceTemplate, InvoiceData } from "@/components/dashboard/sales/InvoiceTemplate";

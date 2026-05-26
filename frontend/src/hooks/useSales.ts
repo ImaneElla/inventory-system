@@ -1,5 +1,5 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@/lib/react-query-custom";
 import { fetchSales } from "@/lib/api";
 
 export interface Sale {

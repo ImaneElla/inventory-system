@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@/lib/react-query-custom";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, fetchDashboardStats, toggleProductActive } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
 

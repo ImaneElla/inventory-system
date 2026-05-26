@@ -1,6 +1,23 @@
 {
+  "name": "inventory-system",
+  "version": "1.0.0",
+  "private": true,
   "scripts": {
     "dev": "cd frontend && bun run dev",
     "dev:backend": "cd backend && mvn spring-boot:run"
+  },
+  "dependencies": {
+    "axios": "^1.16.1",
+    "@heroui/react": "^3.0.3",
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "recharts": "^3.8.1"
+  },
+  "workspaces": [
+    "frontend"
+  ],
+  "overrides": {
+    "use-sync-external-store": "1.4.0"
   }
 }

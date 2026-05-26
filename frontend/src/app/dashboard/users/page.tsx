@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@/lib/react-query-custom";
 import { fetchAllUsers, deleteUser } from "@/lib/api";
 import {
   Users,
