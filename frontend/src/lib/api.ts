@@ -17,6 +17,23 @@ export function resolveImageUrl(path: string | null | undefined): string | null 
   const clean = path.replace(/^\/?(uploads\/)+/, "");
   return `${BACKEND}/uploads/${clean}`;
 }
+
+/**
+ * Resolve a user profile image URL.
+ * The backend stores User.imageUrl as a bare filename (e.g. "abc_photo.jpg").
+ * Profile images are stored under /uploads/profiles/.
+ * - Absolute URLs pass through unchanged.
+ * - Paths already containing /uploads/profiles/ are prefixed with BACKEND.
+ * - Bare filenames get BACKEND + /uploads/profiles/ prepended.
+ */
+export function resolveProfileImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  // Strip any existing /uploads/profiles/ or /uploads/ prefix to avoid duplication
+  const clean = path.replace(/^\/?(uploads\/profiles\/|uploads\/)+/, "");
+  return `${BACKEND}/uploads/profiles/${clean}`;
+}
+
 const BASE_V1_URL = `${BASE_API_URL}/v1`;
 
 function getCurrentUserId(): string | null {

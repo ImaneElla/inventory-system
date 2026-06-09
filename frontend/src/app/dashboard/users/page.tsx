@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@/lib/react-query-custom";
-import { fetchAllUsers, deleteUser, resolveImageUrl } from "@/lib/api";
+import { fetchAllUsers, deleteUser, resolveProfileImageUrl } from "@/lib/api";
 import {
   Users,
   Plus,
@@ -198,18 +198,24 @@ export default function UsersPage() {
                 <div className="flex items-start gap-4">
 
                   {/* AVATAR */}
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-black shrink-0">
+                  <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-black shrink-0">
 
-                    {user.imageUrl ? (
+                    {/* Initial fallback — only shown when there's no imageUrl */}
+                    {!user.imageUrl && (
+                      <span>
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+
+                    {user.imageUrl && (
                       <img
-                        src={resolveImageUrl(user.imageUrl) ?? ""}
+                        src={resolveProfileImageUrl(user.imageUrl) ?? ""}
                         alt={user.username}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).remove();
+                        }}
                       />
-                    ) : (
-                      user.username
-                        .charAt(0)
-                        .toUpperCase()
                     )}
 
                   </div>

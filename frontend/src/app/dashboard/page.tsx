@@ -354,16 +354,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border/40 text-[9px] font-black uppercase tracking-wider text-muted-foreground">
-                    <th className="text-left py-2 px-4">Product</th>
-                    <th className="text-right py-2 px-2">Sold</th>
-                    <th className="text-right py-2 px-4">Revenue</th>
-                  </tr>
+                            <tr className="border-b border-border/40 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                    <th className="text-center py-3 px-3 w-10">#</th>
+                    <th className="text-left py-3 px-3">Product</th>
+                    <th className="text-right py-3 px-3">Sold</th>
+                    <th className="text-right py-3 px-4">Revenue</th>
+                    </tr>
                 </thead>
                 <tbody>
-                  {topProducts.slice(0, 3).map(
+                  {topProducts.slice(0, 5).map(
                     (
                       p: {
                         productId: number;
@@ -375,14 +376,29 @@ export default function DashboardPage() {
                       i: number
                     ) => {
                       const imgSrc = resolveImageUrl(p.imageUrl);
+                            const rankColors = [
+                        "text-yellow-500", 
+                        "text-amber-500",   
+                        "text-orange-500",  
+                        "text-muted-foreground",
+                        "text-muted-foreground",
+                        "text-muted-foreground",
+                      ];
                       return (
                         <tr
                           key={p.productId ?? i}
                           className="border-b border-border/20 hover:bg-muted/30 transition-colors"
                         >
-                          <td className="py-2 px-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-muted overflow-hidden shrink-0">
+                    {/* Rank number */}
+                          <td className="py-4 px-3 text-center">
+                            <span className={`text-base font-black ${rankColors[i]}`}>
+                              {i + 1}
+                            </span>
+                          </td>
+                          {/* Product */}
+                          <td className="py-4 px-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-xl bg-muted overflow-hidden shrink-0">
                                 {imgSrc ? (
                                   <img
                                     src={imgSrc}
@@ -390,16 +406,15 @@ export default function DashboardPage() {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs font-black text-primary">
-                                    {p.name?.charAt(0)}
+                           <div className="w-full h-full flex items-center justify-center text-sm font-black text-primary">             
+                                {p.name?.charAt(0)}
                                   </div>
                                 )}
                               </div>
-                              <span className="font-bold truncate max-w-20 text-xs">{p.name}</span>
-                            </div>
+       <span className="font-bold truncate max-w-[90px] text-sm">{p.name}</span>                            </div>
                           </td>
-                          <td className="text-right py-2 px-2 font-bold text-xs">{p.sold}</td>
-                          <td className="text-right py-2 px-4 font-black text-emerald-600 text-xs">
+        <td className="text-right py-4 px-3 font-bold text-sm">{p.sold}</td>
+                          <td className="text-right py-4 px-4 font-black text-emerald-600 text-sm">
                             {Number(p.revenue).toLocaleString()} DH
                           </td>
                         </tr>
@@ -455,7 +470,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="relative z-10 flex flex-col justify-end pb-8">
             <p className="text-sm text-white/80 font-medium mb-6 max-w-55">
-              Get smart restock tips and sales insights powered by your live inventory data.
+             Get smart restock tips and sales insights powered by your live inventory data.
             </p>
             <Link
               href="/dashboard/ai-assistant"
@@ -465,7 +480,7 @@ export default function DashboardPage() {
               <ArrowUpRight size={16} />
             </Link>
           </CardContent>
-          <div className="absolute bottom-[-20%] right-[-10%] w-48 h-48 rounded-full bg-white/20 blur-2xl pointer-events-none" />
+          <div className="absolute bottom-[-20%] right-[-10%] w-48 h-48 rounded-full bg-white/20 blur-2xl pointer-events-none " />
           <div>
             <div>
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full bg-linear-to-br from-white/40 to-white/10 backdrop-blur-md border border-white/30 shadow-2xl" />

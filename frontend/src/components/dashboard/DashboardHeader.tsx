@@ -316,30 +316,31 @@ export default function DashboardHeader() {
             >
               {/* Avatar: photo if available, else serif initial */}
               <div
-                className="relative h-7 w-7 rounded-full flex items-center justify-center text-[13px] text-white shrink-0 transition-transform hover:scale-105 overflow-hidden"
+                className="relative h-10 w-10 rounded-full flex items-center justify-center text-[13px] text-white shrink-0 transition-transform hover:scale-105 overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
                   boxShadow: `0 2px 8px ${palette.from}55`,
                 }}
               >
-                {userImage ? (
+                {/* Initial — shown when no image, hidden behind photo when image loads */}
+                {!userImage && (
+                  <span
+                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 13 }}
+                  >
+                    {initials.charAt(0)}
+                  </span>
+                )}
+                {userImage && (
                   <img
                     src={userImage}
                     alt={userName}
-                    className="h-full w-full object-cover"
+                    className="absolute inset-0 h-full w-full object-cover"
                     onError={(e) => {
-                      // On broken URL: hide img, reveal the parent's text (initial)
-                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                      // On broken image URL: remove img so the gradient background shows
+                      (e.currentTarget as HTMLImageElement).remove();
                     }}
                   />
-                ) : null}
-                {/* Always render initial — sits behind img or shows when img fails */}
-                <span
-                  className="absolute"
-                  style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 13 }}
-                >
-                  {initials.charAt(0)}
-                </span>
+                )}
               </div>
               {/* Name + role — hidden on small screens */}
               <div className="hidden md:flex flex-col items-start leading-tight">
@@ -362,22 +363,23 @@ export default function DashboardHeader() {
                     boxShadow: `0 2px 8px ${palette.from}44`,
                   }}
                 >
-                  {userImage ? (
+                  {!userImage && (
+                    <span
+                      style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 15 }}
+                    >
+                      {initials.charAt(0)}
+                    </span>
+                  )}
+                  {userImage && (
                     <img
                       src={userImage}
                       alt={userName}
-                      className="h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                        (e.currentTarget as HTMLImageElement).remove();
                       }}
                     />
-                  ) : null}
-                  <span
-                    className="absolute"
-                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 15 }}
-                  >
-                    {initials.charAt(0)}
-                  </span>
+                  )}
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className="text-sm font-semibold truncate">{userName}</span>
