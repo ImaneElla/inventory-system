@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@/lib/react-query-custom";
 import { fetchAllUsers, deleteUser, resolveProfileImageUrl } from "@/lib/api";
+import { formatRelativeTime } from "@/lib/timeUtils";
 import {
   Users,
   Plus,
@@ -10,6 +11,7 @@ import {
   ShieldCheck,
   Trash2,
   Loader2,
+  Power
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
@@ -198,26 +200,30 @@ export default function UsersPage() {
                 <div className="flex items-start gap-4">
 
                   {/* AVATAR */}
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-black shrink-0">
+                  <div className="relative shrink-0">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-lg font-black">
+                      {/* Initial fallback — only shown when there's no imageUrl */}
+                      {!user.imageUrl && (
+                        <span>
+                          {user.username.charAt(0).toUpperCase()}
+                        </span>
+                      )}
 
-                    {/* Initial fallback — only shown when there's no imageUrl */}
-                    {!user.imageUrl && (
-                      <span>
-                        {user.username.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-
-                    {user.imageUrl && (
-                      <img
-                        src={resolveProfileImageUrl(user.imageUrl) ?? ""}
-                        alt={user.username}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).remove();
-                        }}
-                      />
-                    )}
-
+                      {user.imageUrl && (
+                        <img
+                          src={resolveProfileImageUrl(user.imageUrl) ?? ""}
+                          alt={user.username}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).remove();
+                          }}
+                        />
+                      )}
+                    </div>
+                    {/* Status Dot */}
+                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-card z-10 ${(user.isOnline || user.isActive !== false) ? 'bg-emerald-500' : 'bg-gray-400'}`}>
+                      {(user.isOnline || user.isActive !== false) && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75"></span>}
+                    </div>
                   </div>
 
                   {/* INFO */}
@@ -227,7 +233,7 @@ export default function UsersPage() {
                       {user.username}
                     </h2>
 
-                    <div className="mt-2">
+                    <div className="mt-1 flex flex-col gap-1 items-start">
 
                       <span
                         className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -238,22 +244,39 @@ export default function UsersPage() {
                       >
                         {user.role}
                       </span>
+                      
+                      <span className={`text-[10px] font-medium mt-1 ${
+                          user.isOnline ? "text-emerald-500" : "text-muted-foreground"
+                        }`}>
+                        {formatRelativeTime(user.lastSeen, user.isOnline)}
+                      </span>
 
                     </div>
 
                   </div>
 
-                  {/* DELETE BUTTON */}
-                  <button
-                    onClick={() =>
-                      setDeleteTarget(user)
-                    }
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all"
-                  >
-
-                    <Trash2 size={16} />
-
-                  </button>
+                  {/* ACTIONS */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => {
+                        // Mock toggle logic: since it's frontend-only, we can show toast
+                        showToast(user.isActive === false ? "Account restored" : "Account suspended");
+                      }}
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${user.isActive === false ? 'text-amber-500 bg-amber-500/10 hover:bg-amber-500/20' : 'text-slate-400 hover:text-amber-500 hover:bg-amber-500/10'}`}
+                      title={user.isActive === false ? "Restore Account" : "Suspend Account"}
+                    >
+                      <Power size={14} />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setDeleteTarget(user)
+                      }
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                      title="Delete User"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
 
                 </div>
 

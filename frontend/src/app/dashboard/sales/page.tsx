@@ -17,7 +17,7 @@ import { useReactToPrint } from "react-to-print";
 import { InvoiceTemplate, InvoiceData } from "@/components/dashboard/sales/InvoiceTemplate";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 import { cn } from "@/lib/utils";
-import { body, div } from "framer-motion/client";
+import { useActivityLog } from "@/lib/activityLog";
 
 // --- Types ---
 interface ProductSuggestion {
@@ -56,11 +56,14 @@ const ProductSearchInput = React.forwardRef<HTMLInputElement, {
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const results = await fetchProductsByName(query);
-        setSuggestions(results);
-        setOpen(results.length > 0);
+        const data = await fetchProductsByName(query);
+        // fetchProductsByName returns a paginated object — extract .content
+        const items: ProductSuggestion[] = data?.content ?? [];
+        setSuggestions(items);
+        setOpen(items.length > 0);
       } catch (err) {
         setSuggestions([]);
+        setOpen(false);
       } finally { setLoading(false); }
     }, 250);
     return () => clearTimeout(t);
@@ -119,6 +122,7 @@ ProductSearchInput.displayName = "ProductSearchInput";
 export default function SalesPage() {
   const qc = useQueryClient();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const { addLog } = useActivityLog();
 
   // General State
   const [showForm, setShowForm] = useState(false);
@@ -214,6 +218,9 @@ export default function SalesPage() {
         amountTendered: paymentMethod === "CASH" ? Number(amountTendered) : finalTotal,
         changeDue
       });
+      // Log the successful sale
+      const itemNames = basket.map(i => `${i.quantity}x ${i.product.name}`).join(", ");
+      addLog(`Processed Sale #${data?.transactionId ?? ""} — ${itemNames}`, "sale");
       closeForm();
     },
     onError: (e: any) => setError(e.message || "Failed to process order"),
@@ -221,10 +228,11 @@ export default function SalesPage() {
 
   const deleteM = useMutation({
     mutationFn: deleteSale,
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["products"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      addLog(`Deleted Sale #${id}`, "sale");
     },
   });
 
@@ -517,15 +525,16 @@ export default function SalesPage() {
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Date</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Items</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Total</th>
+                  <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Payment</th>
                   <th className="p-6 text-[11px] font-black uppercase text-muted-foreground tracking-widest">Status</th>
                   <th className="p-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50">
                 {isLoading ? (
-                  [...Array(5)].map((_, i) => <tr key={i} className="animate-pulse"><td colSpan={7} className="p-6"><div className="h-10 bg-muted/40 rounded-xl" /></td></tr>)
+                  [...Array(5)].map((_, i) => <tr key={i} className="animate-pulse"><td colSpan={8} className="p-6"><div className="h-10 bg-muted/40 rounded-xl" /></td></tr>)
                 ) : sales.length === 0 ? (
-                  <tr><td colSpan={7} className="py-24 text-center text-muted-foreground">No matching transactions found.</td></tr>
+                  <tr><td colSpan={8} className="py-24 text-center text-muted-foreground">No matching transactions found.</td></tr>
                 ) : sales.map((sale: Sale) => (
                   <React.Fragment key={sale.id}>
                     {/* Main Row */}
@@ -535,6 +544,16 @@ export default function SalesPage() {
                       <td className="p-6 text-muted-foreground text-sm">{sale.createdAt ? new Date(sale.createdAt).toLocaleDateString() : "—"}</td>
                       <td className="p-6 text-sm font-medium">{sale.items?.length || 0} Products</td>
                       <td className="p-6 font-black">{Number(sale.totalAmount).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH</td>
+                      <td className="p-6">
+                        <span className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase",
+                          (sale.paymentMethod || "CASH") === "CASH" ? "bg-emerald-500/10 text-emerald-600" :
+                          (sale.paymentMethod === "CARD") ? "bg-blue-500/10 text-blue-600" :
+                          "bg-purple-500/10 text-purple-600"
+                        )}>
+                          {sale.paymentMethod || "CASH"}
+                        </span>
+                      </td>
                       <td className="p-6">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 text-[10px] font-bold uppercase">
                           {sale.status}
@@ -573,7 +592,7 @@ export default function SalesPage() {
                     <AnimatePresence>
                       {expandedId === sale.id && (
                         <tr className="bg-muted/5 border-b border-border/50">
-                          <td colSpan={7} className="p-0">
+                          <td colSpan={8} className="p-0">
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                               <div className="p-6 lg:px-24">
                                 <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-4">Order Breakdown</h4>
@@ -639,13 +658,32 @@ export default function SalesPage() {
                 </div>
               </div>
               {/* Print and Share Buttons */}
-              <div className="mt-6 flex gap-6 mx-auto w-full">
+              <div className="mt-6 flex gap-3 mx-auto w-full">
                 <button
                   onClick={() => handlePrintReceipt()}
-                  className="flex-1 items-center justify-center gap-2 w-full btn-gradient text-white px-1 py-1 rounded-2xl font-medium hover:bg-primary/90 transition-all shadow-lg h-12 cursor-pointer"
+                  className="flex-1 items-center justify-center gap-2 w-full btn-gradient text-white px-1 py-1 rounded-2xl font-medium hover:bg-primary/90 transition-all shadow-lg h-12 cursor-pointer flex"
                 >
-                  <Printer size={18} className="mx-auto" />
+                  <Printer size={18} />
                   Print Receipt
+                </button>
+
+                {/* Save as PDF — opens browser print dialog targeting the invoice div */}
+                <button
+                  onClick={() => {
+                    // Open a print window containing only the invoice HTML
+                    const invoiceEl = invoiceRef.current;
+                    if (!invoiceEl) return;
+                    const html = `<!DOCTYPE html><html><head><title>Invoice #${receiptData.transactionId}</title><style>@media print{body{margin:0}}</style><link rel="stylesheet" href="/globals.css"></head><body>${invoiceEl.outerHTML}</body></html>`;
+                    const win = window.open("", "_blank", "width=900,height=700");
+                    if (!win) return;
+                    win.document.write(html);
+                    win.document.close();
+                    win.onload = () => { win.focus(); win.print(); };
+                  }}
+                  className="flex-1 items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-foreground px-1 py-1 rounded-2xl font-medium hover:opacity-80 transition-all h-12 cursor-pointer flex border border-border text-sm"
+                >
+                  <Download size={18} />
+                  Save PDF
                 </button>
 
                 <button
@@ -655,10 +693,10 @@ export default function SalesPage() {
                       text: `Here is your receipt #${receiptData.transactionId}`,
                     }).catch(() => { /* Ignore if cancelled */ });
                   }}
-                  className="flex-1 text-sm items-center justify-center gap-2 bg-foreground/30 text-foreground px-1 py-1 rounded-2xl font-medium hover:bg-foreground/60 transition-all h-12 mx-auto w-20 cursor-pointer"
+                  className="flex-1 text-sm items-center justify-center gap-2 bg-foreground/30 text-foreground px-1 py-1 rounded-2xl font-medium hover:bg-foreground/60 transition-all h-12 mx-auto cursor-pointer flex"
                 >
-                  <Share2 size={18} className="mx-auto" />
-                  Share 
+                  <Share2 size={18} />
+                  Share
                 </button>
               </div>
             </motion.div>

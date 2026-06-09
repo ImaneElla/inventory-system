@@ -160,7 +160,9 @@ export function useQuery<TData = any>({
         }));
       }
     });
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+    };
   }, [client, keyString, runQuery]);
 
   return {

@@ -12,8 +12,8 @@ import {
   LogOut,
   Settings,
   Tags,
-
   HelpCircle,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -32,18 +32,20 @@ import { cn } from "@/lib/utils";
 
 // Each item gets a distinctive iOS-style icon color
 const mainMenuItems = [
-  { name: "Dashboard",    icon: LayoutDashboard, path: "/dashboard",           color: "bg-blue-500",    shadow: "shadow-blue-500/30" },
-  { name: "Products",     icon: Box,             path: "/dashboard/products",  color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
-  { name: "Categories",   icon: Tags,            path: "/dashboard/categories", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
-  { name: "Sales",        icon: ShoppingCart,    path: "/dashboard/sales",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Users",        icon: Users,           path: "/dashboard/users",     color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
-  { name: "AI Assistant", icon: Sparkles,        path: "/dashboard/ai-assistant", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
-  { name: "Reports",      icon: BarChart2,       path: "/dashboard/reports",   color: "bg-blue-500",    shadow: "shadow-blue-500/30" },
+  { name: "Dashboard",       icon: LayoutDashboard, path: "/dashboard",                color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Products",        icon: Box,             path: "/dashboard/products",       color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Categories",      icon: Tags,            path: "/dashboard/categories",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Sales",           icon: ShoppingCart,    path: "/dashboard/sales",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Users",           icon: Users,           path: "/dashboard/users",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "AI Assistant",    icon: Sparkles,        path: "/dashboard/ai-assistant",   color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Reports",         icon: BarChart2,       path: "/dashboard/reports",        color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
 ];
 
 const generalMenuItems = [
-  { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-blue-500", shadow: "shadow-slate-500/30" },
-  { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-blue-500",  shadow: "shadow-cyan-500/30" },
+  { name: "Activity Logs",   icon: Activity,        path: "/dashboard/activity-logs", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
+  { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
+
 ];
 
 interface NavItemProps {
@@ -118,6 +120,7 @@ export default function SidebarApp() {
   const filteredMainMenuItems = mainMenuItems.filter(item => {
     if (item.name === "Users" && userRole !== "ADMIN") return false;
     if (item.name === "Reports" && userRole !== "ADMIN") return false;
+    if (item.name === "Activity Logs" && userRole !== "ADMIN") return false;
     return true;
   });
 

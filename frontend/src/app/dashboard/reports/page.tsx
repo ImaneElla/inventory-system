@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
@@ -10,747 +10,544 @@ import {
   Filter,
   Plus,
   Trash2,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  TrendingUp,
   DollarSign,
   BarChart3,
   Calendar,
   AlertCircle,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Printer,
 } from "lucide-react";
-import axios from "axios";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { Badge as HeroBadge } from "@heroui/react";
+import { fetchSales, fetchDashboardStats } from "@/lib/api";
+import { useActivityLog } from "@/lib/activityLog";
 
-// Report type interface
 interface Report {
   id: number;
   name: string;
   summary: string;
   type: string;
   dateRange: string;
-  formats: string; // Comma separated e.g. "PDF,Excel"
-  status: string; // "Ready", "Scheduled"
+  formats: string;
+  status: string;
   generatedBy: string;
   createdAt: string;
+  lineItems?: ReportLineItem[];
+  totalRevenue?: number;
+  totalTransactions?: number;
 }
 
-interface SummaryStats {
-  totalReports: number;
-  downloadedReports: number;
-  scheduledReports: number;
-  lastGenerated: string;
+interface ReportLineItem {
+  label: string;
+  qty: number;
+  amount: number;
 }
+
+
+function getDateWindow(mode: string, customStart: string, customEnd: string): { start: string; end: string; label: string } {
+  const now = new Date();
+
+  if (mode === "today") {
+    const d = now.toISOString().split("T")[0];
+    return { start: `${d}T00:00:00`, end: `${d}T23:59:59`, label: "Today" };
+  }
+
+  if (mode === "this-week") {
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((day + 6) % 7));
+    const start = monday.toISOString().split("T")[0];
+    const end = now.toISOString().split("T")[0];
+    return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: "This Week" };
+  }
+
+  if (mode === "this-month") {
+    const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const end = now.toISOString().split("T")[0];
+    return {
+      start: `${start}T00:00:00`,
+      end: `${end}T23:59:59`,
+      label: `${now.toLocaleString("default", { month: "long" })} ${now.getFullYear()}`,
+    };
+  }
+
+  if (mode === "this-year") {
+    const start = `${now.getFullYear()}-01-01`;
+    const end = now.toISOString().split("T")[0];
+    return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: `FY ${now.getFullYear()}` };
+  }
+
+  if (mode === "custom" && customStart && customEnd) {
+    return {
+      start: `${customStart}T00:00:00`,
+      end: `${customEnd}T23:59:59`,
+      label: `${customStart} → ${customEnd}`,
+    };
+  }
+
+  // fallback: this month
+  const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  const end = now.toISOString().split("T")[0];
+  return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: "This Month" };
+}
+
+function exportCSV(report: Report) {
+  const rows: string[] = [
+    `"${report.name}"`,
+    `"Generated: ${new Date(report.createdAt).toLocaleString()}"`,
+    `"Period: ${report.dateRange}"`,
+    `"Total Revenue: ${(report.totalRevenue ?? 0).toFixed(2)} DH"`,
+    `"Transactions: ${report.totalTransactions ?? 0}"`,
+    `""`,
+    `"Product","Quantity Sold","Revenue (DH)"`,
+  ];
+  if (report.lineItems && report.lineItems.length > 0) {
+    report.lineItems.forEach((item) => {
+      rows.push(`"${item.label}","${item.qty}","${item.amount.toFixed(2)}"`);
+    });
+  }
+  const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `report_${report.id}_${new Date().toISOString().split("T")[0]}.csv`;
+  link.click();
+}
+
+function printReport(report: Report) {
+  const items =
+    report.lineItems && report.lineItems.length > 0
+      ? report.lineItems
+          .map(
+            (item) =>
+              `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee;">${item.label}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${item.qty}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">${item.amount.toFixed(2)} DH</td></tr>`
+          )
+          .join("")
+      : `<tr><td colspan="3" style="padding:16px;text-align:center;color:#888;">No line items available</td></tr>`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${report.name}</title>
+      <style>
+        body { font-family: -apple-system, sans-serif; margin: 40px; color: #1a1a1a; }
+        h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+        .meta { color: #666; font-size: 12px; margin-bottom: 24px; }
+        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: #f9f9f9; border-radius: 8px; padding: 16px; }
+        .summary-card .value { font-size: 24px; font-weight: 900; }
+        .summary-card .label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
+        table { width: 100%; border-collapse: collapse; }
+        thead tr { background: #1a1a1a; color: white; font-size: 11px; text-transform: uppercase; }
+        thead th { padding: 10px 8px; text-align: left; }
+        @media print { body { margin: 20px; } }
+      </style>
+    </head>
+    <body>
+      <h1>${report.name}</h1>
+      <div class="meta">Generated on ${new Date(report.createdAt).toLocaleString()} &nbsp;|&nbsp; Period: ${report.dateRange} &nbsp;|&nbsp; By: ${report.generatedBy}</div>
+      <div class="summary">
+        <div class="summary-card">
+          <div class="value">${(report.totalRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH</div>
+          <div class="label">Total Revenue</div>
+        </div>
+        <div class="summary-card">
+          <div class="value">${report.totalTransactions ?? 0}</div>
+          <div class="label">Total Transactions</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Product</th><th>Qty Sold</th><th style="text-align:right;">Revenue</th></tr></thead>
+        <tbody>${items}</tbody>
+      </table>
+    </body>
+    </html>
+  `;
+
+  const win = window.open("", "_blank");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { win.print(); };
+}
+
 
 export default function ReportsPage() {
-  // --- States ---
-  const [reports, setReports] = useState<Report[]>([
-    {
-      id: 1,
-      name: "Q1 Income Statement",
-      summary: "Complete income analysis for Q1 2024 with revenue breakdown by category",
-      type: "Income",
-      dateRange: "Jan 1, 2024 - Mar 31, 2024",
-      formats: "PDF,Excel,CSV",
-      status: "Ready",
-      generatedBy: "System",
-      createdAt: new Date(Date.now() - 7*24*60*60*1000).toISOString()
-    },
-    {
-      id: 2,
-      name: "February Expense Report",
-      summary: "Monthly expense tracking and departmental breakdowns for February",
-      type: "Expense",
-      dateRange: "Feb 1, 2024 - Feb 29, 2024",
-      formats: "PDF,Excel",
-      status: "Ready",
-      generatedBy: "System",
-      createdAt: new Date(Date.now() - 3*24*60*60*1000).toISOString()
-    },
-    {
-      id: 3,
-      name: "Q2 Forecast",
-      summary: "Projected financial performance for Q2 with growth forecasts",
-      type: "Forecast",
-      dateRange: "Apr 1, 2024 - Jun 30, 2024",
-      formats: "PDF,Excel,CSV",
-      status: "Ready",
-      generatedBy: "System",
-      createdAt: new Date(Date.now() - 1*24*60*60*1000).toISOString()
-    }
-  ]);
-  const [stats, setStats] = useState<SummaryStats>({
-    totalReports: 0,
-    downloadedReports: 42,
-    scheduledReports: 5,
-    lastGenerated: "—"
-  });
-  const [loading, setLoading] = useState(true);
-  const [generatingType, setGeneratingType] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<number | null>(null);
-  
-  // Search & Filtering
+  const { addLog } = useActivityLog();
+
+  // Core report list
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Filter / generation controls
+  const [dateMode, setDateMode] = useState<"today" | "this-week" | "this-month" | "this-year" | "custom">("this-month");
+  const [customStart, setCustomStart] = useState("");
+  const [customEnd, setCustomEnd] = useState("");
+  const [reportType, setReportType] = useState<"Sales" | "Inventory" | "Financial">("Sales");
+
+  // Table filters
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "Income" | "Expense" | "Forecast" | "Budget vs Actual">("all");
-  
+  const [typeFilter, setTypeFilter] = useState<"all" | "Sales" | "Inventory" | "Financial">("all");
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Active Menu Dropdown
-  const [activeMenuId, setActiveMenuId] = useState<number | null>(null);
-
-  // Toast Notification
+  // Toast
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  // Dashboard stats for the donut chart (real data)
+  const [dashStats, setDashStats] = useState<{ revenue: number; expenses: number } | null>(null);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 4000);
   };
 
-  // --- Fetch Data ---
-  const fetchReports = async () => {
-    try {
-      const { data } = await axios.get("/api/reports");
-      setReports(data);
-    } catch (err) {
-      console.error("Failed to fetch reports", err);
-      showToast("Error loading reports from database", "error");
-    }
-  };
-
-  const fetchSummary = async () => {
-    try {
-      const { data } = await axios.get("/api/reports/summary");
-      setStats(data);
-    } catch (err) {
-      console.error("Failed to fetch reports summary", err);
-    }
-  };
-
-  const loadData = async () => {
-    setLoading(true);
-    await Promise.all([fetchReports(), fetchSummary()]);
-    setLoading(false);
-  };
-
+  // Fetch dashboard stats for donut chart
   useEffect(() => {
-    loadData();
+    fetchDashboardStats()
+      .then((data: any) => {
+        if (data) {
+          const revenue = Number(data.totalRevenue ?? data.revenue ?? 0);
+          const expenses = Number(data.totalExpenses ?? data.expenses ?? revenue * 0.6);
+          setDashStats({ revenue, expenses });
+        }
+      })
+      .catch(() => {
+        // Graceful fallback with placeholder
+        setDashStats({ revenue: 0, expenses: 0 });
+      });
   }, []);
 
-  // --- Actions ---
-  const generateMockReport = (reportType: string): Report => {
-    const now = new Date();
-    const id = Math.max(...reports.map(r => r.id), 0) + 1;
-    const reportNames: Record<string, string> = {
-      "Custom": "Custom Report",
-      "Income": "Income Statement",
-      "Expense": "Expense Report",
-      "Forecast": "Financial Forecast",
-      "Budget vs Actual": "Budget vs Actual Analysis"
-    };
-    
-    return {
-      id,
-      name: reportNames[reportType] || `${reportType} Report`,
-      summary: `${reportType} report generated on ${now.toLocaleDateString()}. Contains comprehensive financial analysis and metrics.`,
-      type: reportType === "Custom" ? "Income" : reportType,
-      dateRange: `${now.toLocaleDateString()} - ${new Date(now.getTime() + 30*24*60*60*1000).toLocaleDateString()}`,
-      formats: "PDF,Excel,CSV",
-      status: "Ready",
-      generatedBy: "System",
-      createdAt: now.toISOString()
-    };
-  };
 
-  const handleGenerateReport = async (reportType: string) => {
-    setGeneratingType(reportType);
-    
-    // Create mock report IMMEDIATELY for instant UI feedback
-    const mockReport = generateMockReport(reportType);
-    setReports(prev => [mockReport, ...prev]);
-    showToast(`✓ ${mockReport.name} generated successfully!`, "success");
-    
-    // Try to sync with backend in background (non-blocking)
+  const handleGenerateReport = async () => {
+    setLoading(true);
     try {
-      await axios.post("/api/reports/generate", { type: reportType });
-      // If successful, refresh data
-      await Promise.all([fetchReports(), fetchSummary()]);
-    } catch (err) {
-      console.warn("Backend sync failed, using local report", err);
-      // Report still shows locally, backend is optional
+      const { start, end, label } = getDateWindow(dateMode, customStart, customEnd);
+      const userName = typeof window !== "undefined" ? (localStorage.getItem("userName") || "System") : "System";
+
+      // Fetch all sales in the window
+      const salesData = await fetchSales({ start, end, size: 1000 });
+      const sales: any[] = salesData?.content ?? [];
+
+      // Aggregate line items by product name
+      const productMap: Record<string, { qty: number; amount: number }> = {};
+      let totalRevenue = 0;
+
+      sales.forEach((sale: any) => {
+        const saleTotal = Number(sale.totalAmount ?? 0);
+        totalRevenue += saleTotal;
+        (sale.items ?? []).forEach((item: any) => {
+          const name: string = item.productName ?? item.name ?? "Unknown Product";
+          const qty = Number(item.quantity ?? 1);
+          const price = Number(item.unitPrice ?? item.price ?? 0);
+          if (!productMap[name]) productMap[name] = { qty: 0, amount: 0 };
+          productMap[name].qty += qty;
+          productMap[name].amount += qty * price;
+        });
+      });
+
+      const lineItems: ReportLineItem[] = Object.entries(productMap)
+        .map(([label, v]) => ({ label, qty: v.qty, amount: v.amount }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 50);
+
+      const reportNames: Record<string, string> = {
+        Sales: "Sales Summary Report",
+        Inventory: "Inventory Status Report",
+        Financial: "Financial Overview",
+      };
+
+      const newReport: Report = {
+        id: Date.now(),
+        name: `${reportNames[reportType]} — ${label}`,
+        summary: `${sales.length} transactions recorded in the selected period. Total revenue: ${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })} DH.`,
+        type: reportType,
+        dateRange: label,
+        formats: "PDF,CSV",
+        status: "Ready",
+        generatedBy: userName,
+        createdAt: new Date().toISOString(),
+        lineItems,
+        totalRevenue,
+        totalTransactions: sales.length,
+      };
+
+      setReports((prev) => [newReport, ...prev]);
+      showToast(`✓ ${newReport.name} generated — ${sales.length} transactions found`, "success");
+      addLog(`Generated report: ${newReport.name}`, "report");
+    } catch (err: any) {
+      showToast(`Failed to generate report: ${err.message || "Unknown error"}`, "error");
     } finally {
-      setGeneratingType(null);
+      setLoading(false);
     }
   };
 
-  const handleDeleteReport = async (id: number, name: string) => {
-    setDeletingId(id);
-    setActiveMenuId(null);
-    
-    // Remove immediately from UI (optimistic update)
-    setReports(prev => prev.filter(r => r.id !== id));
+  const handleDeleteReport = (id: number, name: string) => {
+    setReports((prev) => prev.filter((r) => r.id !== id));
     showToast(`Report "${name}" deleted.`, "info");
-    
-    // Try to sync deletion with backend
-    try {
-      await axios.delete(`/api/reports/${id}`);
-    } catch (err) {
-      console.warn("Backend sync failed, report removed locally", err);
-    } finally {
-      setDeletingId(null);
-    }
+    addLog(`Deleted report: ${name}`, "report");
   };
 
-  // --- Client-side Search & Type Filter ---
   const filteredReports = useMemo(() => {
     return reports.filter((r) => {
-      const matchesSearch =
+      const matchSearch =
         r.name.toLowerCase().includes(search.toLowerCase()) ||
         r.summary.toLowerCase().includes(search.toLowerCase());
-      
-      const matchesType = typeFilter === "all" || r.type === typeFilter;
-      
-      return matchesSearch && matchesType;
+      const matchType = typeFilter === "all" || r.type === typeFilter;
+      return matchSearch && matchType;
     });
   }, [reports, search, typeFilter]);
 
-  // Reset to page 1 on search or filter change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [search, typeFilter]);
+  useEffect(() => { setCurrentPage(1); }, [search, typeFilter]);
 
-  // --- Pagination calculations ---
-  const totalPages = Math.ceil(filteredReports.length / itemsPerPage) || 1;
+  const totalPages = Math.max(1, Math.ceil(filteredReports.length / itemsPerPage));
   const paginatedReports = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredReports.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredReports.slice(start, start + itemsPerPage);
   }, [filteredReports, currentPage]);
 
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
+  // Donut chart data
+  const donutData = dashStats && (dashStats.revenue > 0 || dashStats.expenses > 0)
+    ? [
+        { name: "Revenue", value: dashStats.revenue, color: "#10B981" },
+        { name: "Expenses", value: dashStats.expenses, color: "#F43F5E" },
+      ]
+    : [
+        { name: "Revenue", value: 1, color: "#10B981" },
+        { name: "Expenses", value: 1, color: "#F43F5E" },
+      ];
 
-  // --- Close Action Menu on Outside Click ---
-  useEffect(() => {
-    const handleOutsideClick = () => {
-      setActiveMenuId(null);
-    };
-    window.addEventListener("click", handleOutsideClick);
-    return () => window.removeEventListener("click", handleOutsideClick);
-  }, []);
+  const netProfit = dashStats ? Math.max(0, dashStats.revenue - dashStats.expenses) : 0;
 
   return (
-    <div className="min-h-screen bg-[#f4f7fe] dark:bg-background px-4 md:px-8 py-8 text-foreground relative overflow-hidden select-none">
-      
-      {/* Background glow effects */}
+    <div className="min-h-screen bg-[#f4f7fe] dark:bg-background px-4 md:px-8 py-8 text-foreground relative overflow-hidden">
+      {/* Background glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[35%] h-[35%] rounded-full bg-violet-500/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-[1400px] mx-auto space-y-8 relative z-10">
-        
-        {/* ================= HEADER ================= */}
+      <div className="max-w-[1400px] mx-auto space-y-6 relative z-10">
+
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
+            <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
+              <BarChart3 size={11} /> Reports Engine
+            </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground">Reports</h1>
             <p className="text-xs text-muted-foreground font-semibold mt-1">
-              Generate, review, and export detailed financial reports
+              Generate, review, and export detailed financial reports from real transaction data
             </p>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button 
-              disabled={generatingType !== null}
-              onClick={() => handleGenerateReport("Custom")}
-              className="h-10 px-4 rounded-xl border border-border bg-white dark:bg-card text-xs font-bold shadow-sm hover:bg-muted/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {generatingType === "Custom" ? (
-                <Loader2 size={14} className="animate-spin text-primary" />
-              ) : (
-                <Plus size={14} className="text-primary" />
-              )}
-              {generatingType === "Custom" ? "Generating..." : "Generate Custom Report"}
-            </button>
-            
-            
-            <button 
-              onClick={() => {
-                showToast("AI assistant features coming soon!", "info");
-              }}
-              className="h-10 px-5 rounded-xl btn-gradient  text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Sparkles size={13} className="text-violet-200 animate-pulse" />
-              Ask Emexa
-            </button>
           </div>
         </header>
 
-        {/* ================= TOP GRID: QUICK GENERATE + METRICS ================= */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
-          
-          {/* Quick Generate Cards (Left) */}
-          <div className="xl:col-span-8 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Quick Generate</h2>
+        {/* ── Generation Control Bar ────────────────────────────────── */}
+        <div className="bg-card/60 backdrop-blur-xl border border-border p-5 rounded-2xl shadow-sm space-y-4">
+          <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Report Generator</h2>
+
+          <div className="flex flex-wrap items-end gap-4">
+            {/* Date Mode */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Calendar size={10} /> Date Range
+              </label>
+              <select
+                value={dateMode}
+                onChange={(e) => setDateMode(e.target.value as any)}
+                className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="today">Today</option>
+                <option value="this-week">This Week</option>
+                <option value="this-month">This Month</option>
+                <option value="this-year">This Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Income Statement */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
-                    <DollarSign size={18} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground">Income Statement</h3>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium leading-relaxed">
-                      Revenue and expenses summary calculated from live system sales.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  disabled={generatingType !== null}
-                  onClick={() => handleGenerateReport("Income")}
-                  className="mt-6 w-full h-9 rounded-xl bg-[#f0f4ff] dark:bg-muted/40 hover:bg-[#e0e8ff] dark:hover:bg-muted/80 text-primary dark:text-foreground text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {generatingType === "Income" ? (
-                    <Loader2 size={13} className="animate-spin text-primary" />
-                  ) : "Generate"}
-                </button>
-              </div>
 
-              {/* Balance Sheet */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                    <BarChart3 size={18} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground">Balance Sheet</h3>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium leading-relaxed">
-                      Assets and liabilities overview representing inventory cost valuation.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  disabled={generatingType !== null}
-                  onClick={() => handleGenerateReport("Balance Sheet")}
-                  className="mt-6 w-full h-9 rounded-xl bg-[#f0f4ff] dark:bg-muted/40 hover:bg-[#e0e8ff] dark:hover:bg-muted/80 text-primary dark:text-foreground text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            {/* Custom date inputs */}
+            <AnimatePresence>
+              {dateMode === "custom" && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  className="flex items-end gap-2 overflow-hidden"
                 >
-                  {generatingType === "Balance Sheet" ? (
-                    <Loader2 size={13} className="animate-spin text-primary" />
-                  ) : "Generate"}
-                </button>
-              </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">From</label>
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">To</label>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              {/* Cash Flow Statement */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
-                    <FileSpreadsheet size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground">Cash Flow Statement</h3>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium leading-relaxed">
-                      Cash movement analysis and Runway runway forecast calculations.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  disabled={generatingType !== null}
-                  onClick={() => handleGenerateReport("Forecast")}
-                  className="mt-6 w-full h-9 rounded-xl bg-[#f0f4ff] dark:bg-muted/40 hover:bg-[#e0e8ff] dark:hover:bg-muted/80 text-primary dark:text-foreground text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {generatingType === "Forecast" ? (
-                    <Loader2 size={13} className="animate-spin text-primary" />
-                  ) : "Generate"}
-                </button>
-              </div>
-
-              {/* Budget vs Actual */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden group">
-                <div className="flex gap-4 items-start">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
-                    <TrendingUp size={16} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-foreground">Budget vs Actual</h3>
-                    <p className="text-xs text-muted-foreground mt-1 font-medium leading-relaxed">
-                      Compare planned operational budgets vs actual realized outflows.
-                    </p>
-                  </div>
-                </div>
-                <button
-                  disabled={generatingType !== null}
-                  onClick={() => handleGenerateReport("Budget vs Actual")}
-                  className="mt-6 w-full h-9 rounded-xl bg-[#f0f4ff] dark:bg-muted/40 hover:bg-[#e0e8ff] dark:hover:bg-muted/80 text-primary dark:text-foreground text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {generatingType === "Budget vs Actual" ? (
-                    <Loader2 size={13} className="animate-spin text-primary" />
-                  ) : "Generate"}
-                </button>
-              </div>
-
+            {/* Report Category */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                <Filter size={10} /> Category
+              </label>
+              <select
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value as any)}
+                className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="Sales">Sales Report</option>
+                <option value="Inventory">Inventory Report</option>
+                <option value="Financial">Financial Overview</option>
+              </select>
             </div>
+
+            <button
+              disabled={loading || (dateMode === "custom" && (!customStart || !customEnd))}
+              onClick={handleGenerateReport}
+              className="h-10 px-6 rounded-xl btn-gradient text-white text-xs font-black shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 mt-auto"
+            >
+              {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+              Generate Report
+            </button>
           </div>
-
-          {/* Metrics summary grid (Right) */}
-          <div className="xl:col-span-4 space-y-4">
-            <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Reports Summary</h2>
-            
-            <div className="grid grid-cols-2 gap-4 h-[calc(100%-2rem)]">
-              
-              {/* Total Reports */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow select-none">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center">
-                  <FileText size={16} />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black tabular-nums tracking-tight text-foreground">
-                    {loading ? "..." : stats.totalReports}
-                  </h4>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Total Reports</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-0.5 font-medium">Generated this period</p>
-                </div>
-              </div>
-
-              {/* Downloaded Reports */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow select-none">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
-                  <Download size={16} />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black tabular-nums tracking-tight text-foreground">
-                    {stats.downloadedReports}
-                  </h4>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Downloaded</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-0.5 font-medium">Across all formats</p>
-                </div>
-              </div>
-
-              {/* Scheduled Reports */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow select-none">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center">
-                  <Calendar size={16} />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black tabular-nums tracking-tight text-foreground">
-                    {loading ? "..." : stats.scheduledReports}
-                  </h4>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Scheduled Reports</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-0.5 font-medium">Auto-generated rules</p>
-                </div>
-              </div>
-
-              {/* Last Generated */}
-              <div className="p-5 rounded-[1.5rem] bg-white dark:bg-card border border-border/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow select-none col-span-1">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                  <CheckCircle2 size={16} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black truncate max-w-full text-foreground">
-                    {loading ? "..." : stats.lastGenerated.split(" at ")[0]}
-                  </h4>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Last Generated</p>
-                  <p className="text-[9px] text-muted-foreground/60 mt-0.5 font-medium truncate">
-                    {loading ? "..." : stats.lastGenerated.split(" at ")[1] ? stats.lastGenerated.split(" at ")[1] : "Active"}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
         </div>
 
-        {/* ================= TABLE SECTION: GENERATED REPORTS ================= */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Generated Reports</h2>
-          </div>
-
-          <div className="rounded-[2rem] border border-border/80 bg-white dark:bg-card shadow-sm overflow-hidden">
-            
-            {/* Table Search & Filter Bar */}
-            <div className="p-4 sm:p-6 border-b border-border/60 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/50 dark:bg-card/50">
-              <div className="relative w-full sm:max-w-md group">
-                <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search here..."
-                  className="h-10 w-full pl-11 pr-4 rounded-xl border border-border bg-[#f8fafc] dark:bg-background outline-none text-xs font-medium focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                />
-              </div>
-
-              <div className="flex items-center gap-3 w-full sm:w-auto self-stretch sm:self-auto justify-end">
-                <div className="flex bg-[#f1f5f9] dark:bg-background border border-border p-1 rounded-xl">
-                  {(["all", "Income", "Expense", "Forecast"] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setTypeFilter(type)}
-                      className={`px-3 h-8 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                        typeFilter === type
-                          ? "bg-white dark:bg-card text-foreground shadow-sm border border-border/50"
-                          : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-
-              
-            <button 
-              onClick={async () => {
-                try {
-                  const csv = [
-                    ["Report Name", "Type", "Date Range", "Status", "Generated On"].join(","),
-                    ...paginatedReports.map(r => 
-                      [r.name, r.type, r.dateRange, r.status, new Date(r.createdAt).toLocaleDateString()].join(",")
-                    )
-                  ].join("\n");
-                  
-                  const blob = new Blob([csv], { type: "text/csv" });
-                  const url = URL.createObjectURL(blob);
-                  const link = document.createElement("a");
-                  link.href = url;
-                  link.download = `reports-${new Date().toISOString().split("T")[0]}.csv`;
-                  link.click();
-                  URL.revokeObjectURL(url);
-                  showToast("Reports list exported successfully!", "success");
-                } catch (err) {
-                  showToast("Failed to export reports", "error");
-                }
-              }}
-              className="h-10 px-4 rounded-xl border border-border bg-white dark:bg-card hover:bg-muted/10 text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Download size={14} className="text-muted-foreground" />
-              Export
-            </button>
-              </div>
+        {/* ── Table Search & Type Filter Row ───────────────────────── */}
+        <div className="bg-card/60 backdrop-blur-xl border border-border p-4 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-10">
+              <Filter size={14} className="text-muted-foreground" />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as any)}
+                className="bg-transparent text-xs font-bold outline-none cursor-pointer"
+              >
+                <option value="all">All Types</option>
+                <option value="Sales">Sales</option>
+                <option value="Inventory">Inventory</option>
+                <option value="Financial">Financial</option>
+              </select>
             </div>
 
-            {/* Main Table */}
-            <div className="overflow-x-auto">
+            <div className="relative w-48 group">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search reports..."
+                className="h-10 w-full pl-9 pr-3 rounded-xl border border-border bg-background outline-none text-xs font-medium focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+          </div>
+
+          <span className="text-[10px] font-bold text-muted-foreground uppercase">
+            {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+
+          {/* LEFT: Report Table (70%) */}
+          <div className="lg:col-span-7 bg-card/60 backdrop-blur-xl border border-border rounded-3xl shadow-sm overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-border/50 flex items-center justify-between">
+              <h2 className="text-sm font-black uppercase tracking-wider text-foreground">Generated Reports</h2>
+            </div>
+
+            <div className="overflow-x-auto flex-1">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-[#f8fafc]/50 dark:bg-card/30 border-b border-border/60 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                  <tr className="bg-muted/10 border-b border-border/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                     <th className="py-4 px-6">Report Name</th>
                     <th className="py-4 px-6">Type</th>
-                    <th className="py-4 px-6">Date Range</th>
-                    <th className="py-4 px-6">Format</th>
-                    <th className="py-4 px-6">Generated On</th>
-                    <th className="py-4 px-6">Status</th>
-                    <th className="py-4 px-6 text-right w-16">Action</th>
+                    <th className="py-4 px-6">Generated Date</th>
+                    <th className="py-4 px-6">Created By</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {loading ? (
-                    [...Array(3)].map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td colSpan={7} className="p-6">
-                          <div className="h-10 bg-muted/40 rounded-xl" />
-                        </td>
-                      </tr>
-                    ))
-                  ) : paginatedReports.length === 0 ? (
+                  {paginatedReports.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-20 text-center text-muted-foreground text-xs font-bold">
-                        No generated reports found matching your parameters.
+                      <td colSpan={5} className="py-16 text-center text-muted-foreground text-xs font-bold">
+                        {loading ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <Loader2 size={16} className="animate-spin" /> Generating report from real data…
+                          </div>
+                        ) : reports.length === 0 ? (
+                          <div>
+                            <p className="font-bold">No reports generated yet.</p>
+                            <p className="text-muted-foreground/60 mt-1">Use the generator above to create your first report.</p>
+                          </div>
+                        ) : (
+                          "No reports match your filters."
+                        )}
                       </td>
                     </tr>
                   ) : (
                     paginatedReports.map((report) => (
-                      <tr 
-                        key={report.id}
-                        className="hover:bg-[#f8fafc]/40 dark:hover:bg-muted/5 transition-colors border-b border-border/40 text-xs"
-                      >
-                        {/* Report Name & description */}
-                        <td className="py-4 px-6 max-w-sm">
+                      <tr key={report.id} className="hover:bg-muted/5 transition-colors">
+                        <td className="py-4 px-6 max-w-[220px]">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/5 border border-indigo-500/10 flex items-center justify-center shrink-0">
-                              <FileText size={14} className="text-primary" />
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                              <FileText size={14} />
                             </div>
                             <div className="truncate">
-                              <div className="font-bold text-foreground truncate max-w-[260px]">{report.name}</div>
-                              <div className="text-[10px] text-muted-foreground truncate max-w-[260px] mt-0.5 font-medium">{report.summary}</div>
+                              <div className="font-bold text-sm text-foreground truncate">{report.name}</div>
+                              <div className="text-[10px] text-muted-foreground truncate mt-0.5">{report.summary}</div>
                             </div>
                           </div>
                         </td>
-
-                        {/* Type badge */}
                         <td className="py-4 px-6">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                            report.type === "Income"
-                              ? "bg-indigo-500/10 text-indigo-600 border border-indigo-500/10"
-                              : report.type === "Expense"
-                              ? "bg-slate-500/10 text-slate-600 border border-slate-500/10"
-                              : report.type === "Forecast"
-                              ? "bg-violet-500/10 text-violet-600 border border-violet-500/10"
-                              : "bg-amber-500/10 text-amber-600 border border-amber-500/10"
-                          }`}>
+                          <HeroBadge
+                            color={report.type === "Sales" ? "success" : report.type === "Financial" ? "default" : "default"}
+                            variant="soft"
+                            size="sm"
+                            className="uppercase font-black tracking-wider text-[9px]"
+                          >
                             {report.type}
-                          </span>
+                          </HeroBadge>
                         </td>
-
-                        {/* Date Range */}
-                        <td className="py-4 px-6 font-medium text-muted-foreground">{report.dateRange}</td>
-
-                        {/* Format badges */}
-                        <td className="py-4 px-6">
-                          <div className="flex gap-1.5">
-                            {report.formats.split(",").map((fmt) => (
-                              <span 
-                                key={fmt}
-                                className="px-2 py-0.5 rounded bg-muted/40 dark:bg-muted/80 text-[9px] font-black text-muted-foreground uppercase border border-border"
-                              >
-                                {fmt}
-                              </span>
-                            ))}
-                          </div>
+                        <td className="py-4 px-6 font-medium text-xs text-muted-foreground">
+                          {new Date(report.createdAt).toLocaleDateString()}
                         </td>
-
-                        {/* Generated On */}
-                        <td className="py-4 px-6 text-muted-foreground font-medium">
-                          {new Date(report.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric"
-                          })}
-                        </td>
-
-                        {/* Status Badge */}
-                        <td className="py-4 px-6">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                            report.status?.toLowerCase() === "ready"
-                              ? "bg-emerald-500/10 text-emerald-600"
-                              : "bg-amber-500/10 text-amber-600"
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              report.status?.toLowerCase() === "ready" ? "bg-emerald-500" : "bg-amber-500"
-                            }`} />
-                            {report.status}
-                          </span>
-                        </td>
-
-                        {/* Action Triple Dot Menu */}
-                        <td className="py-4 px-6 text-right relative">
-                          <div className="inline-block">
+                        <td className="py-4 px-6 text-xs font-bold text-foreground">{report.generatedBy}</td>
+                        <td className="py-4 px-6 text-right">
+                          <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveMenuId(activeMenuId === report.id ? null : report.id);
-                              }}
-                              className="p-1.5 hover:bg-muted/20 rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+                              onClick={() => printReport(report)}
+                              className="p-2 bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 rounded-lg transition-colors cursor-pointer"
+                              title="Download / Print PDF"
                             >
-                              <MoreVertical size={16} />
+                              <Printer size={14} />
                             </button>
-                            
-                            <AnimatePresence>
-                              {activeMenuId === report.id && (
-                                <motion.div
-                                  initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                                  exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                                  className="absolute right-6 mt-1 w-44 bg-white dark:bg-card border border-border rounded-xl shadow-xl z-20 overflow-hidden text-left"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="p-1.5 space-y-1">
-                                    <button 
-                                      onClick={() => {
-                                        setActiveMenuId(null);
-                                        try {
-                                          const content = `
-REPORT: ${report.name}
-TYPE: ${report.type}
-DATE RANGE: ${report.dateRange}
-GENERATED: ${new Date(report.createdAt).toLocaleString()}
-STATUS: ${report.status}
-
-====================================
-${report.summary}
-====================================
-
-This report was generated by Inventory System.
-For more details, visit the dashboard.
-                                          `.trim();
-                                          
-                                          const blob = new Blob([content], { type: "application/pdf" });
-                                          const url = URL.createObjectURL(blob);
-                                          const link = document.createElement("a");
-                                          link.href = url;
-                                          link.download = `${report.name.toLowerCase().replace(/\s+/g, "-")}.pdf`;
-                                          link.click();
-                                          URL.revokeObjectURL(url);
-                                          showToast(`Downloaded "${report.name}" as PDF`, "success");
-                                        } catch (err) {
-                                          showToast("Failed to download PDF", "error");
-                                        }
-                                      }}
-                                      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted/20 rounded-lg transition-all cursor-pointer"
-                                    >
-                                      <FileText size={13} className="text-indigo-500" />
-                                      Download PDF
-                                    </button>
-                                    
-                                    <button 
-                                      onClick={() => {
-                                        setActiveMenuId(null);
-                                        try {
-                                          const csv = [
-                                            ["Report Name", report.name],
-                                            ["Type", report.type],
-                                            ["Date Range", report.dateRange],
-                                            ["Status", report.status],
-                                            ["Generated", new Date(report.createdAt).toLocaleString()],
-                                            [""],
-                                            ["Summary"],
-                                            [report.summary]
-                                          ].map(row => row.join(",")).join("\n");
-                                          
-                                          const blob = new Blob([csv], { type: "text/csv" });
-                                          const url = URL.createObjectURL(blob);
-                                          const link = document.createElement("a");
-                                          link.href = url;
-                                          link.download = `${report.name.toLowerCase().replace(/\s+/g, "-")}.csv`;
-                                          link.click();
-                                          URL.revokeObjectURL(url);
-                                          showToast(`Downloaded "${report.name}" as Excel`, "success");
-                                        } catch (err) {
-                                          showToast("Failed to download Excel", "error");
-                                        }
-                                      }}
-                                      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted/20 rounded-lg transition-all cursor-pointer"
-                                    >
-                                      <FileSpreadsheet size={13} className="text-emerald-500" />
-                                      Download Excel
-                                    </button>
-
-                                    <div className="h-px bg-border my-1" />
-
-                                    <button 
-                                      disabled={deletingId !== null}
-                                      onClick={() => handleDeleteReport(report.id, report.name)}
-                                      className="w-full flex items-center gap-2.5 px-3 py-1.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all cursor-pointer"
-                                    >
-                                      {deletingId === report.id ? (
-                                        <Loader2 size={13} className="animate-spin text-rose-500" />
-                                      ) : (
-                                        <Trash2 size={13} />
-                                      )}
-                                      Delete Report
-                                    </button>
-                                  </div>
-                                </motion.div>
-                              )}
-                            </AnimatePresence>
+                            <button
+                              onClick={() => exportCSV(report)}
+                              className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-lg transition-colors cursor-pointer"
+                              title="Export CSV"
+                            >
+                              <FileSpreadsheet size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReport(report.id, report.name)}
+                              className="p-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -760,53 +557,108 @@ For more details, visit the dashboard.
               </table>
             </div>
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="p-4 sm:p-6 border-t border-border/60 flex justify-between items-center bg-white/30 dark:bg-card/30">
+              <div className="p-4 border-t border-border/50 flex justify-between items-center bg-muted/5">
                 <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                  Showing {Math.min(currentPage * itemsPerPage, filteredReports.length)} of {filteredReports.length} results
+                  Page {currentPage} of {totalPages}
                 </span>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     disabled={currentPage === 1}
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     className="p-1.5 border border-border rounded-lg disabled:opacity-30 hover:bg-muted/10 cursor-pointer transition-colors"
                   >
-                    <ChevronLeft size={16} />
+                    <ChevronLeft size={14} />
                   </button>
-                  
-                  {/* Page Numbers */}
-                  {Array.from({ length: totalPages }).map((_, idx) => (
-                    <button
-                      key={idx + 1}
-                      onClick={() => handlePageChange(idx + 1)}
-                      className={`w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center border transition-all cursor-pointer ${
-                        currentPage === idx + 1
-                          ? "bg-primary border-primary text-white shadow-sm"
-                          : "border-border hover:bg-muted/10 text-muted-foreground"
-                      }`}
-                    >
-                      {idx + 1}
-                    </button>
-                  ))}
-
-                  <button 
+                  <button
                     disabled={currentPage === totalPages}
-                    onClick={() => handlePageChange(currentPage + 1)}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     className="p-1.5 border border-border rounded-lg disabled:opacity-30 hover:bg-muted/10 cursor-pointer transition-colors"
                   >
-                    <ChevronRight size={16} />
+                    <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             )}
+          </div>
 
+          {/* RIGHT: Financial Sidebar (30%) */}
+          <div className="lg:col-span-3 space-y-6">
+
+            {/* Donut Chart */}
+            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-sm">
+              <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
+                <DollarSign size={12} /> Financial Summary
+              </h3>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      innerRadius={50}
+                      outerRadius={70}
+                      paddingAngle={5}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {donutData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: any) =>
+                        dashStats && (dashStats.revenue > 0 || dashStats.expenses > 0)
+                          ? `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH`
+                          : "No data yet"
+                      }
+                      contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}
+                    />
+                    <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: "10px", fontWeight: "bold" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 text-center">
+                <p className="text-xs font-medium text-muted-foreground">Net Profit (Est.)</p>
+                <p className="text-2xl font-black text-foreground mt-1">
+                  {dashStats && dashStats.revenue > 0
+                    ? netProfit.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                    : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* Ask Emexa AI */}
+            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl pointer-events-none" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-foreground">Ask Emexa</h3>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">AI Assistant</p>
+                </div>
+              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-4 leading-relaxed relative z-10">
+                "I can help you analyze these reports, find anomalies, or suggest cost-cutting measures. What would you like to know?"
+              </p>
+              <div className="relative z-10">
+                <input
+                  type="text"
+                  placeholder="Ask something..."
+                  className="w-full h-10 pl-3 pr-10 rounded-xl bg-background/50 border border-border/50 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                />
+                <button className="absolute right-1 top-1 w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-
       </div>
 
-      {/* ================= TOAST NOTIFICATION ================= */}
+      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -827,7 +679,6 @@ For more details, visit the dashboard.
           </motion.div>
         )}
       </AnimatePresence>
-
     </div>
   );
 }

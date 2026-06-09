@@ -5,7 +5,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import {
   Edit3, Trash2, Package, ChevronUp, ChevronDown,
   ArrowUpDown, Eye, ChevronLeft, ChevronRight,
-  MoreVertical, Loader2, PowerOff, Power
+  MoreVertical, Loader2, PowerOff, Power, X
 } from "lucide-react";
 
 export interface Product {
@@ -91,6 +91,7 @@ export default function ProductsTable({
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
   const [deleteTarget, setDeleteTarget] = React.useState<Product | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
 
   const { state } = useSidebar();
   const isSidebarOpen = state === "expanded";
@@ -164,11 +165,65 @@ export default function ProductsTable({
   }
 
   return (
-    <>
+    <div className="relative">
+      <AnimatePresence>
+        {selectedIds.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 bg-foreground text-background px-6 py-3 rounded-2xl shadow-2xl"
+          >
+            <span className="text-sm font-bold">{selectedIds.length} items selected</span>
+            <div className="h-4 w-px bg-background/20" />
+            <button 
+              onClick={() => {
+                selectedIds.forEach(id => {
+                  const p = products.find(prod => prod.id === id);
+                  if (p) onToggleActive?.(p);
+                });
+                setSelectedIds([]);
+              }}
+              className="text-sm font-bold hover:text-indigo-300 transition-colors cursor-pointer"
+            >
+              Deactivate Selected
+            </button>
+            <button 
+              onClick={() => {
+                selectedIds.forEach(id => {
+                  const p = products.find(prod => prod.id === id);
+                  if (p) onDelete?.(p);
+                });
+                setSelectedIds([]);
+              }}
+              className="text-sm font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+            >
+              Delete Selected
+            </button>
+            <button onClick={() => setSelectedIds([])} className="p-1 hover:bg-background/20 rounded-full ml-2 transition-colors cursor-pointer">
+              <X size={16} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="overflow-x-auto w-full">
         <table className="w-full min-w-[1000px] text-left border-collapse whitespace-nowrap">
           <thead>
             <tr className="border-b border-slate-100/80">
+              <th className="px-4 py-4 w-10">
+                <input 
+                  type="checkbox" 
+                  className="w-4 h-4 rounded border-slate-300 accent-primary cursor-pointer"
+                  checked={paginatedProducts.length > 0 && selectedIds.length === paginatedProducts.length}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(paginatedProducts.map(p => p.id));
+                    } else {
+                      setSelectedIds([]);
+                    }
+                  }}
+                />
+              </th>
               <ColHeader label="Product"    sortKey="name"          active={sortKey === "name"}          dir={sortDir} onSort={handleSort} />
               {isVisible("brand")  && <ColHeader label="Brand"      sortKey="brand"         active={sortKey === "brand"}         dir={sortDir} onSort={handleSort} />}
               {isVisible("sku")    && <ColHeader label="SKU"        sortKey="sku"           active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />}
@@ -193,6 +248,21 @@ export default function ProductsTable({
                   transition={{ delay: i * 0.03, duration: 0.22 }}
                   className="group border-b border-secondary-500/60 last:border-none hover:bg-secondary-500/30 transition-colors duration-150"
                 >
+                  <td className="px-4 py-4">
+                    <input 
+                      type="checkbox" 
+                      className="w-4 h-4 rounded border-slate-300 accent-primary cursor-pointer"
+                      checked={selectedIds.includes(p.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(prev => [...prev, p.id]);
+                        } else {
+                          setSelectedIds(prev => prev.filter(id => id !== p.id));
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </td>
                   <td className="px-2 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-20 h-18 rounded-2xl bg-slate-100 border border-white/80 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
@@ -228,11 +298,21 @@ export default function ProductsTable({
                   </td>}
 
                   {isVisible("qty") && <td className="px-9 py-4">
-                    <span className={`text-sm font-bold tracking-wider ${
-                      p.quantity === 0 ? "text-rose-500"
-                      : p.quantity <= p.minStockLevel ? "text-amber-500"
-                      : "text-foreground"
-                    }`}>{p.quantity}</span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className={`text-sm font-bold tracking-wider ${
+                        p.quantity === 0 ? "text-rose-500"
+                        : p.quantity <= p.minStockLevel ? "text-amber-500"
+                        : "text-foreground"
+                      }`}>{p.quantity}</span>
+                      {p.quantity <= p.minStockLevel && (
+                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full ${p.quantity === 0 ? "bg-rose-500" : "bg-amber-500"}`} 
+                            style={{ width: `${Math.max(5, (p.quantity / p.minStockLevel) * 100)}%` }} 
+                          />
+                        </div>
+                      )}
+                    </div>
                   </td>}
 
                   {isVisible("date") && <td className="px-6 py-4">
@@ -329,7 +409,7 @@ export default function ProductsTable({
           }
         }}
       />
-    </>
+    </div>
   );
 }
 

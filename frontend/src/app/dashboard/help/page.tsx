@@ -1,12 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { BookOpen, Server, Shield, Bell, LayoutDashboard, Search, User, Code, ChevronRight, Zap, Mail, MessageCircle, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function HelpPage() {
+  const [faqSearch, setFaqSearch] = useState("");
+
+  const faqs = [
+    { q: "Why can't I delete my own account?", a: "For security, your own account is protected. You can delete other team members (including other admins) from the Users page." },
+    { q: "How do low-stock alerts work?", a: "Enable Low Stock Warnings in Settings → Notifications. Alerts appear in the header bell when product quantity hits the minimum threshold." },
+    { q: "Where does dashboard data come from?", a: "All charts use live sales and inventory data from your database — revenue trends, busiest days, and top sellers update automatically." },
+    { q: "How do I change my profile picture?", a: "Go to Settings → Account Profile → Change Photo, then click Save Changes to upload to the server." },
+  ];
+
+  const filteredFaqs = faqs.filter(f => 
+    f.q.toLowerCase().includes(faqSearch.toLowerCase()) || 
+    f.a.toLowerCase().includes(faqSearch.toLowerCase())
+  );
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -132,25 +146,39 @@ export default function HelpPage() {
 
         {/* FAQ */}
         <motion.section variants={item} className="bg-card/60 backdrop-blur-2xl rounded-[32px] border border-border/40 p-8 md:p-10">
-          <div className="flex items-center gap-3 mb-8">
-            <MessageCircle className="text-primary" size={24} />
-            <h2 className="text-2xl font-black tracking-tight">Frequently Asked Questions</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              <MessageCircle className="text-primary" size={24} />
+              <h2 className="text-2xl font-black tracking-tight">Frequently Asked Questions</h2>
+            </div>
+            
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+              <input
+                type="text"
+                placeholder="Search FAQs..."
+                value={faqSearch}
+                onChange={(e) => setFaqSearch(e.target.value)}
+                className="w-full h-11 pl-10 pr-4 rounded-xl bg-background border border-border/40 text-sm outline-none focus:border-primary transition-all"
+              />
+            </div>
           </div>
           <div className="space-y-4">
-            {[
-              { q: "Why can't I delete my own account?", a: "For security, your own account is protected. You can delete other team members (including other admins) from the Users page." },
-              { q: "How do low-stock alerts work?", a: "Enable Low Stock Warnings in Settings → Notifications. Alerts appear in the header bell when product quantity hits the minimum threshold." },
-              { q: "Where does dashboard data come from?", a: "All charts use live sales and inventory data from your database — revenue trends, busiest days, and top sellers update automatically." },
-              { q: "How do I change my profile picture?", a: "Go to Settings → Account Profile → Change Photo, then click Save Changes to upload to the server." },
-            ].map((faq, i) => (
-              <details key={i} className="group rounded-2xl border border-border/40 bg-background/50 open:bg-primary/5 open:border-primary/20 transition-all">
-                <summary className="cursor-pointer p-5 font-bold text-sm list-none flex items-center justify-between">
-                  {faq.q}
-                  <ChevronRight size={16} className="text-muted-foreground group-open:rotate-90 transition-transform" />
-                </summary>
-                <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
-              </details>
-            ))}
+            {filteredFaqs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No FAQs match your search.</p>
+              </div>
+            ) : (
+              filteredFaqs.map((faq, i) => (
+                <details key={i} className="group rounded-2xl border border-border/40 bg-background/50 open:bg-primary/5 open:border-primary/20 transition-all">
+                  <summary className="cursor-pointer p-5 font-bold text-sm list-none flex items-center justify-between">
+                    {faq.q}
+                    <ChevronRight size={16} className="text-muted-foreground group-open:rotate-90 transition-transform" />
+                  </summary>
+                  <p className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+                </details>
+              ))
+            )}
           </div>
         </motion.section>
 

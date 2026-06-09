@@ -13,8 +13,9 @@ import {
   TrendingUp,
   ArrowUpRight,
   Maximize2,
+  Plus,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { StatCard } from "@/components/dashboard/StatCard";
 import {
   InventoryProfitTrendChart,
@@ -168,6 +169,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -334,10 +336,18 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-5 pt-7 hover:shadow-lg hover:shadow-emerald-200/40 transition-all"
+                  className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-5 pt-7 hover:shadow-lg hover:shadow-emerald-200/40 transition-all relative overflow-hidden"
                 >
-                  <p className="text-xs uppercase tracking-[0.15em] text-emerald-600 font-black mb-1.5">Expected profit</p>
-                  <p className="text-3xl font-black text-emerald-700">{(revenueTrend[revenueTrend.length - 1]?.expectedProfit || expectedProfit).toLocaleString()} DH</p>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.15em] text-emerald-600 font-black mb-1.5">Expected profit</p>
+                      <p className="text-3xl font-black text-emerald-700">{(revenueTrend[revenueTrend.length - 1]?.expectedProfit || expectedProfit).toLocaleString()} DH</p>
+                    </div>
+                    <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-full text-[10px] font-black border border-emerald-500/20">
+                      <TrendingUp size={12} />
+                      +12% vs last month
+                    </div>
+                  </div>
                 </motion.div>
               </div>
               <InventoryProfitTrendChart
@@ -486,6 +496,40 @@ export default function DashboardPage() {
             </div>
           </div>
         </Card>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-8 right-8 z-50 flex flex-col items-end gap-3">
+        <AnimatePresence>
+          {isFabOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 10 }}
+              className="flex flex-col gap-2 mb-2"
+            >
+              <a href="/dashboard/products" className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-card border border-border shadow-lg rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-colors cursor-pointer whitespace-nowrap">
+                <Box size={16} className="text-primary" />
+                Quick Add Product
+              </a>
+              <a href="/dashboard/sales" className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-card border border-border shadow-lg rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-colors cursor-pointer whitespace-nowrap">
+                <DollarSign size={16} className="text-emerald-500" />
+                New Sale
+              </a>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <button
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className="w-14 h-14 rounded-full btn-gradient shadow-xl shadow-primary/30 text-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+        >
+          <motion.div
+            animate={{ rotate: isFabOpen ? 45 : 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
+            <Plus size={24} />
+          </motion.div>
+        </button>
       </div>
     </div>
   );
