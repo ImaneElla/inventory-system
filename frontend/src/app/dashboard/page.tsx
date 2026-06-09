@@ -61,9 +61,9 @@ const DEMO_TOP_PRODUCTS = [
 ];
 
 const DEMO_PRODUCT_STATS = {
-  totalProducts: 48,
+  totalProducts: 50,
   totalStock: 1240,
-  inventoryValue: 185000,
+  inventoryValue: 175000,
   expectedProfit: 95600,
   lowStockCount: 3,
 };
@@ -250,12 +250,12 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-muted-foreground bg-white dark:bg-card px-4 py-2 rounded-2xl border border-border/50 shadow-sm">
+          <span className="text-xl font-bold text-muted-foreground px-4 py-2 cursor-default">
             {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
           <Link
             href="/dashboard/ai-assistant"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm text-white bg-primary shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm text-white btn-gradient shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform"
           >
             <Sparkles size={16} />
             AI Assistant
@@ -279,8 +279,8 @@ export default function DashboardPage() {
           sub={`${totalOrders} completed orders`}
           trend="up"
           icon={DollarSign}
-          color="bg-indigo-500"
-          shadow="shadow-indigo-500/20"
+          color="bg-green-500"
+          shadow="shadow-green-500/20"
         />
         <StatCard
           label="Inventory Value"
@@ -288,8 +288,8 @@ export default function DashboardPage() {
           sub="Purchase value in stock"
           trend="up"
           icon={ShoppingCart}
-          color="bg-emerald-500"
-          shadow="shadow-emerald-500/20"
+          color="bg-indigo-500"
+          shadow="shadow-indigo-500/20"
         />
         <StatCard
           label="Critical Alerts"
@@ -297,8 +297,8 @@ export default function DashboardPage() {
           sub="Low stock items"
           trend={(DEMO_MODE ? DEMO_PRODUCT_STATS.lowStockCount : productStats?.lowStockCount ?? 0) > 0 ? "warn" : "up"}
           icon={AlertTriangle}
-          color="bg-amber-500"
-          shadow="shadow-amber-500/20"
+          color="bg-red-500"
+          shadow="shadow-red-500/20"
         />
       </div>
 
@@ -324,21 +324,20 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-5 hover:shadow-lg hover:shadow-blue-200/40 transition-all"
+                  className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-5 pt-7 hover:shadow-lg hover:shadow-blue-200/40 transition-all"
                 >
                   <p className="text-xs uppercase tracking-[0.15em] text-blue-600 font-black mb-1.5">Inventory value</p>
-                  <p className="text-3xl font-black text-blue-700">{(revenueTrend[revenueTrend.length - 1]?.inventoryValue || inventoryValue).toLocaleString()}</p>
-                  <p className="text-xs text-blue-500/80 font-semibold mt-1">DH</p>
+                  <p className="text-3xl font-black text-blue-700">{(revenueTrend[revenueTrend.length - 1]?.inventoryValue || inventoryValue).toLocaleString()} DH</p>
+        
                 </motion.div>
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-5 hover:shadow-lg hover:shadow-emerald-200/40 transition-all"
+                  className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-5 pt-7 hover:shadow-lg hover:shadow-emerald-200/40 transition-all"
                 >
                   <p className="text-xs uppercase tracking-[0.15em] text-emerald-600 font-black mb-1.5">Expected profit</p>
-                  <p className="text-3xl font-black text-emerald-700">{(revenueTrend[revenueTrend.length - 1]?.expectedProfit || expectedProfit).toLocaleString()}</p>
-                  <p className="text-xs text-emerald-500/80 font-semibold mt-1">DH</p>
+                  <p className="text-3xl font-black text-emerald-700">{(revenueTrend[revenueTrend.length - 1]?.expectedProfit || expectedProfit).toLocaleString()} DH</p>
                 </motion.div>
               </div>
               <InventoryProfitTrendChart
@@ -476,7 +475,7 @@ export default function DashboardPage() {
               href="/dashboard/ai-assistant"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary rounded-2xl text-sm font-black w-fit hover:bg-white/90 transition-colors"
             >
-              Open Assistant
+              Open Emexa
               <ArrowUpRight size={16} />
             </Link>
           </CardContent>

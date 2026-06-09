@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+ const TERMS_ENABLED = true;
+
 export default function RegisterPage() {
   const router = useRouter();
   const [userName, setUserName] = useState("");
@@ -17,7 +19,7 @@ export default function RegisterPage() {
   const [role, setRole] = useState<"MANAGER" | "ADMIN">("MANAGER");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [terms, setTerms] = useState(true);
+  const [terms, setTerms] = useState(false);
   const [toast, setToast] = useState("");
   const [step, setStep] = useState(1);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -210,12 +212,25 @@ export default function RegisterPage() {
               </div>
             </div>
             <div className="p-4 border-t border-border flex justify-end bg-card/50">
-              <Button 
-                onClick={() => setShowTermsModal(false)}
-                className="px-8"
-              >
-                Close
-              </Button>
+             <div className="flex justify-end gap-3">
+  <Button
+    variant="outline"
+    onClick={() => setShowTermsModal(false)}
+  >
+    Close
+  </Button>
+
+
+  <Button
+    className="btn-gradient"
+    onClick={() => {
+      setTerms(true);
+      setShowTermsModal(false);
+    }}
+  >
+    Accept Terms
+  </Button>
+</div>
             </div>
           </motion.div>
         </div>
@@ -230,8 +245,8 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       className="flex flex-col w-full text-center"
     >
-      <h2 className="text-2xl font-extrabold text-foreground mb-1 tracking-tight">Choose your role</h2>
-      <p className="text-sm text-muted-foreground mb-10">Select the access level for your professional account</p>
+      <h2 className="text-2xl font-extrabold text-black mb-1 tracking-tight">Choose your role</h2>
+      <p className="text-sm text-black/50 mb-10">Select the access level for your professional account</p>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-12">
         {(["MANAGER", "ADMIN"] as const).map(r => (
@@ -266,7 +281,7 @@ function StepRole({ role, setRole, onNext, onLogin }: any) {
         Continue to Details
       </Button>
       
-      <p className="text-xs text-muted-foreground mt-3 font-medium">
+      <p className="text-xs text-black/50 mt-3 font-medium">
         Already have an account?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Sign in</button>
       </p>
@@ -280,8 +295,8 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
       initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }}
       className="flex flex-col w-full"
     >
-      <h2 className="text-2xl font-extrabold text-foreground mb-1 text-center tracking-tight">Account Details</h2>
-      <p className="text-sm text-muted-foreground mb-6 text-center font-medium">Let's set up your login credentials</p>
+      <h2 className="text-2xl font-extrabold text-black mb-1 text-center tracking-tight">Account Details</h2>
+      <p className="text-sm text-black/50 mb-6 text-center font-medium">Let's set up your login credentials</p>
 
       <div className="space-y-5 mb-6">
         <div className="relative group">
@@ -312,17 +327,17 @@ function StepInfo({ userName, setUserName, email, setEmail, password, setPasswor
         <div className="flex items-center gap-2 px-1">
            <div className={cn("h-1 flex-1 rounded-full bg-slate-200", password.length >= 8  && "from-red-500 via-yellow-500 to-green-500 bg-linear-to-r")} />
         </div>
-        <p className="text-[10px] text-slate-400 ml-1 font-semibold italic">
+        <p className="text-[10px] text-slate-500 ml-1 font-semibold italic">
           * Must contain at least 8 characters
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
-        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold border-slate-200 text-slate-600 hover:bg-slate-50" onClick={onBack}>Back</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold text-slate-600 bg-card hover:text-primary hover:scale-105" onClick={onBack}>Back</Button>
         <Button className="flex-2 h-10 rounded-2xl font-bold shadow-lg shadow-primary/20 btn-gradient text-white hover:bg-primary/90" onClick={onNext}>Next Step</Button>
       </div>
       
-      <p className="text-xs text-muted-foreground mt-3 mb-2 text-center font-medium">
+      <p className="text-xs text-black/50 mt-3 mb-2 text-center font-medium">
         Already have an account?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
       </p>
@@ -336,8 +351,8 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
       initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col w-full"
     >
-      <h2 className="text-2xl font-extrabold text-foreground mb-1 text-center tracking-tight">Final Setup</h2>
-      <p className="text-sm text-muted-foreground mb-10 text-center font-medium">Add a personal touch to your profile</p>
+      <h2 className="text-2xl font-extrabold text-black mb-1 text-center tracking-tight">Final Setup</h2>
+      <p className="text-sm text-black/50 mb-10 text-center font-medium">Add a personal touch to your profile</p>
 
       <div className="flex flex-col items-center gap-5 mb-6 mx-auto">
         <button
@@ -354,14 +369,15 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatar} />
         <div className="text-center">
-          <strong className="block text-foreground text-sm font-bold uppercase tracking-widest mb-1">Profile Photo</strong>
-          <p className="text-[10px] text-muted-foreground italic font-medium">Optional — tap to select image</p>
+          <strong className="block text-black text-sm font-bold uppercase tracking-widest mb-1">Profile Photo</strong>
+          <p className="text-[10px] text-black/50 italic font-medium">Optional — tap to select image</p>
         </div>
       </div>
 
         <div className="flex items-center justify-center gap-2 mb-6">
                 <input 
                   type="checkbox" 
+                  disabled={!TERMS_ENABLED}
                   id="terms" 
                   checked={terms} 
                   onChange={e => setTerms(e.target.checked)} 
@@ -373,11 +389,11 @@ function StepProfile({ userName, avatarUrl, fileRef, handleAvatar, terms, setTer
               </div>  
 
       <div className="flex flex-col sm:flex-row gap-4 w-full">
-        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold" onClick={onBack} disabled={isLoading}>Back</Button>
+        <Button variant="outline" className="flex-1 h-10 rounded-2xl font-bold hover:text-primary" onClick={onBack} disabled={isLoading}>Back</Button>
         <Button className="flex-2 h-10 rounded-2xl btn-gradient font-black shadow-2xl shadow-primary/30 text-base" disabled={!terms} onClick={onRegister} isLoading={isLoading}>Finish Account</Button>
       </div>
       
-      <p className="text-xs text-muted-foreground mt-4 mb-3 text-center font-medium">
+      <p className="text-xs text-black/50 mt-4 mb-3 text-center font-medium">
         Want to go back?{" "}
         <button onClick={onLogin} className="text-primary font-bold bg-transparent border-none p-0 cursor-pointer hover:underline">Log in</button>
       </p>

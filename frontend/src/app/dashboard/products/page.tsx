@@ -402,7 +402,7 @@ export default function ProductsPage() {
       <main className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-12 space-y-10">
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <StatCard icon={<Package2 size={24} />} label="Total" value={statsData?.totalProducts || 0} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-foreground" primary />
+          <StatCard icon={<Package2 size={24} />} label="Total" value={statsData?.totalProducts || 0} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-blue-500"  />
           <StatCard icon={<Check size={24} />} label="Available" value={statsData?.availableCount || 0} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
           <StatCard icon={<PowerOff size={24} />} label="Deactivated" value={statsData?.deactivatedCount || 0} iconBg="bg-slate-500/10" iconColor="text-slate-500" valueColor="text-slate-500" />
           <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={statsData?.outOfStockCount || 0} iconBg="bg-rose-500/10" iconColor="text-rose-500" valueColor="text-rose-500" />

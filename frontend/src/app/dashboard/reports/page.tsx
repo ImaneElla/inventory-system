@@ -281,7 +281,7 @@ export default function ReportsPage() {
               onClick={() => {
                 showToast("AI assistant features coming soon!", "info");
               }}
-              className="h-10 px-5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-black shadow-md shadow-indigo-500/20 hover:scale-[1.02] active:scale-98 transition-all flex items-center gap-2 cursor-pointer"
+              className="h-10 px-5 rounded-xl btn-gradient  text-xs font-black shadow-md transition-all flex items-center gap-2 cursor-pointer"
             >
               <Sparkles size={13} className="text-violet-200 animate-pulse" />
               Ask Emexa

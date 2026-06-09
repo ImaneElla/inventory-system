@@ -312,14 +312,14 @@ export default function DashboardHeader() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="flex items-center gap-2 rounded-xl px-2 h-8 transition-colors cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2 rounded-xl px-2 h-8 transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
             >
               {/* Avatar: photo if available, else serif initial */}
               <div
                 className="relative h-10 w-10 rounded-full flex items-center justify-center text-[13px] text-white shrink-0 transition-transform hover:scale-105 overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-                  boxShadow: `0 2px 8px ${palette.from}55`,
+                  
                 }}
               >
                 {/* Initial — shown when no image, hidden behind photo when image loads */}
@@ -343,7 +343,7 @@ export default function DashboardHeader() {
                 )}
               </div>
               {/* Name + role — hidden on small screens */}
-              <div className="hidden md:flex flex-col items-start leading-tight">
+              <div className="hidden md:flex flex-col items-start leading-tight hover:scale-105">
                 <span className="text-[13px] font-semibold text-foreground truncate max-w-[120px]">
                   {userName}
                 </span>

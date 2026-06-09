@@ -101,7 +101,7 @@ export default function UsersPage() {
           </p>
         </div>
 
-        <button className="h-11 px-5 rounded-2xl bg-primary text-white font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
+        <button className="h-11 px-5 rounded-2xl btn-gradient text-white font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-all shadow-lg shadow-primary/20">
           <Plus size={16} />
           Invite User
         </button>

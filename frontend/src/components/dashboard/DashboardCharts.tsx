@@ -69,7 +69,7 @@ export function InventoryProfitTrendChart({
         <Line
           type="monotone"
           dataKey="inventoryValue"
-          name="Inventory value"
+          name="Value"
           stroke="#3b82f6"
           strokeWidth={3}
           dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
@@ -158,7 +158,7 @@ export function RepeatCustomerGauge({ rate }: { rate: number }) {
             dataKey="value"
             stroke="none"
           >
-            <Cell fill="#22c55e" />
+            <Cell fill="#4D92F8" />
             <Cell fill="#e2e8f0" />
           </Pie>
         </PieChart>
