@@ -5,7 +5,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@/lib/react-query-custom";
-import { fetchProducts } from "@/lib/api";
+import { fetchProducts, resolveImageUrl } from "@/lib/api";
 import {
   ChevronRight,
   Search,
@@ -69,7 +69,6 @@ export default function DashboardHeader() {
   const { data: productsData } = useQuery({
     queryKey: ["products-notifications"],
     queryFn: () => fetchProducts("", 0, 100),
-    refetchInterval: 30000, // Refresh every 30s
   });
 
   const notifications = useMemo(() => {
@@ -141,12 +140,8 @@ export default function DashboardHeader() {
     const storedImage = localStorage.getItem("userImage");
     setUserName(storedName);
     setUserRole(storedRole.charAt(0).toUpperCase() + storedRole.slice(1).toLowerCase());
-    if (storedImage) {
-      const backendUrl = "http://127.0.0.1:8080";
-      setUserImage(storedImage.startsWith("http") ? storedImage : backendUrl + storedImage);
-    } else {
-      setUserImage(null);
-    }
+    // Only resolve non-empty image paths
+    setUserImage(storedImage ? resolveImageUrl(storedImage) : null);
   };
 
   useEffect(() => {
@@ -319,19 +314,32 @@ export default function DashboardHeader() {
             <button
               className="flex items-center gap-2 rounded-xl px-2 h-8 transition-colors cursor-pointer hover:bg-muted text-muted-foreground hover:text-foreground"
             >
-              {/* Generated avatar with initials */}
+              {/* Avatar: photo if available, else serif initial */}
               <div
-                className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 transition-transform hover:scale-105 overflow-hidden"
+                className="relative h-7 w-7 rounded-full flex items-center justify-center text-[13px] text-white shrink-0 transition-transform hover:scale-105 overflow-hidden"
                 style={{
                   background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
                   boxShadow: `0 2px 8px ${palette.from}55`,
                 }}
               >
                 {userImage ? (
-                  <img src={userImage} alt={userName} className="h-full w-full object-cover" />
-                ) : (
-                  initials
-                )}
+                  <img
+                    src={userImage}
+                    alt={userName}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      // On broken URL: hide img, reveal the parent's text (initial)
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : null}
+                {/* Always render initial — sits behind img or shows when img fails */}
+                <span
+                  className="absolute"
+                  style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 13 }}
+                >
+                  {initials.charAt(0)}
+                </span>
               </div>
               {/* Name + role — hidden on small screens */}
               <div className="hidden md:flex flex-col items-start leading-tight">
@@ -348,17 +356,28 @@ export default function DashboardHeader() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-3 py-1">
                 <div
-                  className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 overflow-hidden"
+                  className="relative h-9 w-9 rounded-full flex items-center justify-center text-white shrink-0 overflow-hidden"
                   style={{
                     background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
                     boxShadow: `0 2px 8px ${palette.from}44`,
                   }}
                 >
                   {userImage ? (
-                    <img src={userImage} alt={userName} className="h-full w-full object-cover" />
-                  ) : (
-                    initials
-                  )}
+                    <img
+                      src={userImage}
+                      alt={userName}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : null}
+                  <span
+                    className="absolute"
+                    style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontWeight: 700, fontSize: 15 }}
+                  >
+                    {initials.charAt(0)}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className="text-sm font-semibold truncate">{userName}</span>

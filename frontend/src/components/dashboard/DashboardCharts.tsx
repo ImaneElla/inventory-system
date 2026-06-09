@@ -29,25 +29,21 @@ const tooltipStyle = {
 
 export function InventoryProfitTrendChart({
   data,
-  inventoryValue,
-  expectedProfit,
 }: {
-  data: { label: string; revenue: number }[];
-  inventoryValue: number;
-  expectedProfit: number;
+  data: { label: string; inventoryValue: number; expectedProfit: number }[];
 }) {
   const chartData = data.map((point) => ({
     label: point.label,
-    inventoryValue: Number(inventoryValue ?? 0),
-    expectedProfit: Number(expectedProfit ?? 0),
+    inventoryValue: Number(point.inventoryValue ?? 0),
+    expectedProfit: Number(point.expectedProfit ?? 0),
   }));
 
-  const values = chartData.flatMap((point) => [point.inventoryValue, point.expectedProfit]);
-  const yMin = values.length > 0 ? Math.min(0, ...values) : 0;
+  const values = chartData.flatMap((point) => [point.inventoryValue, point.expectedProfit]).filter((v) => v > 0);
+  const yMax = values.length > 0 ? Math.max(...values) : 100000;
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 16, right: 24, left: 0, bottom: 4 }}>
+    <ResponsiveContainer width="100%" height={320}>
+      <LineChart data={chartData} margin={{ top: 12, right: 24, left: 0, bottom: 4 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
         <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 11 }} />
         <YAxis
@@ -55,7 +51,7 @@ export function InventoryProfitTrendChart({
           tickLine={false}
           tick={{ fill: "#94a3b8", fontSize: 11 }}
           tickFormatter={(value) => `${Number(value).toLocaleString()}`}
-          domain={[yMin, "auto"]}
+          domain={[0, yMax * 1.1]}
         />
         <Tooltip
           contentStyle={tooltipStyle}
@@ -76,8 +72,8 @@ export function InventoryProfitTrendChart({
           name="Inventory value"
           stroke="#3b82f6"
           strokeWidth={3}
-          dot={{ r: 3 }}
-          activeDot={{ r: 5 }}
+          dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }}
+          activeDot={{ r: 6, strokeWidth: 0 }}
           connectNulls
         />
         <Line
@@ -86,8 +82,8 @@ export function InventoryProfitTrendChart({
           name="Profit"
           stroke="#22c55e"
           strokeWidth={3}
-          dot={{ r: 3 }}
-          activeDot={{ r: 5 }}
+          dot={{ r: 4, fill: "#22c55e", strokeWidth: 0 }}
+          activeDot={{ r: 6, strokeWidth: 0 }}
           connectNulls
         />
       </LineChart>

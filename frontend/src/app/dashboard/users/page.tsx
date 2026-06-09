@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@/lib/react-query-custom";
-import { fetchAllUsers, deleteUser } from "@/lib/api";
+import { fetchAllUsers, deleteUser, resolveImageUrl } from "@/lib/api";
 import {
   Users,
   Plus,
@@ -202,7 +202,7 @@ export default function UsersPage() {
 
                     {user.imageUrl ? (
                       <img
-                        src={`http://127.0.0.1:8080/uploads/profiles/${user.imageUrl}`}
+                        src={resolveImageUrl(user.imageUrl) ?? ""}
                         alt={user.username}
                         className="w-full h-full object-cover"
                       />

@@ -7,7 +7,7 @@ import { User, Shield, Moon, Bell, Camera, ChevronRight, Check, HelpCircle } fro
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { updateUserProfile } from "@/lib/api";
+import { updateUserProfile, resolveImageUrl } from "@/lib/api";
 import Link from "next/link";
 
 type NotificationKey = "push" | "lowStock" | "emailReports";
@@ -40,7 +40,7 @@ export default function SettingsPage() {
     if (id) setUserId(Number(id));
     const img = localStorage.getItem("userImage");
     if (img) {
-      setUserImage(img.startsWith("http") ? img : `http://127.0.0.1:8080${img}`);
+      setUserImage(resolveImageUrl(img) ?? "");
     }
     const stored = localStorage.getItem("notificationSettings");
     if (stored) {
@@ -86,7 +86,7 @@ export default function SettingsPage() {
       localStorage.setItem("userName", data.userName);
       if (data.imageUrl) {
         localStorage.setItem("userImage", data.imageUrl);
-        setUserImage(`http://127.0.0.1:8080${data.imageUrl}`);
+        setUserImage(resolveImageUrl(data.imageUrl) ?? "");
       }
       setAvatarFile(null);
       window.dispatchEvent(new Event("storage"));

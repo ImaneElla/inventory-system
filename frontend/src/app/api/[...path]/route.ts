@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL =
-  process.env.BACKEND_API_URL || "http://127.0.0.1:8082";
+  process.env.BACKEND_API_URL || "http://127.0.0.1:8080";
 
 async function handler(
   req: NextRequest,

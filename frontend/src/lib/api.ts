@@ -1,6 +1,22 @@
 import { Sale } from "@/types/sale";
 
 const BASE_API_URL = "/api";
+export const BACKEND = "http://127.0.0.1:8080";
+
+/**
+ * Safely resolve a backend image URL.
+ * - Absolute URLs (http/https) pass through unchanged.
+ * - Paths that already start with /uploads/... are prefixed with BACKEND.
+ * - Bare filenames (no leading slash, no http) get BACKEND + /uploads/ prepended.
+ * - Prevents the duplicate /uploads/uploads/... bug.
+ */
+export function resolveImageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http")) return path;
+  // Remove any accidental leading duplicate /uploads prefix before building URL
+  const clean = path.replace(/^\/?(uploads\/)+/, "");
+  return `${BACKEND}/uploads/${clean}`;
+}
 const BASE_V1_URL = `${BASE_API_URL}/v1`;
 
 function getCurrentUserId(): string | null {
