@@ -206,6 +206,9 @@ public ResponseEntity<?> deleteUser(
         return userRepository.findByEmailIgnoreCase(email)
                 .filter(user -> password.equals(user.getPassword()))
                 .map(user -> {
+                    user.setLastSeen(java.time.LocalDateTime.now());
+                    userRepository.save(user);
+
                     java.util.Map<String, String> response = new java.util.HashMap<>();
                     response.put("userId",   String.valueOf(user.getId()));
                     response.put("userName", user.getUsername());

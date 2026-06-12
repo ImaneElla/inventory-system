@@ -135,9 +135,9 @@ export default function DashboardHeader() {
   }, [searchOpen]);
 
   const loadUserFromStorage = () => {
-    const storedName = localStorage.getItem("userName") || localStorage.getItem("username") || "User";
-    const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole") || "Member";
-    const storedImage = localStorage.getItem("userImage");
+    const storedName = sessionStorage.getItem("userName") || sessionStorage.getItem("username") || "User";
+    const storedRole = sessionStorage.getItem("role") || sessionStorage.getItem("userRole") || "Member";
+    const storedImage = sessionStorage.getItem("userImage");
     setUserName(storedName);
     setUserRole(storedRole.charAt(0).toUpperCase() + storedRole.slice(1).toLowerCase());
     // Only resolve non-empty image paths
@@ -157,6 +157,14 @@ export default function DashboardHeader() {
   const unreadCount  = notifications.filter((n) => n.unread).length;
 
   const handleSignOut = () => {
+    sessionStorage.removeItem("auth");
+    sessionStorage.removeItem("userId");
+    sessionStorage.removeItem("email");
+    sessionStorage.removeItem("userName");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("userImage");
+    sessionStorage.removeItem("rememberMe");
+
     localStorage.removeItem("auth");
     localStorage.removeItem("userId");
     localStorage.removeItem("email");

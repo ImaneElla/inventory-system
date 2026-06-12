@@ -229,11 +229,11 @@ export default function ProductsTable({
               {isVisible("sku")    && <ColHeader label="SKU"        sortKey="sku"           active={sortKey === "sku"}           dir={sortDir} onSort={handleSort} />}
               {isVisible("sell")   && <ColHeader label="Sell"       sortKey="sellPrice"     active={sortKey === "sellPrice"}     dir={sortDir} onSort={handleSort} />}
               {isVisible("cost")   && <ColHeader label="Cost"       sortKey="purchasePrice" active={sortKey === "purchasePrice"} dir={sortDir} onSort={handleSort} />}
-              {isVisible("qty")    && <ColHeader label="Qty"        sortKey="quantity"      active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort} />}
-              {isVisible("date")   && <ColHeader label="Date Added" sortKey="createdAt"     active={sortKey === "createdAt"}     dir={sortDir} onSort={handleSort} />}
+              {isVisible("qty")    && <ColHeader label="Qty"        sortKey="quantity"      active={sortKey === "quantity"}      dir={sortDir} onSort={handleSort}  />}
+              {isVisible("date")   && <ColHeader label="Date" sortKey="createdAt"     active={sortKey === "createdAt"}     dir={sortDir} onSort={handleSort} />}
               {isVisible("color")  && <ColHeader label="Color"      sortKey="color"         active={sortKey === "color"}         dir={sortDir} onSort={handleSort} />}
               {isVisible("status") && <th className="px-10 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</th>}
-              {isVisible("action") && <th className="px-14 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right">Action</th>}
+              {isVisible("action") && <th className="px-1 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-400 text-right"></th>}
             </tr>
           </thead>
 
@@ -315,25 +315,25 @@ export default function ProductsTable({
                     </div>
                   </td>}
 
-                  {isVisible("date") && <td className="px-6 py-4">
+                  {isVisible("date") && <td className="px-0 py-4" >
                     <span className="text-sm text-foreground/60">
                       {p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—"}
                     </span>
                   </td>}
 
-                  {isVisible("color") && <td className="px-6 py-4">
+                  {isVisible("color") && <td className="px-1 py-4">
                     {p.color ? (
                       <span className="inline-block w-8 h-8 rounded-lg border border-slate-200 shadow-sm" style={{ backgroundColor: p.color }} />
                     ) : <span className="text-slate-300">—</span>}
                   </td>}
 
-                  {isVisible("status") && <td className="px-6 py-4 text-[11px] space-y-1 max-w-[150px] truncate">
+                  {isVisible("status") && <td className="px-0 py-4 text-[11px] space-y-1 max-w-[150px] truncate">
                     <div><StockBadge qty={p.quantity} min={p.minStockLevel} /></div>
                     <div><StatusBadge isActive={p.isActive} /></div>
                   </td>}
 
                   {isVisible("action") && (
-                    <td className="px-6 py-4">
+                    <td className="px-1 py-2 text-right">
                       <div className="flex items-center justify-end">
                         <ProductActionsMenu
                           product={p}

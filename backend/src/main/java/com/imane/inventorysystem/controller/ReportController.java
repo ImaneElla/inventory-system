@@ -49,6 +49,11 @@ public class ReportController {
         return ResponseEntity.ok(reportService.generateNewReport(reportType));
     }
 
+    @PostMapping
+    public ResponseEntity<Report> saveReport(@RequestBody Report report) {
+        return ResponseEntity.ok(reportService.saveReport(report));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReport(@PathVariable("id") Long id) {
         reportService.deleteReport(id);

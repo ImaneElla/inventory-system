@@ -38,7 +38,7 @@ const BASE_V1_URL = `${BASE_API_URL}/v1`;
 
 function getCurrentUserId(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("userId");
+  return sessionStorage.getItem("userId");
 }
 
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
@@ -140,7 +140,7 @@ export async function fetchProducts(
     }
   }
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: authHeaders() });
   const data = await handleResponse(res, "Failed to fetch products");
   return normalizePageResponse<any>(data);
 }
@@ -152,7 +152,7 @@ export async function fetchProductsByName(name: string) {
   url.searchParams.append("page", "0");
   url.searchParams.append("size", "10");
   
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: authHeaders() });
   const data = await handleResponse(res, "Failed to fetch products");
 
   console.log("PRODUCTS API RESPONSE:", data);
@@ -163,7 +163,7 @@ export async function fetchProductsByName(name: string) {
 export async function createProduct(product: any) {
   const res = await fetch(`${BASE_V1_URL}/products`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(product),
   });
   return handleResponse(res, "Failed to create product");
@@ -172,7 +172,7 @@ export async function createProduct(product: any) {
 export async function updateProduct(id: number, product: any) {
   const res = await fetch(`${BASE_V1_URL}/products/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(product),
   });
   return handleResponse(res, "Failed to update product");
@@ -181,6 +181,7 @@ export async function updateProduct(id: number, product: any) {
 export async function deleteProduct(id: number) {
   const res = await fetch(`${BASE_V1_URL}/products/${id}`, {
     method: "DELETE",
+    headers: authHeaders(),
   });
   return handleResponse(res, "Failed to delete product");
 }
@@ -188,6 +189,7 @@ export async function deleteProduct(id: number) {
 export async function toggleProductActive(id: number) {
   const res = await fetch(`${BASE_V1_URL}/products/${id}/toggle-active`, {
     method: "PATCH",
+    headers: authHeaders(),
   });
   return handleResponse(res, "Failed to toggle product status");
 }
@@ -195,14 +197,14 @@ export async function toggleProductActive(id: number) {
 // --- Categories ---
 
 export async function fetchCategories() {
-  const res = await fetch(`${BASE_V1_URL}/categories`);
+  const res = await fetch(`${BASE_V1_URL}/categories`, { headers: authHeaders() });
   return handleResponse(res, "Failed to fetch categories");
 }
 
 export async function createCategory(category: any) {
   const res = await fetch(`${BASE_V1_URL}/categories`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(category),
   });
   return handleResponse(res, "Failed to create category");
@@ -211,7 +213,7 @@ export async function createCategory(category: any) {
 export async function updateCategory(id: number, category: any) {
   const res = await fetch(`${BASE_V1_URL}/categories/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(category),
   });
   return handleResponse(res, "Failed to update category");
@@ -220,6 +222,7 @@ export async function updateCategory(id: number, category: any) {
 export async function deleteCategory(id: number) {
   const res = await fetch(`${BASE_V1_URL}/categories/${id}`, {
     method: "DELETE",
+    headers: authHeaders(),
   });
   return handleResponse(res, "Failed to delete category");
 }
@@ -238,7 +241,7 @@ export async function fetchSales(filters?: { search?: string; status?: string; s
     if (filters.size !== undefined) url.searchParams.append("size", filters.size.toString());
   }
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { headers: authHeaders() });
   const data = await handleResponse(res, "Failed to fetch sales");
   return normalizePageResponse<Sale>(data);
 }
@@ -246,7 +249,7 @@ export async function fetchSales(filters?: { search?: string; status?: string; s
 export async function createSale(data: { items: { productId: number; quantity: number }[] }) {
   const res = await fetch(`${BASE_V1_URL}/sales/process`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(data),
   });
   return handleResponse(res, "Failed to process sale");
@@ -255,6 +258,7 @@ export async function createSale(data: { items: { productId: number; quantity: n
 export async function deleteSale(id: number) {
   const res = await fetch(`${BASE_V1_URL}/sales/${id}`, {
     method: "DELETE",
+    headers: authHeaders(),
   });
   return handleResponse(res, "Failed to delete sale");
 }
@@ -262,19 +266,19 @@ export async function deleteSale(id: number) {
 // --- Stats ---
 
 export async function fetchDashboardStats() {
-  const res = await fetch(`${BASE_V1_URL}/products/stats`);
+  const res = await fetch(`${BASE_V1_URL}/products/stats`, { headers: authHeaders() });
   return handleResponse(res, "Failed to fetch dashboard statistics");
 }
 
 export async function fetchSalesDashboardAnalytics() {
-  const res = await fetch(`${BASE_V1_URL}/sales/stats/dashboard`);
+  const res = await fetch(`${BASE_V1_URL}/sales/stats/dashboard`, { headers: authHeaders() });
   return handleResponse(res, "Failed to fetch sales analytics");
 }
 
 // --- Users ---
 
 export async function fetchAllUsers() {
-  const res = await fetch(`${BASE_API_URL}/auth/users`);
+  const res = await fetch(`${BASE_API_URL}/auth/users`, { headers: authHeaders() });
   return handleResponse(res, "Failed to fetch users");
 }
 
@@ -300,4 +304,30 @@ export async function updateUserProfile(
     body: formData,
   });
   return handleResponse(res, "Failed to update profile");
+}
+
+// --- Reports ---
+
+export async function fetchReports(search?: string) {
+  const url = new URL(`${BASE_API_URL}/reports`, window.location.origin);
+  if (search) url.searchParams.append("search", search);
+  const res = await fetch(url.toString(), { headers: authHeaders() });
+  return handleResponse(res, "Failed to fetch reports");
+}
+
+export async function createReport(report: any) {
+  const res = await fetch(`${BASE_API_URL}/reports`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(report),
+  });
+  return handleResponse(res, "Failed to save report");
+}
+
+export async function deleteReport(id: number) {
+  const res = await fetch(`${BASE_API_URL}/reports/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  return handleResponse(res, "Failed to delete report");
 }

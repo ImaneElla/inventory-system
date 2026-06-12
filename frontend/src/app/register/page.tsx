@@ -27,7 +27,7 @@ export default function RegisterPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (localStorage.getItem("auth") === "true") {
+    if (sessionStorage.getItem("auth") === "true") {
       router.replace("/dashboard");
     }
     const stored = sessionStorage.getItem("registerState");
@@ -88,13 +88,18 @@ export default function RegisterPage() {
       
       if (response.ok) {
         showToast(data.message || "Registration successful!"); 
-        localStorage.setItem("auth", "true");
-        if (data.userId)   localStorage.setItem("userId",   data.userId);
-        if (data.email)    localStorage.setItem("email",    email);
-        if (data.userName) localStorage.setItem("userName", data.userName);
-        if (data.role)     localStorage.setItem("role",     data.role);
-        if (data.imageUrl) localStorage.setItem("userImage", data.imageUrl);
-        else               localStorage.removeItem("userImage");
+        sessionStorage.setItem("auth", "true");
+        if (data.userId)   sessionStorage.setItem("userId",   data.userId);
+        if (data.email)    sessionStorage.setItem("email",    email);
+        if (data.userName) sessionStorage.setItem("userName", data.userName);
+        if (data.role)     sessionStorage.setItem("role",     data.role);
+        if (data.imageUrl) sessionStorage.setItem("userImage", data.imageUrl);
+        else               sessionStorage.removeItem("userImage");
+        
+        // Clear localStorage on a fresh registration
+        const keys = ["auth", "userId", "email", "userName", "role", "userImage", "rememberMe"];
+        keys.forEach(k => localStorage.removeItem(k));
+
         sessionStorage.removeItem("registerState");
         setTimeout(() => router.replace("/dashboard"), 1500);
       } else {

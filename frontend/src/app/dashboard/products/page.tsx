@@ -22,6 +22,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@/lib/react-query-custom";
 import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, fetchDashboardStats, toggleProductActive } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
+import { useActivityLog } from "@/lib/activityLog";
 
 const PALETTES = [
   { name: "Ocean",    value: "#3B82F6" },
@@ -267,6 +268,7 @@ function ColorPicker({
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function ProductsPage() {
+  const { addLog } = useActivityLog();
   const qc = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -308,24 +310,24 @@ export default function ProductsPage() {
 
   const createM = useMutation({
     mutationFn: createProduct,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product created!"); },
+    onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product created!"); addLog(`Created product: ${data.name}`, "product"); },
     onError: (e: any) => setFormError(e?.message || "Failed to create product"),
   });
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateProduct(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product updated!") },
+    onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["products"] }); closeForm(); showToast("Product updated!"); addLog(`Updated product: ${data.name}`, "product"); },
     onError: (e: any) => setFormError(e?.message || "Failed to update product"),
   });
 
   const deleteM = useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }) },
+    mutationFn: (p: Product) => deleteProduct(p.id),
+    onSuccess: (_, p) => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); addLog(`Deleted product: ${p.name}`, "product"); },
   });
 
   const toggleActiveM = useMutation({
     mutationFn: toggleProductActive,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); showToast("Product status updated!") },
+    onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); showToast("Product status updated!"); addLog(`${data.isActive ? "Activated" : "Deactivated"} product: ${data.name}`, "product"); },
     onError: (e: any) => setFormError(e?.message || "Failed to toggle status"),
   });
 
@@ -471,11 +473,9 @@ export default function ProductsPage() {
                 <Boxes size={14} className="text-muted-foreground" />
                 <select value={filterBrand} onChange={e => setFilterBrand(e.target.value)} className="bg-transparent text-sm font-bold outline-none cursor-pointer pr-2 max-w-[120px]">
                   <option value="all" className="bg-background text-foreground">Brands</option>
-                  {/* We can't derive uniqueBrands easily from paginated products, we'll let user type or just omit brands dynamically if backend provides it. For now let's keep it simple or remove the dynamic list */}
-                  <option value="Apple" className="bg-background text-foreground">Apple</option>
-                  <option value="Samsung" className="bg-background text-foreground">Samsung</option>
-                  <option value="Sony" className="bg-background text-foreground">Sony</option>
-                  <option value="LG" className="bg-background text-foreground">LG</option>
+                  {[...new Set(products.map(p => p.brand).filter(Boolean))].map((b) => (
+                    <option key={b} value={b} className="bg-background text-foreground">{b}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -520,7 +520,7 @@ export default function ProductsPage() {
                         onView={() => setViewProduct(p)}
                         onToggleActive={() => toggleActiveM.mutate(p.id)}
                         isDeleting={deleteM.isPending && deleteM.variables === p.id}
-                        isToggling={toggleActiveM.isPending && toggleActiveM.variables === p.id}
+                        isToggling={toggleActiveM.isPending && (toggleActiveM.variables as any) === p.id}
                         isActive={p.isActive !== false}
                       />
                     </div>
@@ -831,7 +831,7 @@ export default function ProductsPage() {
               className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
               onClick={() => {
                 if (deleteTarget !== null) {
-                  deleteM.mutate(deleteTarget.id);
+                  deleteM.mutate(deleteTarget);
                   setDeleteTarget(null);
                 }
               }}

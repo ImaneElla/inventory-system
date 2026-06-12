@@ -303,11 +303,11 @@ export default function SalesPage() {
     setReceiptData({
       transactionId: sale.transactionId,
       createdAt: sale.createdAt,
-      clientName: sale.clientName || "Walk-in Customer",
+      clientName: sale.clientName || "Customer ",
       basket: mappedBasket,
       finalTotal: sale.totalAmount,
       discountApplied: sale.discountApplied || 0,
-      paymentMethod: sale.paymentMethod || "CASH",
+      paymentMethod: sale.paymentMethod || "",
       amountTendered: sale.amountTendered || sale.totalAmount,
       changeDue: (sale.amountTendered || sale.totalAmount) - sale.totalAmount
     });
@@ -668,29 +668,74 @@ export default function SalesPage() {
                 </button>
 
                 {/* Save as PDF — opens browser print dialog targeting the invoice div */}
-                <button
-                  onClick={() => {
-                    // Open a print window containing only the invoice HTML
-                    const invoiceEl = invoiceRef.current;
-                    if (!invoiceEl) return;
-                    const html = `<!DOCTYPE html><html><head><title>Invoice #${receiptData.transactionId}</title><style>@media print{body{margin:0}}</style><link rel="stylesheet" href="/globals.css"></head><body>${invoiceEl.outerHTML}</body></html>`;
-                    const win = window.open("", "_blank", "width=900,height=700");
-                    if (!win) return;
-                    win.document.write(html);
-                    win.document.close();
-                    win.onload = () => { win.focus(); win.print(); };
-                  }}
-                  className="flex-1 items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-foreground px-1 py-1 rounded-2xl font-medium hover:opacity-80 transition-all h-12 cursor-pointer flex border border-border text-sm"
-                >
-                  <Download size={18} />
-                  Save PDF
-                </button>
+                {/* Save as PDF Button */}
+            <button
+              onClick={() => {
+                const invoiceEl = invoiceRef.current;
+                if (!invoiceEl) return;
+
+                // 1. Open a new browser window
+                const win = window.open("", "_blank", "width=900,height=700");
+                if (!win) return;
+
+                // 2. Get all currently active styles/stylesheets from the page and copy them
+                let stylesHtml = '';
+                document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
+                  stylesHtml += el.outerHTML;
+                });
+
+                // 3. Build the document structure with the copied styles
+                const html = `
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <title>Invoice #${receiptData.transactionId}</title>
+                      ${stylesHtml}
+                      <style>
+                        @media print {
+                          body { margin: 10mm; background: white; color: black; }
+                        }
+                      </style>
+                    </head>
+                    <body>
+                      ${invoiceEl.outerHTML}
+                    </body>
+                  </html>
+                `;
+
+                win.document.write(html);
+                win.document.close();
+
+                // 4. Delay the print dialog slightly to ensure the browser has fully parsed the CSS
+                win.onload = () => {
+                  setTimeout(() => {
+                    win.focus();
+                    win.print();
+                  }, 500); 
+                };
+              }}
+              className="flex-1 items-center justify-center gap-2 bg-slate-100 dark:bg-slate-800 text-foreground px-1 py-1 rounded-2xl font-medium hover:opacity-80 transition-all h-12 cursor-pointer flex border border-border text-sm"
+            >
+              <Download size={18} />
+              Save PDF
+            </button>
+
+                {/* Share Button */}
 
                 <button
                   onClick={() => {
                     navigator.share({
-                      title: "Your Receipt",
-                      text: `Here is your receipt #${receiptData.transactionId}`,
+                      title: "Facture | IMN SYSTEM",
+                      text: `Ta Facture #${receiptData.transactionId}`,
+                      url: window.location.href ,
+                      files: [
+                        new File([invoiceRef.current?.outerHTML || "Facture"], `invoice_${receiptData.transactionId}.html`, { type: "text/html" })
+                      ],
+                  
+
+
+
+
                     }).catch(() => { /* Ignore if cancelled */ });
                   }}
                   className="flex-1 text-sm items-center justify-center gap-2 bg-foreground/30 text-foreground px-1 py-1 rounded-2xl font-medium hover:bg-foreground/60 transition-all h-12 mx-auto cursor-pointer flex"

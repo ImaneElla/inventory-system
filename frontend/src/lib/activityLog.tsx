@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 
 export type LogIcon = "sale" | "product" | "report" | "user" | "category" | "system";
 
@@ -20,35 +20,77 @@ interface ActivityLogContextType {
   logs: ActivityLogEntry[];
   addLog: (what: string, icon?: LogIcon) => void;
   clearLogs: () => void;
+  refreshLogs: () => void;
 }
 
 const ActivityLogContext = createContext<ActivityLogContextType | null>(null);
 
 export function ActivityLogProvider({ children }: { children: React.ReactNode }) {
   const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
-  const counterRef = useRef(0);
 
-  const addLog = useCallback((what: string, icon: LogIcon = "system") => {
-    const name = typeof window !== "undefined" ? (localStorage.getItem("userName") || "System") : "System";
-    const role = typeof window !== "undefined" ? (localStorage.getItem("role") || "USER") : "USER";
-    const avatar = typeof window !== "undefined" ? localStorage.getItem("userImage") : null;
+  const fetchLogs = useCallback(async () => {
+    try {
+      const userId = typeof window !== "undefined" ? sessionStorage.getItem("userId") : null;
+      const headers: Record<string, string> = {};
+      if (userId) headers["X-Current-User-Id"] = userId;
 
-    counterRef.current += 1;
-    const entry: ActivityLogEntry = {
-      id: `log-${Date.now()}-${counterRef.current}`,
-      who: { name, role, avatar },
-      what,
-      when: new Date(),
-      icon,
-    };
-
-    setLogs((prev) => [entry, ...prev].slice(0, 200)); // keep last 200 logs
+      const res = await fetch("/api/v1/activity-logs", { headers });
+      if (res.ok) {
+        const data = await res.json();
+        const parsed = data.map((entry: any) => ({
+          ...entry,
+          when: new Date(entry.when),
+        }));
+        setLogs(parsed);
+      }
+    } catch (err) {
+      console.error("Failed to fetch activity logs:", err);
+    }
   }, []);
 
-  const clearLogs = useCallback(() => setLogs([]), []);
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  const addLog = useCallback(async (what: string, icon: LogIcon = "system") => {
+    try {
+      const userId = typeof window !== "undefined" ? sessionStorage.getItem("userId") : null;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (userId) headers["X-Current-User-Id"] = userId;
+
+      const res = await fetch("/api/v1/activity-logs", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ what, icon }),
+      });
+      if (res.ok) {
+        fetchLogs();
+      }
+    } catch (err) {
+      console.error("Failed to add activity log:", err);
+    }
+  }, [fetchLogs]);
+
+  const clearLogs = useCallback(async () => {
+    try {
+      const userId = typeof window !== "undefined" ? sessionStorage.getItem("userId") : null;
+      const headers: Record<string, string> = {};
+      if (userId) headers["X-Current-User-Id"] = userId;
+
+      const res = await fetch("/api/v1/activity-logs", {
+        method: "DELETE",
+        headers,
+      });
+      if (res.ok) {
+        setLogs([]);
+      }
+    } catch (err) {
+      console.error("Failed to clear activity logs:", err);
+    }
+  }, []);
 
   return (
-    <ActivityLogContext.Provider value={{ logs, addLog, clearLogs }}>
+    <ActivityLogContext.Provider value={{ logs, addLog, clearLogs, refreshLogs: fetchLogs }}>
       {children}
     </ActivityLogContext.Provider>
   );

@@ -38,5 +38,14 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column(name = "last_seen", nullable = true)
+    private java.time.LocalDateTime lastSeen;
 
+    @jakarta.persistence.Transient
+    @com.fasterxml.jackson.annotation.JsonProperty("isOnline")
+    public boolean getIsOnline() {
+        if (lastSeen == null) return false;
+        // Consider online if active within the last 5 minutes
+        return lastSeen.isAfter(java.time.LocalDateTime.now().minusMinutes(5));
+    }
 }

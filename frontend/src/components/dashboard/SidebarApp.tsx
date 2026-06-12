@@ -103,13 +103,15 @@ export default function SidebarApp() {
 
   useEffect(() => { 
     setMounted(true); 
-    const storedRole = localStorage.getItem("role") || localStorage.getItem("userRole");
+    const storedRole = sessionStorage.getItem("role") || sessionStorage.getItem("userRole");
     if (storedRole) {
       setUserRole(storedRole.toUpperCase());
     }
   }, []);
 
   const handleSignOut = () => {
+    sessionStorage.removeItem("auth");
+    sessionStorage.removeItem("role");
     localStorage.removeItem("auth");
     localStorage.removeItem("role");
     router.replace("/login");
@@ -214,13 +216,13 @@ export default function SidebarApp() {
       </SidebarContent>
 
       {/* Footer */}
-      <SidebarFooter className="px-4 py-3 border-t border-black/5">
+      <SidebarFooter className="px-4 py-3 border-t border-foreground/10">
         {!isCollapsed && (
           <p
-            className="text-center text-[10px] font-medium tracking-widest uppercase text-[#1c1c1e]/20"
+            className="text-center text-[10px] font-medium tracking-widest uppercase text-foreground/20"
             style={{ fontFamily: "var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif" }}
           >
-            v1.0.0
+            v2.0.0
           </p>
         )}
       </SidebarFooter>

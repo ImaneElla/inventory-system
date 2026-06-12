@@ -35,9 +35,47 @@ public class Report {
     @Column(name = "generated_by")
     private String generatedBy;
 
+    @Column(name = "total_revenue", precision = 15, scale = 2)
+    private java.math.BigDecimal totalRevenue;
+
+    @Column(name = "total_transactions")
+    private Integer totalTransactions;
+
+    @Column(name = "line_items", columnDefinition = "TEXT")
+    private String lineItemsJson;
+
+    @Transient
+    private Object lineItems;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    @PreUpdate
+    protected void convertLineItemsToJson() {
+        if (this.lineItems != null) {
+            try {
+                this.lineItemsJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(this.lineItems);
+            } catch (Exception e) {
+                this.lineItemsJson = "[]";
+            }
+        }
+    }
+
+    @PostLoad
+    protected void convertJsonToLineItems() {
+        if (this.lineItemsJson != null) {
+            try {
+                this.lineItems = new com.fasterxml.jackson.databind.ObjectMapper().readValue(
+                    this.lineItemsJson,
+                    new com.fasterxml.jackson.core.type.TypeReference<Object>() {}
+                );
+            } catch (Exception e) {
+                this.lineItems = new java.util.ArrayList<>();
+            }
+        }
+    }
 
     // Getters and Setters manually added to ensure compilation with or without Lombok config details
     public Long getId() { return id; }
@@ -58,4 +96,12 @@ public class Report {
     public void setGeneratedBy(String generatedBy) { this.generatedBy = generatedBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public java.math.BigDecimal getTotalRevenue() { return totalRevenue; }
+    public void setTotalRevenue(java.math.BigDecimal totalRevenue) { this.totalRevenue = totalRevenue; }
+    public Integer getTotalTransactions() { return totalTransactions; }
+    public void setTotalTransactions(Integer totalTransactions) { this.totalTransactions = totalTransactions; }
+    public String getLineItemsJson() { return lineItemsJson; }
+    public void setLineItemsJson(String lineItemsJson) { this.lineItemsJson = lineItemsJson; }
+    public Object getLineItems() { return lineItems; }
+    public void setLineItems(Object lineItems) { this.lineItems = lineItems; }
 }

@@ -173,7 +173,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setMounted(true);
-    if (localStorage.getItem("auth") === "true") {
+    if (sessionStorage.getItem("auth") === "true") {
       setAuthorized(true);
     } else {
       router.replace("/login");

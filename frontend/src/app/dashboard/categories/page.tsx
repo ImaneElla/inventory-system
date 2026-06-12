@@ -37,6 +37,7 @@ import {
   deleteCategory,
   fetchProducts,
 } from "@/lib/api";
+import { useActivityLog } from "@/lib/activityLog";
 
 const iconMap: Record<string, React.ElementType> = {
   Laptop, Smartphone, Headphones, Gamepad2, Monitor,
@@ -61,6 +62,7 @@ import { CategoryCard } from "@/components/dashboard/(categories)/CategoryCard";
 import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
 
 export default function CategoriesPage() {
+  const { addLog } = useActivityLog();
   const qc = useQueryClient();
   const [search, setSearch]             = useState("");
   const [showForm, setShowForm]         = useState(false);
@@ -123,19 +125,19 @@ export default function CategoriesPage() {
 
   const createM = useMutation({
     mutationFn: createCategory,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category created!"); },
+    onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category created!"); addLog(`Created category: ${data.name}`, "category"); },
     onError: (e: any) => setFormError(e?.message || "Failed to create category"),
   });
 
   const updateM = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => updateCategory(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category updated!"); },
+    onSuccess: (data: any) => { qc.invalidateQueries({ queryKey: ["categories"] }); closeForm(); showToast("Category updated!"); addLog(`Updated category: ${data.name}`, "category"); },
     onError: (e: any) => setFormError(e?.message || "Failed to update category"),
   });
 
   const deleteM = useMutation({
-    mutationFn: deleteCategory,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["categories"] }); showToast("Category deleted!"); },
+    mutationFn: (cat: any) => deleteCategory(cat.id),
+    onSuccess: (_, cat) => { qc.invalidateQueries({ queryKey: ["categories"] }); showToast("Category deleted!"); addLog(`Deleted category: ${cat.name}`, "category"); },
   });
 
   const filtered = useMemo(() => {
@@ -342,7 +344,7 @@ export default function CategoriesPage() {
         )}
         onConfirm={() => {
           if (deleteTarget !== null) {
-            deleteM.mutate(deleteTarget.id);
+            deleteM.mutate(deleteTarget);
             setDeleteTarget(null);
           }
         }}

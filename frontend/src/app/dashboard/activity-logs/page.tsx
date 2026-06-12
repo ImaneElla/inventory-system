@@ -12,10 +12,10 @@ import {
   Tags,
   Settings,
   Shield,
-  Trash2,
   Clock,
   AlertTriangle,
   ArrowLeft,
+  Calendar,
 } from "lucide-react";
 import { useActivityLog, ActivityLogEntry, LogIcon } from "@/lib/activityLog";
 import { formatRelativeTime } from "@/lib/timeUtils";
@@ -83,9 +83,15 @@ function LogItem({ entry, index }: { entry: ActivityLogEntry; index: number }) {
                 <p className="text-xs text-muted-foreground mt-0.5 font-medium leading-relaxed">{entry.what}</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-muted-foreground text-[10px] font-bold uppercase tracking-wider shrink-0">
-              <Clock size={10} />
-              <span>{entry.when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            <div className="flex flex-col items-end gap-0.5 text-muted-foreground text-[10px] font-bold uppercase tracking-wider shrink-0">
+              <div className="flex items-center gap-1">
+                <Calendar size={9} />
+                <span>{entry.when.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock size={9} />
+                <span>{entry.when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -96,11 +102,11 @@ function LogItem({ entry, index }: { entry: ActivityLogEntry; index: number }) {
 
 export default function ActivityLogsPage() {
   const router = useRouter();
-  const { logs, clearLogs } = useActivityLog();
+  const { logs } = useActivityLog();
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem("role") || "";
+    const role = sessionStorage.getItem("role") || "";
     setAuthorized(role.toUpperCase() === "ADMIN");
   }, []);
 
@@ -125,16 +131,15 @@ export default function ActivityLogsPage() {
           <AlertTriangle size={40} className="text-rose-500" />
         </motion.div>
         <div>
-          <h1 className="text-4xl font-black text-foreground tracking-tight">403</h1>
-          <p className="text-xl font-bold text-muted-foreground mt-1">Access Denied</p>
+          <p className="text-2xl font-bold text-foreground mt-1">Access Denied</p>
           <p className="text-sm text-muted-foreground mt-3 max-w-xs mx-auto">
-            This page is restricted to <span className="font-black text-purple-500">Admin</span> accounts only.
+            This page is restricted to <span className="font-black text-primary">Admin</span> accounts only.
             Your current role does not have permission to view system audit logs.
           </p>
         </div>
         <button
           onClick={() => router.push("/dashboard")}
-          className="flex items-center gap-2 h-11 px-6 rounded-2xl bg-foreground text-background text-sm font-bold hover:opacity-80 transition-all"
+          className="flex items-center gap-2 h-11 px-6 rounded-2xl btn-gradient text-background text-sm font-bold hover:opacity-80 transition-all"
         >
           <ArrowLeft size={16} />
           Back to Dashboard
@@ -160,18 +165,16 @@ export default function ActivityLogsPage() {
             </div>
             <h1 className="text-4xl font-black tracking-tight">Activity Logs</h1>
             <p className="text-muted-foreground font-medium mt-1 text-sm">
-              Real-time audit trail of all system operations &mdash; {logs.length} event{logs.length !== 1 ? 's' : ''} recorded this session
+              Real-time audit trail of all system operations &mdash; {logs.length} event{logs.length !== 1 ? 's' : ''} recorded
             </p>
           </div>
-          {logs.length > 0 && (
-            <button
-              onClick={clearLogs}
-              className="h-10 px-5 flex items-center gap-2 rounded-2xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-all text-sm font-bold"
-            >
-              <Trash2 size={14} />
-              Clear Logs
-            </button>
-          )}
+          <button
+            onClick={() => window.history.back()}
+            className="h-10 px-5 flex items-center gap-2 rounded-2xl border border-border text-muted-foreground hover:bg-muted/10 transition-all text-sm font-bold"
+          >
+            <ArrowLeft size={14} />
+            Back
+          </button>
         </div>
 
         {/* Stats bar */}

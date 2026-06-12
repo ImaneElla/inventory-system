@@ -18,6 +18,10 @@ async function handler(
   if (contentType) {
     headers["Content-Type"] = contentType;
   }
+  const currentUserId = req.headers.get("x-current-user-id");
+  if (currentUserId) {
+    headers["X-Current-User-Id"] = currentUserId;
+  }
 
   const fetchOptions: RequestInit = {
     method: req.method,

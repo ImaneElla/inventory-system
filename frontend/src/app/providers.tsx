@@ -8,6 +8,20 @@ import { ActivityLogProvider } from "@/lib/activityLog";
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
+  if (typeof window !== "undefined" && sessionStorage.getItem("auth") !== "true") {
+    const localAuth = localStorage.getItem("auth") === "true";
+    const rememberMe = localStorage.getItem("rememberMe") === "true";
+    if (localAuth && rememberMe) {
+      const keys = ["auth", "userId", "email", "userName", "role", "userImage", "rememberMe"];
+      keys.forEach((key) => {
+        const val = localStorage.getItem(key);
+        if (val !== null) {
+          sessionStorage.setItem(key, val);
+        }
+      });
+    }
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ActivityLogProvider>

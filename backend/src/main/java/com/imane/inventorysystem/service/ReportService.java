@@ -216,6 +216,13 @@ public class ReportService {
         return reportRepository.save(r);
     }
 
+    public Report saveReport(Report report) {
+        if (report.getCreatedAt() == null) {
+            report.setCreatedAt(LocalDateTime.now());
+        }
+        return reportRepository.save(report);
+    }
+
     public void deleteReport(Long id) {
         reportRepository.deleteById(id);
     }

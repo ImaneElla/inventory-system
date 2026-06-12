@@ -30,7 +30,7 @@ export default function UsersPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
-    const id = localStorage.getItem("userId");
+    const id = sessionStorage.getItem("userId");
     if (id) setCurrentUserId(Number(id));
   }, []);
 
@@ -221,8 +221,8 @@ export default function UsersPage() {
                       )}
                     </div>
                     {/* Status Dot */}
-                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-card z-10 ${(user.isOnline || user.isActive !== false) ? 'bg-emerald-500' : 'bg-gray-400'}`}>
-                      {(user.isOnline || user.isActive !== false) && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75"></span>}
+                    <div className={`absolute bottom-0 right-0 w-5 h-5 rounded-full border-[3px] border-card z-10 ${user.isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`}>
+                      {user.isOnline && <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-75"></span>}
                     </div>
                   </div>
 
@@ -298,7 +298,7 @@ export default function UsersPage() {
                     <ShieldCheck size={14} />
 
                     <span>
-                      User ID: #{user.id}
+                      Verified 
                     </span>
 
                   </div>

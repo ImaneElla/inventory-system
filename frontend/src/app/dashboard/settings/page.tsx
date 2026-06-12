@@ -34,11 +34,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setMounted(true);
-    setUserName(localStorage.getItem("userName") || "");
-    setRole(localStorage.getItem("role") || "");
-    const id = localStorage.getItem("userId");
+    setUserName(sessionStorage.getItem("userName") || "");
+    setRole(sessionStorage.getItem("role") || "");
+    const id = sessionStorage.getItem("userId");
     if (id) setUserId(Number(id));
-    const img = localStorage.getItem("userImage");
+    const img = sessionStorage.getItem("userImage");
     if (img) {
       setUserImage(resolveImageUrl(img) ?? "");
     }
@@ -83,10 +83,16 @@ export default function SettingsPage() {
         userName: userName.trim(),
         image: avatarFile ?? undefined,
       });
-      localStorage.setItem("userName", data.userName);
+      sessionStorage.setItem("userName", data.userName);
       if (data.imageUrl) {
-        localStorage.setItem("userImage", data.imageUrl);
+        sessionStorage.setItem("userImage", data.imageUrl);
         setUserImage(resolveImageUrl(data.imageUrl) ?? "");
+      }
+      if (sessionStorage.getItem("rememberMe") === "true") {
+        localStorage.setItem("userName", data.userName);
+        if (data.imageUrl) {
+          localStorage.setItem("userImage", data.imageUrl);
+        }
       }
       setAvatarFile(null);
       window.dispatchEvent(new Event("storage"));
