@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useMutation, useQuery, useQueryClient } from "@/lib/react-query-custom";
-import { fetchProducts, createProduct, updateProduct, deleteProduct, fetchCategories, fetchDashboardStats, toggleProductActive } from "@/lib/api";
+import { fetchProducts, createProduct, updateProduct, deleteProduct, deleteProducts, fetchCategories, fetchDashboardStats, toggleProductActive } from "@/lib/api";
 import ProductsTable, { Product } from "@/components/dashboard/(products)/ProductTable";
 import { useActivityLog } from "@/lib/activityLog";
 
@@ -285,7 +285,7 @@ export default function ProductsPage() {
   const [filterStock, setFilterStock] = useState("all");
   const [formError, setFormError] = useState("");
   const [toast, setToast] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | Product[] | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3500); };
 
   const { data: productsData, isLoading } = useQuery({
@@ -322,7 +322,18 @@ export default function ProductsPage() {
 
   const deleteM = useMutation({
     mutationFn: (p: Product) => deleteProduct(p.id),
-    onSuccess: (_, p) => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); addLog(`Deleted product: ${p.name}`, "product"); },
+    onSuccess: (_, p) => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["dashboardStats"] }); showToast("Product deleted!"); addLog(`Deleted product: ${p.name}`, "product"); },
+  });
+
+  const deleteMultipleM = useMutation({
+    mutationFn: (ids: number[]) => deleteProducts(ids),
+    onSuccess: (_, ids) => { 
+      qc.invalidateQueries({ queryKey: ["products"] }); 
+      qc.invalidateQueries({ queryKey: ["dashboardStats"] }); 
+      showToast(`Deleted ${ids.length} products!`);
+      addLog(`Deleted ${ids.length} products in batch`, "product"); 
+    },
+    onError: (e: any) => showToast(e?.message || "Failed to delete products"),
   });
 
   const toggleActiveM = useMutation({
@@ -492,9 +503,10 @@ export default function ProductsPage() {
                   isLoading={isLoading}
                   onEdit={openEdit}
                   onDelete={p => setDeleteTarget(p)}
+                  onDeleteSelected={prods => setDeleteTarget(prods)}
                   onViewDetails={setViewProduct}
                   onToggleActive={(p) => toggleActiveM.mutate(p.id)}
-                  deletingId={deleteM.isPending ? (deleteM.variables as any) : null}
+                  deletingId={deleteM.isPending ? deleteM.variables?.id : null}
                   togglingId={toggleActiveM.isPending ? (toggleActiveM.variables as any) : null}
                 />
               </div>
@@ -519,7 +531,7 @@ export default function ProductsPage() {
                         onDelete={() => setDeleteTarget(p)}
                         onView={() => setViewProduct(p)}
                         onToggleActive={() => toggleActiveM.mutate(p.id)}
-                        isDeleting={deleteM.isPending && deleteM.variables === p.id}
+                        isDeleting={deleteM.isPending && deleteM.variables?.id === p.id}
                         isToggling={toggleActiveM.isPending && (toggleActiveM.variables as any) === p.id}
                         isActive={p.isActive !== false}
                       />
@@ -815,12 +827,22 @@ export default function ProductsPage() {
               <Trash2 size={28} className="text-rose-500" />
             </div>
             <AlertDialogTitle className="text-2xl font-bold tracking-tight text-foreground w-full text-center sm:text-center">
-              Delete Product?
+              {Array.isArray(deleteTarget) ? `Delete ${deleteTarget.length} Products?` : "Delete Product?"}
             </AlertDialogTitle>
             <AlertDialogDescription className="font-medium leading-relaxed w-full text-center sm:text-center">
-              This action cannot be undone. Deleting{" "}
-              <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
-              will permanently remove it from your inventory.
+              {Array.isArray(deleteTarget) ? (
+                <>
+                  This action cannot be undone. Deleting{" "}
+                  <strong className="text-foreground">{deleteTarget.length} products</strong>{" "}
+                  will permanently remove them from your inventory.
+                </>
+              ) : (
+                <>
+                  This action cannot be undone. Deleting{" "}
+                  <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
+                  will permanently remove it from your inventory.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="relative z-10 sm:justify-center gap-3 pt-6">
@@ -831,7 +853,11 @@ export default function ProductsPage() {
               className="rounded-2xl h-12 px-6 font-semibold bg-rose-500 hover:bg-rose-600 text-white cursor-pointer border-none shadow-lg shadow-rose-500/25 transition-all flex-1"
               onClick={() => {
                 if (deleteTarget !== null) {
-                  deleteM.mutate(deleteTarget);
+                  if (Array.isArray(deleteTarget)) {
+                    deleteMultipleM.mutate(deleteTarget.map(p => p.id));
+                  } else {
+                    deleteM.mutate(deleteTarget);
+                  }
                   setDeleteTarget(null);
                 }
               }}

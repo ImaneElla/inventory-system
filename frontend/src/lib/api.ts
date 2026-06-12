@@ -186,6 +186,15 @@ export async function deleteProduct(id: number) {
   return handleResponse(res, "Failed to delete product");
 }
 
+export async function deleteProducts(ids: number[]) {
+  const res = await fetch(`${BASE_V1_URL}/products/batch`, {
+    method: "DELETE",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(ids),
+  });
+  return handleResponse(res, "Failed to delete products");
+}
+
 export async function toggleProductActive(id: number) {
   const res = await fetch(`${BASE_V1_URL}/products/${id}/toggle-active`, {
     method: "PATCH",

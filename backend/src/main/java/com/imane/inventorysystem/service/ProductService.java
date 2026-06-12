@@ -15,7 +15,10 @@ import com.imane.inventorysystem.dto.ProductResponse;
 import com.imane.inventorysystem.entity.MovementType;
 import com.imane.inventorysystem.entity.Product;
 import com.imane.inventorysystem.repository.ProductRepository;
+import com.imane.inventorysystem.repository.SaleItemRepository;
+import com.imane.inventorysystem.repository.StockMovementRepository;
 import com.imane.inventorysystem.service.StockMovementService;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ProductService {
@@ -23,11 +26,16 @@ public class ProductService {
     private final ProductRepository repo;
     private final CategoryService categoryService;
     private final StockMovementService stockMovementService;
+    private final SaleItemRepository saleItemRepository;
+    private final StockMovementRepository stockMovementRepository;
 
-    public ProductService(ProductRepository repo, CategoryService categoryService, StockMovementService stockMovementService) {
+    public ProductService(ProductRepository repo, CategoryService categoryService, StockMovementService stockMovementService,
+                          SaleItemRepository saleItemRepository, StockMovementRepository stockMovementRepository) {
         this.repo = repo;
         this.categoryService = categoryService;
         this.stockMovementService = stockMovementService;
+        this.saleItemRepository = saleItemRepository;
+        this.stockMovementRepository = stockMovementRepository;
     }
 
     public Page<ProductResponse> getAllProducts(String search, Boolean isActive, String stockStatus, Long categoryId, String brand, Pageable pageable) {
@@ -110,12 +118,31 @@ public class ProductService {
         if (product.getSellPrice() == null) product.setSellPrice(BigDecimal.ZERO);
     }
 
+    @Transactional
     public void deleteProduct(Long id) {
         if (id == null) {
             throw new IllegalArgumentException("Product ID must not be null");
         }
         if (!repo.existsById(id)) throw new IllegalArgumentException("Product not found with ID: " + id);
+        
+        // 1. Nullify references in sale items
+        saleItemRepository.nullifyProductId(id);
+        
+        // 2. Delete stock movements
+        stockMovementRepository.deleteByProductId(id);
+        
+        // 3. Delete the product itself
         repo.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteProducts(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        for (Long id : ids) {
+            deleteProduct(id);
+        }
     }
 
     public ProductResponse findById(Long id) {

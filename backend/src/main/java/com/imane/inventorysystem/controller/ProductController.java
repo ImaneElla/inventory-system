@@ -1,4 +1,5 @@
 package com.imane.inventorysystem.controller;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
@@ -54,6 +55,12 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/batch")
+    public ResponseEntity<Void> deleteProducts(@RequestBody List<Long> ids) {
+        productService.deleteProducts(ids);
         return ResponseEntity.ok().build();
     }
 

@@ -30,6 +30,7 @@ interface ProductsTableProps {
   isLoading?: boolean;
   onEdit?: (product: Product) => void;
   onDelete?: (product: Product) => void;
+  onDeleteSelected?: (products: Product[]) => void;
   onViewDetails?: (product: Product) => void;
   onToggleActive?: (product: Product) => void;
   deletingId?: number | null;
@@ -83,14 +84,13 @@ function ColHeader({
   );
 }
 
-import { DeleteConfirmationDialog } from "@/components/ui/delete-confirmation-dialog";
+// DeleteConfirmationDialog import removed
 
 export default function ProductsTable({
-  products, isLoading = false, onEdit, onDelete, onViewDetails, onToggleActive, deletingId, togglingId
+  products, isLoading = false, onEdit, onDelete, onDeleteSelected, onViewDetails, onToggleActive, deletingId, togglingId
 }: ProductsTableProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>(null);
   const [sortDir, setSortDir] = React.useState<"asc" | "desc">("asc");
-  const [deleteTarget, setDeleteTarget] = React.useState<Product | null>(null);
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
 
   const { state } = useSidebar();
@@ -190,10 +190,12 @@ export default function ProductsTable({
             </button>
             <button 
               onClick={() => {
-                selectedIds.forEach(id => {
-                  const p = products.find(prod => prod.id === id);
-                  if (p) onDelete?.(p);
-                });
+                const selectedProducts = selectedIds
+                  .map(id => products.find(prod => prod.id === id))
+                  .filter((p): p is Product => !!p);
+                if (selectedProducts.length > 0) {
+                  onDeleteSelected?.(selectedProducts);
+                }
                 setSelectedIds([]);
               }}
               className="text-sm font-bold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
@@ -339,7 +341,7 @@ export default function ProductsTable({
                           product={p}
                           onViewDetails={() => onViewDetails?.(p)}
                           onEdit={() => onEdit?.(p)}
-                          onDelete={() => setDeleteTarget(p)}
+                          onDelete={() => onDelete?.(p)}
                           onToggleActive={() => onToggleActive?.(p)}
                           isDeleting={deletingId === p.id}
                           isToggling={togglingId === p.id}
@@ -391,24 +393,7 @@ export default function ProductsTable({
         </div>
       </div>
 
-      <DeleteConfirmationDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete Product?"
-        description={(
-          <>
-            This action cannot be undone. This will permanently delete{" "}
-            <strong className="text-foreground">{deleteTarget?.name}</strong>{" "}
-            and remove it from your inventory records.
-          </>
-        )}
-        onConfirm={() => {
-          if (deleteTarget && onDelete) {
-            onDelete(deleteTarget);
-            setDeleteTarget(null);
-          }
-        }}
-      />
+      {/* Delete Confirmation Dialog handled by parent page */}
     </div>
   );
 }

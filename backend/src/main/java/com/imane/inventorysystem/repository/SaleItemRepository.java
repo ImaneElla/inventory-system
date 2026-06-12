@@ -2,7 +2,9 @@ package com.imane.inventorysystem.repository;
 
 import com.imane.inventorysystem.entity.SaleItem;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -14,4 +16,9 @@ public interface SaleItemRepository extends JpaRepository<SaleItem, Long> {
             "GROUP BY p.id, p.name, p.imageUrl " +
             "ORDER BY SUM(si.quantity) DESC")
     List<Object[]> findTopSellingProducts(org.springframework.data.domain.Pageable pageable);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE SaleItem si SET si.product = null WHERE si.product.id = :productId")
+    void nullifyProductId(Long productId);
 }
