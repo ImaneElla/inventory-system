@@ -37,12 +37,12 @@ const mainMenuItems = [
   { name: "Categories",      icon: Tags,            path: "/dashboard/categories",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
   { name: "Sales",           icon: ShoppingCart,    path: "/dashboard/sales",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
   { name: "Users",           icon: Users,           path: "/dashboard/users",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "AI Assistant",    icon: Sparkles,        path: "/dashboard/ai-assistant",   color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "AI Assistant",    icon: Sparkles,        path: "/dashboard/EmexaAssistant", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
   { name: "Reports",         icon: BarChart2,       path: "/dashboard/reports",        color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
 ];
 
 const generalMenuItems = [
-  { name: "Activity Logs",   icon: Activity,        path: "/dashboard/activity-logs", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { name: "Activity Logs", icon: Activity, path: "/dashboard/activity-logs", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
   { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
   { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
 

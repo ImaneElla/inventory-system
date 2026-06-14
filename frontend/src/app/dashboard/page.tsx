@@ -256,7 +256,7 @@ export default function DashboardPage() {
             {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
           </span>
           <Link
-            href="/dashboard/ai-assistant"
+            href="/dashboard/EmexaAssistant"
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm text-white btn-gradient shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform"
           >
             <Sparkles size={16} />
@@ -471,7 +471,7 @@ export default function DashboardPage() {
           <CardHeader className="relative z-10 flex flex-row items-start justify-between">
             <CardTitle className="text-lg font-black text-white">AI Assistant</CardTitle>
             <Link
-              href="/dashboard/ai-assistant"
+            href="/dashboard/EmexaAssistant"
               className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
             >
               <Maximize2 size={16} />
@@ -482,7 +482,7 @@ export default function DashboardPage() {
              Get smart restock tips and sales insights powered by your live inventory data.
             </p>
             <Link
-              href="/dashboard/ai-assistant"
+            href="/dashboard/EmexaAssistant"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary rounded-2xl text-sm font-black w-fit hover:bg-white/90 transition-colors"
             >
               Open Emexa
