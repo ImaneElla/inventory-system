@@ -25,6 +25,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { Badge as HeroBadge } from "@heroui/react";
 import { fetchSales, fetchDashboardStats, fetchReports, createReport, deleteReport } from "@/lib/api";
 import { useActivityLog } from "@/lib/activityLog";
+import { useRouter } from "next/navigation";
 
 // ─── Demo / Real data toggle ─────────────────────────────────────────────────
 // Set to `true` to show rich mock financial data in the sidebar chart.
@@ -206,7 +207,8 @@ function printReport(report: Report) {
 
 export default function ReportsPage() {
   const { addLog } = useActivityLog();
-
+const router = useRouter();
+const [aiQuery, setAiQuery] = useState("");
   // Core report list
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
@@ -720,32 +722,46 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {/* Ask Emexa AI */}
-            <div className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 rounded-3xl p-6 shadow-sm relative overflow-hidden">
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-xl pointer-events-none" />
-              <div className="flex items-center gap-3 mb-4 relative z-10">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <h3 className="font-black text-sm text-foreground">Ask Emexa</h3>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">AI Assistant</p>
-                </div>
-              </div>
-              <p className="text-xs font-medium text-muted-foreground mb-4 leading-relaxed relative z-10">
-                "I can help you analyze these reports, find anomalies, or suggest cost-cutting measures. What would you like to know?"
-              </p>
-              <div className="relative z-10">
-                <input
-                  type="text"
-                  placeholder="Ask something..."
-                  className="w-full h-10 pl-3 pr-10 rounded-xl bg-background/50 border border-border/50 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                />
-                <button className="absolute right-1 top-1 w-8 h-8 rounded-lg bg-indigo-500 text-white flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
+     {/* Ask Emexa AI */}
+<div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 rounded-3xl p-6 shadow-sm relative overflow-hidden">
+  <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/20 rounded-full blur-xl pointer-events-none" />
+  <div className="flex items-center gap-3 mb-4 relative z-10">
+    <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+      <Sparkles size={18} />
+    </div>
+    <div>
+      <h3 className="font-black text-sm text-foreground">Ask Emexa</h3>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">AI Assistant</p>
+    </div>
+  </div>
+  <p className="text-xs font-medium text-muted-foreground mb-4 leading-relaxed relative z-10">
+    "I can help you analyze these reports, find anomalies, or suggest cost-cutting measures. What would you like to know?"
+  </p>
+  
+  <form 
+    onSubmit={(e) => {
+      e.preventDefault();
+      if (!aiQuery.trim()) return;
+
+router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);    }}
+    className="relative z-10"
+  >
+    <input
+      type="text"
+      value={aiQuery}
+      onChange={(e) => setAiQuery(e.target.value)}
+      placeholder="Ask something..."
+      className="w-full h-10 pl-3 pr-10 rounded-xl bg-background/50 border border-border/50 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+    />
+    <button 
+      type="submit"
+      disabled={!aiQuery.trim()}
+      className="absolute right-1 top-1 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer disabled:opacity-40"
+    >
+      <ChevronRight size={16} />
+    </button>
+  </form>
+</div>
           </div>
         </div>
       </div>
@@ -762,7 +778,7 @@ export default function ReportsPage() {
                 ? "bg-emerald-600 text-white border-emerald-500"
                 : toast.type === "error"
                 ? "bg-rose-600 text-white border-rose-500"
-                : "bg-slate-800 text-white border-slate-700"
+                : "bg-blue-800 text-white border-slate-700"
             }`}
           >
             {toast.type === "success" && <CheckCircle2 size={14} className="text-emerald-200" />}
