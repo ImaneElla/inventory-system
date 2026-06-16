@@ -22,6 +22,7 @@ interface DeleteConfirmationDialogProps {
   confirmText?: string;
   cancelText?: string;
   variant?: "danger" | "warning";
+  isLoading?: boolean;
 }
 
 export function DeleteConfirmationDialog({
@@ -33,6 +34,7 @@ export function DeleteConfirmationDialog({
   confirmText = "Delete",
   cancelText = "Cancel",
   variant = "danger",
+  isLoading = false,
 }: DeleteConfirmationDialogProps) {
   const isDanger = variant === "danger";
 
@@ -64,14 +66,15 @@ export function DeleteConfirmationDialog({
               isDanger 
                 ? "bg-rose-500 hover:bg-rose-600 shadow-rose-500/25" 
                 : "bg-amber-500 hover:bg-amber-600 shadow-amber-500/25"
-            }`}
+            } disabled:opacity-60`}
+            disabled={isLoading}
             onClick={(e) => {
               e.preventDefault();
               onConfirm();
               onOpenChange(false);
             }}
           >
-            {confirmText}
+            {isLoading ? "Deleting..." : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

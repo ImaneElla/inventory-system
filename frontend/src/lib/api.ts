@@ -340,3 +340,41 @@ export async function deleteReport(id: number) {
   });
   return handleResponse(res, "Failed to delete report");
 }
+
+// --- Chat / Emexa Conversations ---
+
+export async function createConversation(): Promise<{ id: string; title: string; createdAt: string; messageCount: number }> {
+  const res = await fetch(`${BACKEND}/api/conversations`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+  });
+  return handleResponse(res, "Failed to create conversation");
+}
+
+export async function fetchConversations(): Promise<{ id: string; title: string; createdAt: string; messageCount: number }[]> {
+  const res = await fetch(`${BACKEND}/api/conversations`, {
+    headers: authHeaders(),
+  });
+  const data = await handleResponse(res, "Failed to fetch conversations");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchConversationMessages(conversationId: string): Promise<{ id: string; sender: string; text: string; timestamp: string }[]> {
+  const res = await fetch(`${BACKEND}/api/conversations/${conversationId}`, {
+    headers: authHeaders(),
+  });
+  const data = await handleResponse(res, "Failed to fetch messages");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function sendChatMessage(
+  conversationId: string,
+  text: string
+): Promise<{ id: string; sender: string; text: string; timestamp: string }> {
+  const res = await fetch(`${BACKEND}/api/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ text }),
+  });
+  return handleResponse(res, "Failed to send message");
+}
