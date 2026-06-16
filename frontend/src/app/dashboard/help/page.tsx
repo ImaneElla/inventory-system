@@ -5,6 +5,7 @@ import { BookOpen, Server, Shield, Bell, LayoutDashboard, Search, User, Code, Ch
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import AiAssistant from "@/components/AiAssistant";
 
 export default function HelpPage() {
   const [faqSearch, setFaqSearch] = useState("");
@@ -51,9 +52,28 @@ export default function HelpPage() {
           Mastering <span className="text-primary">IMN</span>
         </h1>
         <p className="text-sm md:text-lg text-muted-foreground font-medium leading-relaxed">
-          Welcome to your high-performance inventory hub. This documentation captures our collaborative journey and provides everything you need to dominate your stock management.
+          Welcome to your high-performance inventory hub. Meet Emexa, our custom-built intelligent core agent engineered to run predictive forecasting across your active database tracks.
         </p>
       </motion.div>
+
+      {/* Navigation Bar */}
+      <nav className="bg-card/50 backdrop-blur-3xl border border-border/80 rounded-3xl w-xl mx-auto p-4 flex flex-row justify-between items-center gap-4 mb-4 transition-all">
+        {[
+          { label: "Technical", id: "technical" },
+          { label: "Support", id: "support" },
+          { label: "Guide", id: "guide" },
+          { label: "FAQ", id: "faq" },
+          { label: "Meet Emexa", id: "emexa-assistant" }
+        ].map((navItem) => (
+          <a
+            key={navItem.id}
+            href={`#${navItem.id}`}
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground hover:text-primary transition-colors duration-300"
+          >
+            {navItem.label}
+          </a>
+        ))}
+      </nav>
 
       <motion.div 
         variants={container}
@@ -61,8 +81,12 @@ export default function HelpPage() {
         animate="show"
         className="grid gap-8"
       >
-        {/* Journey Section */}
-        <motion.section variants={item} className="bg-card/60 backdrop-blur-3xl rounded-[38px] border border-border/40 shadow-2xl p-8 md:p-12 overflow-hidden relative">
+        {/* Technical Section */}
+        <motion.section 
+          id="technical"
+          variants={item}
+          className="bg-card/60 backdrop-blur-3xl rounded-[38px] border border-border/40 shadow-2xl p-8 md:p-12 overflow-hidden relative"
+        >
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] -ml-32 -mb-32 pointer-events-none" />
           
@@ -126,7 +150,7 @@ export default function HelpPage() {
         </motion.section>
 
         {/* Support shortcuts */}
-        <motion.section variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <motion.section variants={item} id="support" className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/dashboard/settings" className="p-6 rounded-3xl bg-card border border-border/40 hover:border-primary/40 hover:shadow-lg transition-all group">
             <Settings className="text-primary mb-4 group-hover:scale-110 transition-transform" size={28} />
             <h3 className="font-black text-sm mb-1">Account Settings</h3>
@@ -145,7 +169,7 @@ export default function HelpPage() {
         </motion.section>
 
         {/* FAQ */}
-        <motion.section variants={item} className="bg-card/60 backdrop-blur-2xl rounded-[32px] border border-border/40 p-8 md:p-10">
+        <motion.section variants={item} id="faq" className="bg-card/60 backdrop-blur-2xl rounded-[32px] border border-border/40 p-8 md:p-10">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-3">
               <MessageCircle className="text-primary" size={24} />
@@ -183,7 +207,7 @@ export default function HelpPage() {
         </motion.section>
 
         {/* Quick Guide */}
-        <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <motion.section variants={item} id="guide" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-4 p-4">
             <h2 className="text-3xl font-black tracking-tighter text-foreground mb-4">Quick Guide</h2>
             <p className="text-sm text-muted-foreground font-medium leading-relaxed">
@@ -196,7 +220,7 @@ export default function HelpPage() {
               { num: "01", title: "Inventory Management", desc: "Access the 'Products' tab to manage your stock. Items hitting low levels will automatically appear in your notifications.", icon: LayoutDashboard },
               { num: "02", title: "Real-time Analytics", desc: "The 'Dashboard' provides deep insights into sales trends and profit margins with interactive visualizations.", icon: Zap },
               { num: "03", title: "System Preferences", desc: "Customize your environment in 'Settings'. Switch themes, update your profile, and manage notifications.", icon: Search },
-              { num: "04", title: "Intelligent Assistant", desc: "Use the 'Ask AI' feature for demand forecasting and automated restock recommendations.", icon: Code },
+              { num: "04", title: "Emexa Core Assistant", desc: "Use our intelligent interface down below for predictive data modeling and structural analysis queries.", icon: Code },
             ].map((step, idx) => (
               <div key={idx} className="group p-6 rounded-[28px] bg-card/40 border border-border/40 hover:border-primary/40 hover:bg-primary/5 transition-all duration-500 shadow-sm flex gap-6 items-center">
                 <div className="shrink-0 w-14 h-14 rounded-2xl bg-muted/20 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary font-black flex items-center justify-center text-xl transition-all duration-500">
@@ -212,6 +236,15 @@ export default function HelpPage() {
           </div>
         </motion.section>
       </motion.div>
+
+      {/* Emexa Integration Section */}
+      <motion.section
+        variants={item}
+        id="emexa-assistant"
+        className="bg-card/60 backdrop-blur-3xl rounded-[38px] border border-border/40 shadow-2xl p-8 md:p-12 overflow-hidden relative"
+      >
+        <AiAssistant />
+      </motion.section>
 
       <motion.div 
         initial={{ opacity: 0 }}
@@ -229,7 +262,7 @@ function FeatureCard({ icon: Icon, title, desc, color, bgColor }: any) {
   return (
     <div className="group p-6 rounded-3xl bg-background/50 border border-border/40 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
       <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110", bgColor, color)}>
-        <Icon size={24} />
+        <Icon size={28} />
       </div>
       <h3 className="font-black text-foreground text-sm uppercase tracking-wider mb-2">{title}</h3>
       <p className="text-[12px] text-muted-foreground leading-relaxed font-medium">{desc}</p>
