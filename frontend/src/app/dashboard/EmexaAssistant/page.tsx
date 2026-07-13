@@ -22,8 +22,8 @@ import {
   fetchConversations,
   fetchConversationMessages,
   sendChatMessage,
+  deleteConversation,
 } from "@/lib/api";
-
 
 interface Message {
   id: string;
@@ -38,7 +38,6 @@ interface ConversationMeta {
   createdAt: string;
   messageCount: number;
 }
-
 
 function formatTime(date: Date) {
   return new Intl.DateTimeFormat("en-US", {
@@ -68,7 +67,6 @@ function parseMessages(raw: { id: string; sender: string; text: string; timestam
   }));
 }
 
-
 export default function EmexaAssistant() {
   const [conversations, setConversations] = useState<ConversationMeta[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -79,6 +77,10 @@ export default function EmexaAssistant() {
   const [isLoadingConversations, setIsLoadingConversations] = useState(true);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [userName, setUserName] = useState("");
+
+  // Dialog State
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -110,16 +112,12 @@ export default function EmexaAssistant() {
       try {
         const convs = await fetchConversations();
         setConversations(convs);
-        if (convs.length > 0) {
-          await loadConversation(convs[0].id);
-        }
       } catch (e) {
         console.error("Failed to load conversations", e);
       } finally {
         setIsLoadingConversations(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -136,7 +134,6 @@ export default function EmexaAssistant() {
         window.location.pathname + (newqs ? `?${newqs}` : "")
       );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const loadConversation = useCallback(async (id: string) => {
@@ -154,16 +151,37 @@ export default function EmexaAssistant() {
     }
   }, []);
 
-  const handleNewChat = async () => {
+  const handleNewChat = () => {
+    setActiveId(null);
+    setMessages([]);
+    setIsSidebarOpen(false);
+    setInputText("");
+    inputRef.current?.focus();
+  };
+
+  const triggerDeleteConfirmation = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation(); // Avoid choosing/opening the conversation card on click
+    setDeleteTargetId(id);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (!deleteTargetId) return;
+    setIsDeleting(true);
+
     try {
-      const conv = await createConversation();
-      setConversations((prev) => [conv, ...prev]);
-      setActiveId(conv.id);
-      setMessages([]);
-      setIsSidebarOpen(false);
-      inputRef.current?.focus();
+      // Optimistically clear active window layout view if active chat is deleted
+      if (activeId === deleteTargetId) {
+        handleNewChat();
+      }
+
+      await deleteConversation(deleteTargetId);
+      setConversations((prev) => prev.filter((c) => c.id !== deleteTargetId));
     } catch (e) {
-      console.error("Failed to create conversation", e);
+      console.error("Failed to delete conversation from backend:", e);
+      alert("Could not complete removal. Please verify your backend server route mappings.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
     }
   };
 
@@ -173,7 +191,6 @@ export default function EmexaAssistant() {
 
       let currentId = activeId;
 
-      // If no active conversation, create one first
       if (!currentId) {
         try {
           const conv = await createConversation();
@@ -186,7 +203,6 @@ export default function EmexaAssistant() {
         }
       }
 
-      // Optimistically add user message
       const tempUserMsg: Message = {
         id: `tmp-${Date.now()}`,
         sender: "user",
@@ -207,7 +223,6 @@ export default function EmexaAssistant() {
         };
         setMessages((prev) => [...prev, emexaMsg]);
 
-        // Update conversation title in sidebar if it changed
         setConversations((prev) =>
           prev.map((c) =>
             c.id === currentId
@@ -216,7 +231,6 @@ export default function EmexaAssistant() {
           )
         );
 
-        // Refresh titles in sidebar
         fetchConversations()
           .then((convs) => setConversations(convs))
           .catch(() => {});
@@ -243,7 +257,7 @@ export default function EmexaAssistant() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 25 } },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } },
   };
 
   const containerVariants = {
@@ -253,7 +267,6 @@ export default function EmexaAssistant() {
 
   return (
     <div className="w-full h-[calc(100vh-80px)] flex flex-col justify-between items-center px-4 py-6 overflow-hidden relative">
-      {/* Background gradient */}
       <div className="bg-linear-to-b from-blue-900/50 to-background opacity-40 absolute inset-0 pointer-events-none" />
 
       {/* History toggle button */}
@@ -280,7 +293,6 @@ export default function EmexaAssistant() {
               <span className="text-sm font-medium">Loading conversation...</span>
             </motion.div>
           ) : messages.length === 0 ? (
-            /* Welcome screen */
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: -15 }}
@@ -301,14 +313,12 @@ export default function EmexaAssistant() {
               </p>
             </motion.div>
           ) : (
-            /* Chat feed */
             <motion.div
               key="chat-feed"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="w-full flex-1 flex flex-col overflow-y-auto px-2 py-2 scrollbar-none"
             >
-              {/* Date header */}
               <div className="w-full flex flex-col items-center justify-center my-4 gap-1 pb-2">
                 <Logo className="text-blue-500 h-8 w-8 mx-auto opacity-60" />
                 <span className="text-xs font-semibold tracking-wider text-slate-500">
@@ -320,7 +330,6 @@ export default function EmexaAssistant() {
                 </div>
               </div>
 
-              {/* Messages */}
               <div className="flex flex-col gap-4">
                 {messages.map((msg) => (
                   <motion.div
@@ -353,7 +362,6 @@ export default function EmexaAssistant() {
                   </motion.div>
                 ))}
 
-                {/* Typing indicator */}
                 {isTyping && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
@@ -404,13 +412,12 @@ export default function EmexaAssistant() {
             disabled={!inputText.trim() || isTyping}
             whileHover={inputText.trim() ? { scale: 1.05 } : {}}
             whileTap={inputText.trim() ? { scale: 0.95 } : {}}
-            className="absolute top-1/2 -translate-y-1/2 right-3 h-8 w-8 bg-[#007AFF] text-white rounded-full flex items-center justify-center shadow-md transition-all disabled:opacity-30 disabled:bg-slate-400 z-20"
+            className="absolute top-6 -translate-y-1/2 right-3 h-8 w-8 bg-[#007AFF] text-white rounded-full flex items-center justify-center shadow-md transition-all disabled:opacity-30 disabled:bg-slate-400 z-20"
           >
             <Send size={14} />
           </motion.button>
         </form>
 
-        {/* Quick suggestions (only when empty chat) */}
         {messages.length === 0 && !isLoadingMessages && (
           <motion.div
             variants={containerVariants}
@@ -437,10 +444,11 @@ export default function EmexaAssistant() {
         )}
       </div>
 
+      {/* Drawer & Overlays */}
       <AnimatePresence>
         {isSidebarOpen && (
           <>
-            {/* Backdrop */}
+            {/* Sidebar Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -449,7 +457,7 @@ export default function EmexaAssistant() {
               className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40"
             />
 
-            {/* Drawer */}
+            {/* Sidebar Drawer */}
             <motion.div
               initial={{ x: "100%", opacity: 0.5 }}
               animate={{ x: 0, opacity: 1 }}
@@ -457,7 +465,6 @@ export default function EmexaAssistant() {
               transition={{ type: "spring", damping: 28, stiffness: 220 }}
               className="fixed right-0 top-0 h-full w-80 bg-background/90 dark:bg-[#1C1C1E]/90 backdrop-blur-2xl border-l border-white/10 dark:border-white/5 z-50 rounded-l-[2rem] shadow-[-10px_0_40px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden"
             >
-              {/* Sidebar header */}
               <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-200/50 dark:border-slate-800/50">
                 <div className="flex items-center gap-2">
                   <MessageSquare size={18} className="text-[#007AFF]" />
@@ -471,7 +478,6 @@ export default function EmexaAssistant() {
                 </button>
               </div>
 
-              {/* Conversation list */}
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 scrollbar-none">
                 {isLoadingConversations ? (
                   <div className="flex flex-col gap-2">
@@ -492,19 +498,19 @@ export default function EmexaAssistant() {
                   </div>
                 ) : (
                   conversations.map((conv) => (
-                    <motion.button
+                    <motion.div
                       key={conv.id}
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.99 }}
                       id={`conversation-${conv.id}`}
                       onClick={() => loadConversation(conv.id)}
-                      className={`w-full flex flex-col text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      className={`group w-full flex flex-col text-left p-3.5 rounded-2xl border transition-all cursor-pointer relative ${
                         activeId === conv.id
                           ? "bg-[#007AFF]/10 border-[#007AFF]/30 shadow-sm"
                           : "bg-white/50 dark:bg-[#2C2C2E]/50 border-transparent hover:bg-white dark:hover:bg-[#3A3A3C] hover:border-slate-200 dark:hover:border-slate-700"
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-2 pr-6">
                         <span
                           className={`text-[13px] font-semibold truncate leading-snug ${
                             activeId === conv.id ? "text-[#007AFF]" : "text-foreground"
@@ -516,7 +522,7 @@ export default function EmexaAssistant() {
                           <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] mt-1 shrink-0" />
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center justify-between mt-1 pr-6">
                         <span className="text-[11px] text-slate-400">
                           {formatRelativeDate(conv.createdAt)}
                         </span>
@@ -526,19 +532,27 @@ export default function EmexaAssistant() {
                           </span>
                         )}
                       </div>
-                    </motion.button>
+
+                      {/* Delete Conversation Button */}
+                      <button
+                        onClick={(e) => triggerDeleteConfirmation(e, conv.id)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 bg-red-500/10 dark:bg-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all cursor-pointer z-10"
+                        title="Delete conversation"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </motion.div>
                   ))
                 )}
               </div>
 
-              {/* New Chat button */}
               <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50">
                 <motion.button
                   id="emexa-new-chat-btn"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleNewChat}
-                  className="w-full py-3 rounded-2xl bg-[#007AFF] text-white font-semibold text-sm cursor-pointer hover:bg-[#0066DD] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                  className="w-full py-3 rounded-2xl btn-gradient font-semibold text-sm cursor-pointer hover:bg-[#0066DD] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                 >
                   <Plus size={16} />
                   New Chat
@@ -546,6 +560,63 @@ export default function EmexaAssistant() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Modern Dialog Confirmation Modal */}
+      <AnimatePresence>
+        {deleteTargetId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDeleteTargetId(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            {/* Modal Content container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ type: "spring", duration: 0.3 }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all dark:bg-[#1C1C1E] border border-black/5 dark:border-white/5"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400">
+                  <AlertTriangle size={20} />
+                </div>
+                <h3 className="text-base font-bold leading-6 text-foreground">
+                  Delete Conversation
+                </h3>
+              </div>
+              <div className="mt-3">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Are you sure you want to permanentely clear this conversation thread? This action cannot be undone.
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDeleteTargetId(null)}
+                  className="inline-flex justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent px-4 py-2 text-sm font-semibold text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={confirmDeleteConversation}
+                  className="inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 shadow-md shadow-red-600/10 transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

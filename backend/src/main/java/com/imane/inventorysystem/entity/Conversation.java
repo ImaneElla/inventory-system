@@ -17,6 +17,9 @@ public class Conversation {
     private UUID id;
 
     private String title;
+
+    @Column(name = "user_id")
+    private Long userId;
     
     private LocalDateTime createdAt = LocalDateTime.now();
 

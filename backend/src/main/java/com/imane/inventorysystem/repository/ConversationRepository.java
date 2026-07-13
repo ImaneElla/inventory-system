@@ -6,9 +6,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
-import com.imane.inventorysystem.entity.Conversation;
-
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
     List<Conversation> findAllByOrderByCreatedAtDesc();
+    List<Conversation> findByUserIdOrderByCreatedAtDesc(Long userId);
+    void deleteById(UUID id);
 }

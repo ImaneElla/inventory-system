@@ -25,21 +25,21 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<ConversationResponse> createConversation() {
-        Conversation conv = chatService.createConversation();
+    public ResponseEntity<ConversationResponse> createConversation(
+            @RequestHeader(value = "X-Current-User-Id", required = false) Long userId) {
+        Conversation conv = chatService.createConversation(userId);
         return ResponseEntity.ok(toConversationResponse(conv));
     }
 
-
     @GetMapping
-    public ResponseEntity<List<ConversationResponse>> getAllConversations() {
-        List<ConversationResponse> list = chatService.getAllConversations()
+    public ResponseEntity<List<ConversationResponse>> getAllConversations(
+            @RequestHeader(value = "X-Current-User-Id", required = false) Long userId) {
+        List<ConversationResponse> list = chatService.getAllConversations(userId)
                 .stream()
                 .map(this::toConversationResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(list);
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<List<ChatMessageResponse>> getMessages(@PathVariable UUID id) {
@@ -58,6 +58,11 @@ public class ChatController {
         return ResponseEntity.ok(toMessageResponse(reply));
     }
 
+    @DeleteMapping("/{conversationId}")
+    public ResponseEntity<?> deleteConversation(@PathVariable UUID conversationId) {
+        chatService.deleteConversation(conversationId);
+        return ResponseEntity.noContent().build();
+    }
 
     private ConversationResponse toConversationResponse(Conversation c) {
         return new ConversationResponse(

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +27,14 @@ public class ChatService {
     private final ChatMessageRepository messageRepository;
     private final ProductRepository productRepository;
     private final ChatModel chatModel;
+
+    // Cache inventory context for 60 seconds to avoid DB hit on every message
+    private volatile String cachedInventoryContext = null;
+    private final AtomicLong cacheTimestamp = new AtomicLong(0);
+    private static final long CACHE_TTL_MS = 60_000;
+
+    // Only keep last N message pairs to limit prompt size
+    private static final int MAX_HISTORY_MESSAGES = 6;
 
     public ChatService(ConversationRepository conversationRepository,
                        ChatMessageRepository messageRepository,
@@ -37,9 +46,10 @@ public class ChatService {
         this.chatModel = chatModel;
     }
 
-
-
-    public List<Conversation> getAllConversations() {
+    public List<Conversation> getAllConversations(Long userId) {
+        if (userId != null) {
+            return conversationRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        }
         return conversationRepository.findAllByOrderByCreatedAtDesc();
     }
 
@@ -48,10 +58,16 @@ public class ChatService {
     }
 
     @Transactional
-    public Conversation createConversation() {
+    public Conversation createConversation(Long userId) {
         Conversation conversation = new Conversation();
         conversation.setTitle("New Chat");
+        conversation.setUserId(userId);
         return conversationRepository.save(conversation);
+    }
+
+    @Transactional
+    public void deleteConversation(UUID conversationId) {
+        conversationRepository.deleteById(conversationId);
     }
 
     @Transactional
@@ -70,38 +86,40 @@ public class ChatService {
         }
 
         // 3. Save the user message to DB
-        
         ChatMessage userMsg = new ChatMessage();
         userMsg.setSender("user");
         userMsg.setText(userText);
         userMsg.setConversation(conversation);
         messageRepository.save(userMsg);
 
-        // 4. Load full conversation history (all messages so far, including the one we just saved)
-        List<ChatMessage> history = messageRepository
+        // 4. Load only the last MAX_HISTORY_MESSAGES messages (trim context for speed)
+        List<ChatMessage> allHistory = messageRepository
                 .findByConversation_IdOrderByTimestampAsc(conversationId);
+        // Exclude the message we just saved, then take the tail
+        List<ChatMessage> history = allHistory.stream()
+                .filter(m -> !m.getId().equals(userMsg.getId()))
+                .collect(Collectors.toList());
+        if (history.size() > MAX_HISTORY_MESSAGES) {
+            history = history.subList(history.size() - MAX_HISTORY_MESSAGES, history.size());
+        }
 
-        // 5. Build inventory context from real DB data
-        String inventoryContext = buildInventoryContext();
+        // 5. Get inventory context (cached — avoid DB hit every message)
+        String inventoryContext = getCachedInventoryContext();
 
         // 6. Build system prompt
         String systemPrompt = buildSystemPrompt(inventoryContext);
 
-        // 7. Assemble multi-message Prompt (system + history + current user msg)
+        // 7. Assemble prompt: system + trimmed history + current user message
         List<org.springframework.ai.chat.messages.Message> promptMessages = new ArrayList<>();
         promptMessages.add(new SystemMessage(systemPrompt));
 
         for (ChatMessage msg : history) {
-            // Skip the last saved user message — we'll add it as the current UserMessage
-            if (msg.getId().equals(userMsg.getId())) continue;
-
             if ("user".equalsIgnoreCase(msg.getSender())) {
                 promptMessages.add(new UserMessage(msg.getText()));
             } else {
                 promptMessages.add(new AssistantMessage(msg.getText()));
             }
         }
-        // Add the current user message last
         promptMessages.add(new UserMessage(userText));
 
         // 8. Call Ollama
@@ -124,7 +142,18 @@ public class ChatService {
         return messageRepository.save(emexaMsg);
     }
 
-
+    /**
+     * Returns a cached inventory snapshot. Refreshes every 60 seconds.
+     * This prevents a full table scan on every single chat message.
+     */
+    private String getCachedInventoryContext() {
+        long now = System.currentTimeMillis();
+        if (cachedInventoryContext == null || (now - cacheTimestamp.get()) > CACHE_TTL_MS) {
+            cachedInventoryContext = buildInventoryContext();
+            cacheTimestamp.set(now);
+        }
+        return cachedInventoryContext;
+    }
 
     private String buildInventoryContext() {
         try {
@@ -146,17 +175,17 @@ public class ChatService {
             StringBuilder ctx = new StringBuilder();
             ctx.append("=== LIVE INVENTORY DATA ===\n");
             ctx.append(String.format("Total products: %d (Active: %d)\n", totalProducts, activeProducts));
-            ctx.append(String.format("Out-of-stock products: %d\n", outOfStock));
-            ctx.append(String.format("Low-stock products (at or below min level): %d\n", lowStock.size()));
+            ctx.append(String.format("Out-of-stock: %d | Low-stock: %d\n", outOfStock, lowStock.size()));
 
             if (!lowStock.isEmpty()) {
-                ctx.append("\nLow Stock Details:\n");
-                for (Product p : lowStock) {
-                    ctx.append(String.format("  • %s (SKU: %s) — qty: %d / min: %d\n",
-                            p.getName(), p.getSku(), p.getQuantity(), p.getMinStockLevel()));
-                }
+                ctx.append("Low Stock:\n");
+                // Cap at 10 items to keep prompt small
+                lowStock.stream().limit(10).forEach(p ->
+                    ctx.append(String.format("  • %s — qty: %d / min: %d\n",
+                            p.getName(), p.getQuantity(), p.getMinStockLevel()))
+                );
             }
-            ctx.append("=== END OF INVENTORY DATA ===");
+            ctx.append("=== END ===");
             return ctx.toString();
         } catch (Exception e) {
             return "=== INVENTORY DATA UNAVAILABLE ===";
@@ -165,7 +194,8 @@ public class ChatService {
 
     private String buildSystemPrompt(String inventoryContext) {
         return """
-You are Emexa, an intelligent, professional AI assistant for the IMN Inventory Management System, created by Imane.
+You are Emexa, an intelligent, professional AI assistant for the IMN Inventory Management System, created by Imane Ellaouzi 
+and she is a software engineer and entrepreneur.
 
 CORE RULES:
 - Always use the LIVE INVENTORY DATA below when answering stock/product questions.

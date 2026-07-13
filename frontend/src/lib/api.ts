@@ -343,38 +343,44 @@ export async function deleteReport(id: number) {
 
 // --- Chat / Emexa Conversations ---
 
-export async function createConversation(): Promise<{ id: string; title: string; createdAt: string; messageCount: number }> {
-  const res = await fetch(`${BACKEND}/api/conversations`, {
+export async function createConversation(): Promise<any> {
+  // Switched ${BACKEND} to ${BASE_API_URL} to leverage Next.js rewrites safely
+  const res = await fetch(`${BASE_API_URL}/conversations`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
   });
   return handleResponse(res, "Failed to create conversation");
 }
 
-export async function fetchConversations(): Promise<{ id: string; title: string; createdAt: string; messageCount: number }[]> {
-  const res = await fetch(`${BACKEND}/api/conversations`, {
+export async function fetchConversations(): Promise<any[]> {
+  const res = await fetch(`${BASE_API_URL}/conversations`, {
     headers: authHeaders(),
   });
   const data = await handleResponse(res, "Failed to fetch conversations");
   return Array.isArray(data) ? data : [];
 }
 
-export async function fetchConversationMessages(conversationId: string): Promise<{ id: string; sender: string; text: string; timestamp: string }[]> {
-  const res = await fetch(`${BACKEND}/api/conversations/${conversationId}`, {
+export async function fetchConversationMessages(conversationId: string): Promise<any[]> {
+  const res = await fetch(`${BASE_API_URL}/conversations/${conversationId}`, {
     headers: authHeaders(),
   });
   const data = await handleResponse(res, "Failed to fetch messages");
   return Array.isArray(data) ? data : [];
 }
 
-export async function sendChatMessage(
-  conversationId: string,
-  text: string
-): Promise<{ id: string; sender: string; text: string; timestamp: string }> {
-  const res = await fetch(`${BACKEND}/api/conversations/${conversationId}/messages`, {
+export async function sendChatMessage(conversationId: string, text: string): Promise<any> {
+  const res = await fetch(`${BASE_API_URL}/conversations/${conversationId}/messages`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ text }),
   });
   return handleResponse(res, "Failed to send message");
-}
+}
+
+export async function deleteConversation(conversationId: string): Promise<any> {
+  const res = await fetch(`${BASE_API_URL}/conversations/${conversationId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  return handleResponse(res, "Failed to delete conversation");
+}

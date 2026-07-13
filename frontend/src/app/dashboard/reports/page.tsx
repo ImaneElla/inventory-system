@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
   Sparkles,
   Search,
-  Download,
   Filter,
   Plus,
   Trash2,
@@ -20,23 +19,21 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Printer,
+  TrendingUp,
+  TrendingDown,
+  ArrowRight,
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
-import { Badge as HeroBadge } from "@heroui/react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { fetchSales, fetchDashboardStats, fetchReports, createReport, deleteReport } from "@/lib/api";
 import { useActivityLog } from "@/lib/activityLog";
 import { useRouter } from "next/navigation";
 
-// ─── Demo / Real data toggle ─────────────────────────────────────────────────
-// Set to `true` to show rich mock financial data in the sidebar chart.
-// Set to `false` to show live data fetched from the backend API.
 const DEMO_MODE = true;
 
 const MOCK_FINANCIAL_DATA = {
-  revenue:  148_720.50,
-  expenses:  89_234.80,
+  revenue: 148_720.5,
+  expenses: 89_234.8,
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface Report {
   id: number;
@@ -59,15 +56,16 @@ interface ReportLineItem {
   amount: number;
 }
 
-
-function getDateWindow(mode: string, customStart: string, customEnd: string): { start: string; end: string; label: string } {
+function getDateWindow(
+  mode: string,
+  customStart: string,
+  customEnd: string
+): { start: string; end: string; label: string } {
   const now = new Date();
-
   if (mode === "today") {
     const d = now.toISOString().split("T")[0];
     return { start: `${d}T00:00:00`, end: `${d}T23:59:59`, label: "Today" };
   }
-
   if (mode === "this-week") {
     const day = now.getDay();
     const monday = new Date(now);
@@ -76,7 +74,6 @@ function getDateWindow(mode: string, customStart: string, customEnd: string): { 
     const end = now.toISOString().split("T")[0];
     return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: "This Week" };
   }
-
   if (mode === "this-month") {
     const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
     const end = now.toISOString().split("T")[0];
@@ -86,13 +83,11 @@ function getDateWindow(mode: string, customStart: string, customEnd: string): { 
       label: `${now.toLocaleString("default", { month: "long" })} ${now.getFullYear()}`,
     };
   }
-
   if (mode === "this-year") {
     const start = `${now.getFullYear()}-01-01`;
     const end = now.toISOString().split("T")[0];
     return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: `FY ${now.getFullYear()}` };
   }
-
   if (mode === "custom" && customStart && customEnd) {
     return {
       start: `${customStart}T00:00:00`,
@@ -100,8 +95,6 @@ function getDateWindow(mode: string, customStart: string, customEnd: string): { 
       label: `${customStart} → ${customEnd}`,
     };
   }
-
-  // fallback: this month
   const start = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
   const end = now.toISOString().split("T")[0];
   return { start: `${start}T00:00:00`, end: `${end}T23:59:59`, label: "This Month" };
@@ -125,24 +118,20 @@ function exportCSV(report: Report) {
     ["Total Transactions", String(report.totalTransactions ?? 0)],
     ["", ""],
     ["LINE ITEMS DETAILED BREAKDOWN", ""],
-    ["Product Name", "Quantity Sold", "Revenue (DH)"]
+    ["Product Name", "Quantity Sold", "Revenue (DH)"],
   ];
-
   if (report.lineItems && report.lineItems.length > 0) {
     report.lineItems.forEach((item) => {
       csvContent.push([item.label, String(item.qty), item.amount.toFixed(2)]);
     });
   }
-
-  // Format array to CSV string
   const csvString = csvContent
-    .map(row => row.map(val => `"${val.replace(/"/g, '""')}"`).join(","))
+    .map((row) => row.map((val) => `"${val.replace(/"/g, '""')}"`).join(","))
     .join("\n");
-
-  const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" }); // include BOM for Excel UTF-8 compatibility
+  const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `report_${report.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split("T")[0]}.csv`;
+  link.download = `report_${report.name.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_${new Date().toISOString().split("T")[0]}.csv`;
   link.click();
 }
 
@@ -157,80 +146,44 @@ function printReport(report: Report) {
           .join("")
       : `<tr><td colspan="3" style="padding:16px;text-align:center;color:#888;">No line items available</td></tr>`;
 
-  const html = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>${report.name}</title>
-      <style>
-        body { font-family: -apple-system, sans-serif; margin: 40px; color: #1a1a1a; }
-        h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
-        .meta { color: #666; font-size: 12px; margin-bottom: 24px; }
-        .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .summary-card { background: #f9f9f9; border-radius: 8px; padding: 16px; }
-        .summary-card .value { font-size: 24px; font-weight: 900; }
-        .summary-card .label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
-        table { width: 100%; border-collapse: collapse; }
-        thead tr { background: #1a1a1a; color: white; font-size: 11px; text-transform: uppercase; }
-        thead th { padding: 10px 8px; text-align: left; }
-        @media print { body { margin: 20px; } }
-      </style>
-    </head>
-    <body>
-      <h1>${report.name}</h1>
-      <div class="meta">Generated on ${new Date(report.createdAt).toLocaleString()} &nbsp;|&nbsp; Period: ${report.dateRange} &nbsp;|&nbsp; By: ${report.generatedBy}</div>
-      <div class="summary">
-        <div class="summary-card">
-          <div class="value">${(report.totalRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH</div>
-          <div class="label">Total Revenue</div>
-        </div>
-        <div class="summary-card">
-          <div class="value">${report.totalTransactions ?? 0}</div>
-          <div class="label">Total Transactions</div>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>Product</th><th>Qty Sold</th><th style="text-align:right;">Revenue</th></tr></thead>
-        <tbody>${items}</tbody>
-      </table>
-    </body>
-    </html>
-  `;
+  const html = `<!DOCTYPE html><html><head><title>${report.name}</title><style>body{font-family:-apple-system,sans-serif;margin:40px;color:#1a1a1a;}h1{font-size:22px;font-weight:900;margin-bottom:4px;}.meta{color:#666;font-size:12px;margin-bottom:24px;}.summary{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}.summary-card{background:#f9f9f9;border-radius:8px;padding:16px;}.summary-card .value{font-size:24px;font-weight:900;}.summary-card .label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:0.08em;}table{width:100%;border-collapse:collapse;}thead tr{background:#1a1a1a;color:white;font-size:11px;text-transform:uppercase;}thead th{padding:10px 8px;text-align:left;}@media print{body{margin:20px;}}</style></head><body><h1>${report.name}</h1><div class="meta">Generated on ${new Date(report.createdAt).toLocaleString()} &nbsp;|&nbsp; Period: ${report.dateRange} &nbsp;|&nbsp; By: ${report.generatedBy}</div><div class="summary"><div class="summary-card"><div class="value">${(report.totalRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH</div><div class="label">Total Revenue</div></div><div class="summary-card"><div class="value">${report.totalTransactions ?? 0}</div><div class="label">Total Transactions</div></div></div><table><thead><tr><th>Product</th><th>Qty Sold</th><th style="text-align:right;">Revenue</th></tr></thead><tbody>${items}</tbody></table></body></html>`;
 
   const win = window.open("", "_blank");
   if (!win) return;
   win.document.write(html);
   win.document.close();
-  win.onload = () => { win.print(); };
+  win.onload = () => {
+    win.print();
+  };
 }
 
+const TYPE_COLORS: Record<string, string> = {
+  Sales: "#22c55e",
+  Inventory: "#6366f1",
+  Financial: "#f59e0b",
+};
+
+const TYPE_BG: Record<string, string> = {
+  Sales: "rgba(34,197,94,0.08)",
+  Inventory: "rgba(99,102,241,0.08)",
+  Financial: "rgba(245,158,11,0.08)",
+};
 
 export default function ReportsPage() {
   const { addLog } = useActivityLog();
-const router = useRouter();
-const [aiQuery, setAiQuery] = useState("");
-  // Core report list
+  const router = useRouter();
+  const [aiQuery, setAiQuery] = useState("");
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Filter / generation controls
   const [dateMode, setDateMode] = useState<"today" | "this-week" | "this-month" | "this-year" | "custom">("this-month");
   const [customStart, setCustomStart] = useState("");
   const [customEnd, setCustomEnd] = useState("");
   const [reportType, setReportType] = useState<"Sales" | "Inventory" | "Financial">("Sales");
-
-  // Table filters
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "Sales" | "Inventory" | "Financial">("all");
-
-  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-
-  // Toast
+  const itemsPerPage = 6;
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
-
-  // Dashboard stats for the donut chart (real data)
   const [dashStats, setDashStats] = useState<{ revenue: number; expenses: number } | null>(null);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
@@ -238,7 +191,6 @@ const [aiQuery, setAiQuery] = useState("");
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Fetch dashboard stats for donut chart
   useEffect(() => {
     fetchDashboardStats()
       .then((data: any) => {
@@ -248,44 +200,26 @@ const [aiQuery, setAiQuery] = useState("");
           setDashStats({ revenue, expenses });
         }
       })
-      .catch(() => {
-        // Graceful fallback with placeholder
-        setDashStats({ revenue: 0, expenses: 0 });
-      });
+      .catch(() => setDashStats({ revenue: 0, expenses: 0 }));
   }, []);
 
-  // Fetch reports from backend on mount
   useEffect(() => {
     setLoading(true);
     fetchReports()
-      .then((data: any) => {
-        if (data) {
-          setReports(data);
-        }
-      })
-      .catch((err: any) => {
-        showToast(`Failed to load reports: ${err.message}`, "error");
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+      .then((data: any) => { if (data) setReports(data); })
+      .catch((err: any) => showToast(`Failed to load reports: ${err.message}`, "error"))
+      .finally(() => setLoading(false));
   }, []);
-
 
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
       const { start, end, label } = getDateWindow(dateMode, customStart, customEnd);
-      const userName = typeof window !== "undefined" ? (sessionStorage.getItem("userName") || "System") : "System";
-
-      // Fetch all sales in the window
+      const userName = typeof window !== "undefined" ? sessionStorage.getItem("userName") || "System" : "System";
       const salesData = await fetchSales({ start, end, size: 1000 });
       const sales: any[] = salesData?.content ?? [];
-
-      // Aggregate line items by product name
       const productMap: Record<string, { qty: number; amount: number }> = {};
       let totalRevenue = 0;
-
       sales.forEach((sale: any) => {
         const saleTotal = Number(sale.totalAmount ?? 0);
         totalRevenue += saleTotal;
@@ -298,21 +232,18 @@ const [aiQuery, setAiQuery] = useState("");
           productMap[name].amount += qty * price;
         });
       });
-
       const lineItems: ReportLineItem[] = Object.entries(productMap)
         .map(([label, v]) => ({ label, qty: v.qty, amount: v.amount }))
         .sort((a, b) => b.amount - a.amount)
         .slice(0, 50);
-
       const reportNames: Record<string, string> = {
         Sales: "Sales Summary Report",
         Inventory: "Inventory Status Report",
         Financial: "Financial Overview",
       };
-
       const newReport: Omit<Report, "id"> = {
         name: `${reportNames[reportType]} — ${label}`,
-        summary: `${sales.length} transactions recorded in the selected period. Total revenue: ${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })} DH.`,
+        summary: `${sales.length} transactions recorded. Revenue: ${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })} DH`,
         type: reportType,
         dateRange: label,
         formats: "PDF,CSV",
@@ -323,13 +254,12 @@ const [aiQuery, setAiQuery] = useState("");
         totalRevenue,
         totalTransactions: sales.length,
       };
-
       const savedReport = await createReport(newReport);
       setReports((prev) => [savedReport, ...prev]);
-      showToast(`✓ ${savedReport.name} generated — ${sales.length} transactions found`, "success");
+      showToast(`${savedReport.name} generated`, "success");
       addLog(`Generated report: ${savedReport.name}`, "report");
     } catch (err: any) {
-      showToast(`Failed to generate report: ${err.message || "Unknown error"}`, "error");
+      showToast(`Failed to generate: ${err.message || "Unknown error"}`, "error");
     } finally {
       setLoading(false);
     }
@@ -339,10 +269,10 @@ const [aiQuery, setAiQuery] = useState("");
     try {
       await deleteReport(id);
       setReports((prev) => prev.filter((r) => r.id !== id));
-      showToast(`Report "${name}" deleted.`, "info");
+      showToast(`"${name}" deleted`, "info");
       addLog(`Deleted report: ${name}`, "report");
     } catch (err: any) {
-      showToast(`Failed to delete report: ${err.message || "Unknown error"}`, "error");
+      showToast(`Failed to delete: ${err.message || "Unknown error"}`, "error");
     }
   };
 
@@ -364,55 +294,56 @@ const [aiQuery, setAiQuery] = useState("");
     return filteredReports.slice(start, start + itemsPerPage);
   }, [filteredReports, currentPage]);
 
-  // Donut chart data — uses mock or real depending on DEMO_MODE
   const activeStats = DEMO_MODE ? MOCK_FINANCIAL_DATA : dashStats;
-
-  const donutData = activeStats && (activeStats.revenue > 0 || activeStats.expenses > 0)
-    ? [
-        { name: "Revenue",  value: activeStats.revenue,  color: "#10B981" },
-        { name: "Expenses", value: activeStats.expenses, color: "#F43F5E" },
-      ]
-    : [
-        { name: "Revenue",  value: 1, color: "#10B981" },
-        { name: "Expenses", value: 1, color: "#F43F5E" },
-      ];
-
   const netProfit = activeStats ? Math.max(0, activeStats.revenue - activeStats.expenses) : 0;
 
+  const donutData =
+    activeStats && (activeStats.revenue > 0 || activeStats.expenses > 0)
+      ? [
+          { name: "Revenue", value: activeStats.revenue, color: "#22c55e" },
+          { name: "Expenses", value: activeStats.expenses, color: "#f43f5e" },
+        ]
+      : [
+          { name: "Revenue", value: 1, color: "#22c55e" },
+          { name: "Expenses", value: 1, color: "#f43f5e" },
+        ];
+
   return (
-    <div className="min-h-screen bg-[#f4f7fe] dark:bg-background px-4 md:px-8 py-8 text-foreground relative overflow-hidden">
-      {/* Background glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[35%] h-[35%] rounded-full bg-violet-500/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-indigo-500/5 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen bg-[#0d0f14] text-white px-5 md:px-8 py-8 relative overflow-hidden font-sans">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.06),transparent)] pointer-events-none" />
 
-      <div className="max-w-[1400px] mx-auto space-y-6 relative z-10">
+      <div className="max-w-[1380px] mx-auto space-y-6 relative z-10">
 
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* ── Page Header ────────────────────────────────────── */}
+        <div className="flex items-end justify-between">
           <div>
-            <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary rounded-full px-3 py-1 text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
-              <BarChart3 size={11} /> Reports Engine
-            </div>
-            <h1 className="text-3xl font-black tracking-tight text-foreground">Reports</h1>
-            <p className="text-xs text-muted-foreground font-semibold mt-1">
-              Generate, review, and export detailed financial reports from real transaction data
-            </p>
+            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-indigo-400 mb-2">Emexa · Reports Engine</p>
+            <h1 className="text-[28px] font-black tracking-tight text-white leading-none">Financial Reports</h1>
+            <p className="text-sm text-white/30 mt-1.5 font-medium">Generate, review, and export reports from real transaction data</p>
           </div>
-        </header>
+          <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live data
+          </div>
+        </div>
 
-        {/* ── Generation Control Bar ────────────────────────────────── */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border p-5 rounded-2xl shadow-sm space-y-4">
-          <h2 className="text-xs font-black uppercase tracking-wider text-muted-foreground">Report Generator</h2>
-
-          <div className="flex flex-wrap items-end gap-4">
-            {/* Date Mode */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <Calendar size={10} /> Date Range
+        {/* ── Command Strip ────────────────────────────────────── */}
+        <div className="relative border border-white/[0.07] rounded-2xl overflow-hidden bg-[#13151d]">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+          <div className="px-6 py-4 border-b border-white/[0.05] flex items-center gap-3">
+            <BarChart3 size={13} className="text-indigo-400" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Report Generator</span>
+          </div>
+          <div className="p-6 flex flex-wrap items-end gap-5">
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-1.5">
+                <Calendar size={9} /> Date Range
               </label>
               <select
                 value={dateMode}
                 onChange={(e) => setDateMode(e.target.value as any)}
-                className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-primary/20"
+                className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none cursor-pointer focus:border-indigo-500/50 transition-colors appearance-none pr-8"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
               >
                 <option value="today">Today</option>
                 <option value="this-week">This Week</option>
@@ -422,46 +353,45 @@ const [aiQuery, setAiQuery] = useState("");
               </select>
             </div>
 
-            {/* Custom date inputs */}
             <AnimatePresence>
               {dateMode === "custom" && (
                 <motion.div
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="flex items-end gap-2 overflow-hidden"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-end gap-3"
                 >
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">From</label>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">From</label>
                     <input
                       type="date"
                       value={customStart}
                       onChange={(e) => setCustomStart(e.target.value)}
-                      className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                      className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none focus:border-indigo-500/50 transition-colors"
                     />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">To</label>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">To</label>
                     <input
                       type="date"
                       value={customEnd}
                       onChange={(e) => setCustomEnd(e.target.value)}
-                      className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                      className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none focus:border-indigo-500/50 transition-colors"
                     />
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Report Category */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                <Filter size={10} /> Category
+            <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-1.5">
+                <Filter size={9} /> Category
               </label>
               <select
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value as any)}
-                className="h-10 px-3 rounded-xl border border-border bg-background text-xs font-bold outline-none cursor-pointer focus:ring-2 focus:ring-primary/20"
+                className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none cursor-pointer focus:border-indigo-500/50 transition-colors appearance-none pr-8"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
               >
                 <option value="Sales">Sales Report</option>
                 <option value="Inventory">Inventory Report</option>
@@ -469,201 +399,219 @@ const [aiQuery, setAiQuery] = useState("");
               </select>
             </div>
 
+            <div className="h-10 w-px bg-white/[0.06] self-end" />
+
             <button
               disabled={loading || (dateMode === "custom" && (!customStart || !customEnd))}
               onClick={handleGenerateReport}
-              className="h-10 px-6 rounded-xl btn-gradient text-white text-xs font-black shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 mt-auto"
+              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black tracking-wide transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 self-end"
             >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
-              Generate Report
+              {loading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              Generate
             </button>
           </div>
         </div>
 
-        {/* ── Table Search & Type Filter Row ───────────────────────── */}
-        <div className="bg-card/60 backdrop-blur-xl border border-border p-4 rounded-2xl shadow-sm flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-background border border-border rounded-xl px-3 h-10">
-              <Filter size={14} className="text-muted-foreground" />
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value as any)}
-                className="bg-transparent text-xs font-bold outline-none cursor-pointer"
-              >
-                <option value="all">All Types</option>
-                <option value="Sales">Sales</option>
-                <option value="Inventory">Inventory</option>
-                <option value="Financial">Financial</option>
-              </select>
-            </div>
+        {/* ── Main Grid ────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
-            <div className="relative w-48 group">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search reports..."
-                className="h-10 w-full pl-9 pr-3 rounded-xl border border-border bg-background outline-none text-xs font-medium focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-            </div>
-          </div>
+          {/* LEFT: Table */}
+          <div className="border border-white/[0.07] rounded-2xl overflow-hidden bg-[#13151d] flex flex-col">
 
-          <span className="text-[10px] font-bold text-muted-foreground uppercase">
-            {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-
-          {/* LEFT: Report Table (70%) */}
-          <div className="lg:col-span-7 bg-card/60 backdrop-blur-xl border border-border rounded-3xl shadow-sm overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-border/50 flex items-center justify-between">
-              <h2 className="text-sm font-black uppercase tracking-wider text-foreground">Generated Reports</h2>
+            {/* Table toolbar */}
+            <div className="px-5 py-4 border-b border-white/[0.05] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search reports…"
+                    className="h-9 pl-9 pr-4 w-52 rounded-xl border border-white/[0.07] bg-white/[0.03] text-xs text-white placeholder:text-white/20 outline-none focus:border-indigo-500/40 transition-colors font-medium"
+                  />
+                </div>
+                <div className="flex items-center h-9 rounded-xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
+                  {(["all", "Sales", "Inventory", "Financial"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setTypeFilter(t)}
+                      className={`px-3 h-full text-[10px] font-black uppercase tracking-wider transition-colors ${
+                        typeFilter === t
+                          ? "bg-indigo-600 text-white"
+                          : "text-white/30 hover:text-white/60"
+                      }`}
+                    >
+                      {t === "all" ? "All" : t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
+                {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
+              </span>
             </div>
 
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-muted/10 border-b border-border/50 text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-                    <th className="py-4 px-6">Report Name</th>
-                    <th className="py-4 px-6">Type</th>
-                    <th className="py-4 px-6">Generated Date</th>
-                    <th className="py-4 px-6">Created By</th>
-                    <th className="py-4 px-6 text-right">Actions</th>
+                  <tr className="border-b border-white/[0.05]">
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Report</th>
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Type</th>
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Period</th>
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Revenue</th>
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">By</th>
+                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/50">
+                <tbody>
                   {paginatedReports.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center text-muted-foreground text-xs font-bold">
+                      <td colSpan={6} className="py-20 text-center">
                         {loading ? (
-                          <div className="flex items-center justify-center gap-2">
-                            <Loader2 size={16} className="animate-spin" /> Generating report from real data…
+                          <div className="flex items-center justify-center gap-2 text-white/30 text-xs font-bold">
+                            <Loader2 size={15} className="animate-spin" /> Pulling transaction data…
                           </div>
                         ) : reports.length === 0 ? (
                           <div>
-                            <p className="font-bold">No reports generated yet.</p>
-                            <p className="text-muted-foreground/60 mt-1">Use the generator above to create your first report.</p>
+                            <FileText size={28} className="mx-auto text-white/10 mb-3" />
+                            <p className="text-white/30 text-sm font-bold">No reports yet</p>
+                            <p className="text-white/15 text-xs mt-1">Use the generator above to create your first report</p>
                           </div>
                         ) : (
-                          "No reports match your filters."
+                          <p className="text-white/25 text-xs font-bold">No reports match your filters</p>
                         )}
                       </td>
                     </tr>
                   ) : (
-                    paginatedReports.map((report) => (
-                      <tr key={report.id} className="hover:bg-muted/5 transition-colors">
-                        <td className="py-4 px-6 max-w-[220px]">
+                    paginatedReports.map((report, i) => (
+                      <motion.tr
+                        key={report.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group"
+                      >
+                        <td className="py-4 px-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
-                              <FileText size={14} />
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                              style={{ background: TYPE_BG[report.type] || "rgba(99,102,241,0.08)" }}
+                            >
+                              <FileText size={13} style={{ color: TYPE_COLORS[report.type] || "#6366f1" }} />
                             </div>
-                            <div className="truncate">
-                              <div className="font-bold text-sm text-foreground truncate">{report.name}</div>
-                              <div className="text-[10px] text-muted-foreground truncate mt-0.5">{report.summary}</div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-white truncate max-w-[220px]">{report.name}</p>
+                              <p className="text-[10px] text-white/25 truncate max-w-[220px] mt-0.5">{report.summary}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <HeroBadge
-                            color={report.type === "Sales" ? "success" : report.type === "Financial" ? "default" : "default"}
-                            variant="soft"
-                            size="sm"
-                            className="uppercase font-black tracking-wider text-[9px]"
+                        <td className="py-4 px-5">
+                          <span
+                            className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded border-l-2"
+                            style={{
+                              color: TYPE_COLORS[report.type] || "#6366f1",
+                              background: TYPE_BG[report.type] || "rgba(99,102,241,0.08)",
+                              borderColor: TYPE_COLORS[report.type] || "#6366f1",
+                            }}
                           >
                             {report.type}
-                          </HeroBadge>
+                          </span>
                         </td>
-                        <td className="py-4 px-6 font-medium text-xs text-muted-foreground">
-                          {new Date(report.createdAt).toLocaleDateString()}
+                        <td className="py-4 px-5 text-xs text-white/40 font-medium">{report.dateRange}</td>
+                        <td className="py-4 px-5">
+                          <span className="text-sm font-black text-white tabular-nums">
+                            {report.totalRevenue != null
+                              ? report.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                              : "—"}
+                          </span>
                         </td>
-                        <td className="py-4 px-6 text-xs font-bold text-foreground">{report.generatedBy}</td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="py-4 px-5 text-xs font-semibold text-white/40">{report.generatedBy}</td>
+                        <td className="py-4 px-5">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => printReport(report)}
-                              className="p-2 bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20 rounded-lg transition-colors cursor-pointer"
-                              title="Download / Print PDF"
+                              title="Print / PDF"
+                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-indigo-500/15 text-white/30 hover:text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
                             >
-                              <Printer size={14} />
+                              <Printer size={13} />
                             </button>
                             <button
                               onClick={() => exportCSV(report)}
-                              className="p-2 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 rounded-lg transition-colors cursor-pointer"
                               title="Export CSV"
+                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-emerald-500/15 text-white/30 hover:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
                             >
-                              <FileSpreadsheet size={14} />
+                              <FileSpreadsheet size={13} />
                             </button>
                             <button
                               onClick={() => handleDeleteReport(report.id, report.name)}
-                              className="p-2 bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
                               title="Delete"
+                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-rose-500/15 text-white/30 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
                             >
-                              <Trash2 size={14} />
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="p-4 border-t border-border/50 flex justify-between items-center bg-muted/5">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase">
+              <div className="px-5 py-3 border-t border-white/[0.05] flex items-center justify-between bg-white/[0.01]">
+                <span className="text-[9px] font-bold uppercase tracking-widest text-white/20">
                   Page {currentPage} of {totalPages}
                 </span>
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="p-1.5 border border-border rounded-lg disabled:opacity-30 hover:bg-muted/10 cursor-pointer transition-colors"
+                    className="w-7 h-7 rounded-lg border border-white/[0.07] flex items-center justify-center disabled:opacity-20 hover:bg-white/[0.05] cursor-pointer transition-colors"
                   >
-                    <ChevronLeft size={14} />
+                    <ChevronLeft size={13} className="text-white/50" />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="p-1.5 border border-border rounded-lg disabled:opacity-30 hover:bg-muted/10 cursor-pointer transition-colors"
+                    className="w-7 h-7 rounded-lg border border-white/[0.07] flex items-center justify-center disabled:opacity-20 hover:bg-white/[0.05] cursor-pointer transition-colors"
                   >
-                    <ChevronRight size={14} />
+                    <ChevronRight size={13} className="text-white/50" />
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* RIGHT: Financial Sidebar (30%) */}
-          <div className="lg:col-span-3 space-y-6">
+          {/* RIGHT: Sidebar */}
+          <div className="flex flex-col gap-5">
 
             {/* Financial Summary */}
-            <div className="bg-card/60 backdrop-blur-xl border border-border rounded-3xl p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <DollarSign size={12} /> Financial Summary
-                </h3>
+            <div className="border border-white/[0.07] rounded-2xl bg-[#13151d] p-5 relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <DollarSign size={12} className="text-white/30" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Financial Summary</span>
+                </div>
                 {DEMO_MODE && (
-                  <span className="text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full">
-                    Demo
-                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded">Demo</span>
                 )}
               </div>
 
-              {/* Donut Chart */}
-              <div className="h-44 w-full">
+              <div className="h-36 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={donutData}
-                      innerRadius={48}
-                      outerRadius={66}
-                      paddingAngle={4}
+                      innerRadius={42}
+                      outerRadius={58}
+                      paddingAngle={3}
                       dataKey="value"
                       stroke="none"
+                      startAngle={90}
+                      endAngle={-270}
                     >
                       {donutData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -673,48 +621,49 @@ const [aiQuery, setAiQuery] = useState("");
                       formatter={(value: any) =>
                         activeStats && (activeStats.revenue > 0 || activeStats.expenses > 0)
                           ? `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH`
-                          : "No data yet"
+                          : "No data"
                       }
-                      contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}
+                      contentStyle={{
+                        borderRadius: "10px",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        background: "#1a1d28",
+                        color: "#fff",
+                        fontSize: "11px",
+                        fontWeight: "bold",
+                      }}
                     />
-                    <Legend verticalAlign="bottom" height={32} iconType="circle" wrapperStyle={{ fontSize: "10px", fontWeight: "bold" }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Metric rows */}
-              <div className="mt-4 space-y-3 border-t border-border/50 pt-4">
+              <div className="space-y-2.5 mt-2 pt-4 border-t border-white/[0.05]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="text-xs font-bold text-muted-foreground">Revenue</span>
+                    <TrendingUp size={11} className="text-emerald-500" />
+                    <span className="text-[10px] font-bold text-white/40">Revenue</span>
                   </div>
-                  <span className="text-sm font-black text-emerald-500">
-                    {activeStats && activeStats.revenue > 0
+                  <span className="text-sm font-black text-emerald-400 tabular-nums">
+                    {activeStats?.revenue
                       ? activeStats.revenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
                       : "—"}
                   </span>
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                    <span className="text-xs font-bold text-muted-foreground">Expenses</span>
+                    <TrendingDown size={11} className="text-rose-500" />
+                    <span className="text-[10px] font-bold text-white/40">Expenses</span>
                   </div>
-                  <span className="text-sm font-black text-rose-500">
-                    {activeStats && activeStats.expenses > 0
+                  <span className="text-sm font-black text-rose-400 tabular-nums">
+                    {activeStats?.expenses
                       ? activeStats.expenses.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
                       : "—"}
                   </span>
                 </div>
-
-                <div className="flex items-center justify-between border-t border-border/50 pt-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-                    <span className="text-xs font-black text-foreground">Net Profit (Est.)</span>
-                  </div>
-                  <span className="text-base font-black text-foreground">
-                    {activeStats && activeStats.revenue > 0
+                <div className="h-px bg-white/[0.05]" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-white/60">Net Profit</span>
+                  <span className="text-base font-black text-white tabular-nums">
+                    {activeStats?.revenue
                       ? netProfit.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
                       : "—"}
                   </span>
@@ -722,46 +671,46 @@ const [aiQuery, setAiQuery] = useState("");
               </div>
             </div>
 
-     {/* Ask Emexa AI */}
-<div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-indigo-500/20 rounded-3xl p-6 shadow-sm relative overflow-hidden">
-  <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/20 rounded-full blur-xl pointer-events-none" />
-  <div className="flex items-center gap-3 mb-4 relative z-10">
-    <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
-      <Sparkles size={18} />
-    </div>
-    <div>
-      <h3 className="font-black text-sm text-foreground">Ask Emexa</h3>
-      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">AI Assistant</p>
-    </div>
-  </div>
-  <p className="text-xs font-medium text-muted-foreground mb-4 leading-relaxed relative z-10">
-    "I can help you analyze these reports, find anomalies, or suggest cost-cutting measures. What would you like to know?"
-  </p>
-  
-  <form 
-    onSubmit={(e) => {
-      e.preventDefault();
-      if (!aiQuery.trim()) return;
+            {/* Emexa AI */}
+            <div className="border border-indigo-500/20 rounded-2xl bg-gradient-to-b from-indigo-950/60 to-[#13151d] p-5 relative overflow-hidden">
+              <div className="absolute -right-6 -top-6 w-28 h-28 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none" />
+              <div className="flex items-center gap-3 mb-4 relative z-10">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+                  <Sparkles size={15} className="text-white" />
+                </div>
+                <div>
+                  <p className="font-black text-sm text-white leading-none">Ask Emexa</p>
+                  <p className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-bold mt-0.5">AI Assistant</p>
+                </div>
+              </div>
+              <p className="text-[11px] text-white/35 leading-relaxed mb-4 relative z-10">
+                Analyze these reports, spot anomalies, or get cost-cutting recommendations.
+              </p>
+              <div className="relative z-10">
+                <input
+                  type="text"
+                  value={aiQuery}
+                  onChange={(e) => setAiQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && aiQuery.trim()) {
+                      router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
+                    }
+                  }}
+                  placeholder="Ask something…"
+                  className="w-full h-10 pl-3.5 pr-11 rounded-xl bg-white/[0.05] border border-white/[0.08] text-xs text-white placeholder:text-white/20 outline-none focus:border-indigo-500/50 transition-colors font-medium"
+                />
+                <button
+                  onClick={() => {
+                    if (aiQuery.trim()) router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
+                  }}
+                  disabled={!aiQuery.trim()}
+                  className="absolute right-1.5 top-1.5 w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30"
+                >
+                  <ArrowRight size={13} className="text-white" />
+                </button>
+              </div>
+            </div>
 
-router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);    }}
-    className="relative z-10"
-  >
-    <input
-      type="text"
-      value={aiQuery}
-      onChange={(e) => setAiQuery(e.target.value)}
-      placeholder="Ask something..."
-      className="w-full h-10 pl-3 pr-10 rounded-xl bg-background/50 border border-border/50 text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-    />
-    <button 
-      type="submit"
-      disabled={!aiQuery.trim()}
-      className="absolute right-1 top-1 w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-indigo-600 transition-colors cursor-pointer disabled:opacity-40"
-    >
-      <ChevronRight size={16} />
-    </button>
-  </form>
-</div>
           </div>
         </div>
       </div>
@@ -770,19 +719,19 @@ router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim()
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 50, x: "-50%" }}
-            animate={{ opacity: 1, y: 0, x: "-50%" }}
-            exit={{ opacity: 0, y: 20, x: "-50%" }}
-            className={`fixed bottom-6 left-1/2 z-[9999] px-6 py-3 rounded-xl shadow-2xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border ${
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border shadow-2xl ${
               toast.type === "success"
-                ? "bg-emerald-600 text-white border-emerald-500"
+                ? "bg-emerald-950 text-emerald-300 border-emerald-800"
                 : toast.type === "error"
-                ? "bg-rose-600 text-white border-rose-500"
-                : "bg-blue-800 text-white border-slate-700"
+                ? "bg-rose-950 text-rose-300 border-rose-800"
+                : "bg-[#1a1d28] text-white/70 border-white/10"
             }`}
           >
-            {toast.type === "success" && <CheckCircle2 size={14} className="text-emerald-200" />}
-            {toast.type === "error" && <AlertCircle size={14} className="text-rose-200" />}
+            {toast.type === "success" && <CheckCircle2 size={13} />}
+            {toast.type === "error" && <AlertCircle size={13} />}
             {toast.message}
           </motion.div>
         )}
