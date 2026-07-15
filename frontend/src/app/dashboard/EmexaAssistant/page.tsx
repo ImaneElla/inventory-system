@@ -24,6 +24,7 @@ import {
   sendChatMessage,
   deleteConversation,
 } from "@/lib/api";
+import { useAppPrefs } from "@/lib/appPrefs";
 
 interface Message {
   id: string;
@@ -68,6 +69,7 @@ function parseMessages(raw: { id: string; sender: string; text: string; timestam
 }
 
 export default function EmexaAssistant() {
+  const { t } = useAppPrefs();
   const [conversations, setConversations] = useState<ConversationMeta[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -88,9 +90,9 @@ export default function EmexaAssistant() {
   const queryProcessed = useRef(false);
 
   const suggestions = [
-    { text: "What products are low on stock?", icon: <AlertTriangle size={14} className="text-amber-400" /> },
-    { text: "Give me a sales summary.", icon: <BarChart2 size={14} className="text-blue-400" /> },
-    { text: "How is overall inventory health?", icon: <Activity size={14} className="text-emerald-400" /> },
+    { text: t("emexa.suggestion1"), icon: <AlertTriangle size={14} className="text-amber-400" /> },
+    { text: t("emexa.suggestion2"), icon: <BarChart2 size={14} className="text-blue-400" /> },
+    { text: t("emexa.suggestion3"), icon: <Activity size={14} className="text-emerald-400" /> },
   ];
 
   useEffect(() => {
@@ -203,6 +205,8 @@ export default function EmexaAssistant() {
         }
       }
 
+      if (!currentId) return;
+
       const tempUserMsg: Message = {
         id: `tmp-${Date.now()}`,
         sender: "user",
@@ -257,7 +261,7 @@ export default function EmexaAssistant() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 8 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 25 } },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 25 } },
   };
 
   const containerVariants = {
@@ -290,7 +294,7 @@ export default function EmexaAssistant() {
               className="flex flex-col items-center gap-3 text-slate-400"
             >
               <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-              <span className="text-sm font-medium">Loading conversation...</span>
+              <span className="text-sm font-medium">{t("emexa.loading")}</span>
             </motion.div>
           ) : messages.length === 0 ? (
             <motion.div
@@ -306,10 +310,10 @@ export default function EmexaAssistant() {
                 <div className="absolute inset-0 rounded-full border border-blue-500/10 blur-sm" />
               </div>
               <h1 className="text-3xl font-black tracking-tight text-foreground mt-6">
-                Hey {userName}, I'm Emexa
+                {t("emexa.greeting")} {userName}, I'm Emexa
               </h1>
               <p className="text-slate-400 max-w-sm font-medium tracking-wide">
-                Your AI inventory assistant. Ask me anything about your stock, products, or sales.
+                {t("emexa.greetingDesc")}
               </p>
             </motion.div>
           ) : (
@@ -397,7 +401,7 @@ export default function EmexaAssistant() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             rows={1}
-            placeholder="Ask Emexa anything about your inventory..."
+            placeholder={t("emexa.placeholder")}
             className="w-full dark:bg-[#212121] bg-white border border-slate-200 dark:border-slate-800 rounded-3xl py-3.5 pl-5 pr-14 text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:border-[#007AFF]/50 resize-none transition-all shadow-sm"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -468,7 +472,7 @@ export default function EmexaAssistant() {
               <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-200/50 dark:border-slate-800/50">
                 <div className="flex items-center gap-2">
                   <MessageSquare size={18} className="text-[#007AFF]" />
-                  <h2 className="text-lg font-bold text-foreground">Conversations</h2>
+                  <h2 className="text-lg font-bold text-foreground">{t("emexa.conversations")}</h2>
                 </div>
                 <button
                   onClick={() => setIsSidebarOpen(false)}
@@ -493,8 +497,8 @@ export default function EmexaAssistant() {
                     <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                       <MessageSquare size={20} className="text-slate-400" />
                     </div>
-                    <p className="text-sm text-slate-400 font-medium">No conversations yet.</p>
-                    <p className="text-xs text-slate-500">Click "New Chat" to start.</p>
+                    <p className="text-sm text-slate-400 font-medium">{t("emexa.noConversations")}</p>
+                    <p className="text-xs text-slate-500">{t("emexa.startChat")}</p>
                   </div>
                 ) : (
                   conversations.map((conv) => (
@@ -516,7 +520,7 @@ export default function EmexaAssistant() {
                             activeId === conv.id ? "text-[#007AFF]" : "text-foreground"
                           }`}
                         >
-                          {conv.title || "New Chat"}
+                          {conv.title || t("emexa.newChat")}
                         </span>
                         {activeId === conv.id && (
                           <div className="w-1.5 h-1.5 rounded-full bg-[#007AFF] mt-1 shrink-0" />
@@ -555,7 +559,7 @@ export default function EmexaAssistant() {
                   className="w-full py-3 rounded-2xl btn-gradient font-semibold text-sm cursor-pointer hover:bg-[#0066DD] transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
                 >
                   <Plus size={16} />
-                  New Chat
+                  {t("emexa.newChat")}
                 </motion.button>
               </div>
             </motion.div>
@@ -588,12 +592,12 @@ export default function EmexaAssistant() {
                   <AlertTriangle size={20} />
                 </div>
                 <h3 className="text-base font-bold leading-6 text-foreground">
-                  Delete Conversation
+                  {t("emexa.deleteConversation")}
                 </h3>
               </div>
               <div className="mt-3">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Are you sure you want to permanentely clear this conversation thread? This action cannot be undone.
+                  {t("emexa.deleteConfirm")}
                 </p>
               </div>
 
@@ -604,7 +608,7 @@ export default function EmexaAssistant() {
                   onClick={() => setDeleteTargetId(null)}
                   className="inline-flex justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent px-4 py-2 text-sm font-semibold text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  Cancel
+                  {t("emexa.cancel")}
                 </button>
                 <button
                   type="button"
@@ -612,7 +616,7 @@ export default function EmexaAssistant() {
                   onClick={confirmDeleteConversation}
                   className="inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 shadow-md shadow-red-600/10 transition-colors disabled:opacity-50 cursor-pointer"
                 >
-                  {isDeleting ? "Deleting..." : "Delete"}
+                  {isDeleting ? t("emexa.deleting") : t("emexa.delete")}
                 </button>
               </div>
             </motion.div>

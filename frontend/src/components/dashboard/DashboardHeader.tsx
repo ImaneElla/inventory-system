@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAppPrefs } from "@/lib/appPrefs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,6 +60,7 @@ export default function DashboardHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { t } = useAppPrefs();
 
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
@@ -182,6 +184,13 @@ export default function DashboardHeader() {
     setReadNotifIds(newRead);
   };
 
+  const getBreadcrumbLabel = (segment: string) => {
+    const camelCased = segment.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    const key = `nav.${camelCased}`;
+    const translated = t(key);
+    return translated !== key ? translated : segment.replaceAll("-", " ");
+  };
+
   return (
     <header
       className="sticky top-0 z-30 flex h-14 items-center gap-3 px-4 lg:px-5 backdrop-blur-xl bg-sidebar/80 border-b border-border/60 text-foreground cursor-default shadow-sm"
@@ -207,7 +216,7 @@ export default function DashboardHeader() {
                     : "text-muted-foreground"
                 )}
               >
-                {segment.replaceAll("-", " ")}
+                {getBreadcrumbLabel(segment)}
               </span>
             </React.Fragment>
           ))}
@@ -231,7 +240,7 @@ export default function DashboardHeader() {
               autoFocus
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search anything..."
+              placeholder={t("header.searchPlaceholder")}
               className="flex-1 bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground"
               onKeyDown={(e) => {
                 if (e.key === "Escape") { setSearchOpen(false); setSearchValue(""); }
@@ -250,7 +259,7 @@ export default function DashboardHeader() {
             className="flex items-center gap-2 rounded-xl px-3 h-8 text-sm border border-border/50 bg-muted/40 text-muted-foreground transition-colors cursor-pointer hover:bg-muted/60"
           >
             <Search size={14} />
-            <span className="hidden sm:inline text-sm">Search...</span>
+            <span className="hidden sm:inline text-sm">{t("header.search")}</span>
             <kbd
               className="hidden md:inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium border border-border/60 text-muted-foreground bg-background"
             >
@@ -282,13 +291,13 @@ export default function DashboardHeader() {
             <div
               className="flex items-center justify-between px-4 py-3 border-b border-border/50"
             >
-              <span className="text-sm font-semibold">Notifications</span>
+              <span className="text-sm font-semibold">{t("header.notifications")}</span>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllRead}
                   className="text-xs text-primary hover:underline cursor-pointer"
                 >
-                  Mark all read
+                  {t("header.markAllRead")}
                 </button>
               )}
             </div>
@@ -311,7 +320,7 @@ export default function DashboardHeader() {
               ))}
             </div>
             {notifications.length === 0 && (
-              <div className="px-4 py-8 text-center text-sm text-muted-foreground">All caught up!</div>
+              <div className="px-4 py-8 text-center text-sm text-muted-foreground">{t("header.noNotifications")}</div>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -409,17 +418,17 @@ export default function DashboardHeader() {
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="cursor-pointer hover:bg-accent/10 focus:bg-accent/10">
                 <Sun size={15} className="mr-2" />
-                Theme
+                {t("header.theme")}
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
                 <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer gap-2 hover:bg-accent/10 focus:bg-accent/10">
-                  <Sun size={14} /> Light
+                  <Sun size={14} /> {t("header.theme.light")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer gap-2 hover:bg-accent/10 focus:bg-accent/10">
-                  <Moon size={14} /> Dark
+                  <Moon size={14} /> {t("header.theme.dark")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer gap-2 hover:bg-accent/10 focus:bg-accent/10">
-                  <Monitor size={14} /> System
+                  <Monitor size={14} /> {t("header.theme.system")}
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
@@ -430,7 +439,7 @@ export default function DashboardHeader() {
               className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer gap-2"
             >
               <LogOut size={15} />
-              Sign Out
+              {t("header.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

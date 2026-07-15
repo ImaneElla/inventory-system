@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@/lib/react-query-custom";
 import { useState } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ActivityLogProvider } from "@/lib/activityLog";
+import { AppPrefsProvider } from "@/lib/appPrefs";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
@@ -25,9 +26,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ActivityLogProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <AppPrefsProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            {children}
+          </ThemeProvider>
+        </AppPrefsProvider>
       </ActivityLogProvider>
     </QueryClientProvider>
   );

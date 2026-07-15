@@ -22,6 +22,11 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRight,
+  Download,
+  RefreshCw,
+  Clock,
+  User,
+  Tag,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { fetchSales, fetchDashboardStats, fetchReports, createReport, deleteReport } from "@/lib/api";
@@ -157,17 +162,55 @@ function printReport(report: Report) {
   };
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  Sales: "#22c55e",
-  Inventory: "#6366f1",
-  Financial: "#f59e0b",
+const TYPE_CONFIG: Record<string, { color: string; bg: string; border: string; dot: string }> = {
+  Sales:     { color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0", dot: "#22c55e" },
+  Inventory: { color: "#4f46e5", bg: "#eef2ff", border: "#c7d2fe", dot: "#6366f1" },
+  Financial: { color: "#d97706", bg: "#fffbeb", border: "#fde68a", dot: "#f59e0b" },
 };
 
-const TYPE_BG: Record<string, string> = {
-  Sales: "rgba(34,197,94,0.08)",
-  Inventory: "rgba(99,102,241,0.08)",
-  Financial: "rgba(245,158,11,0.08)",
-};
+function TypeBadge({ type }: { type: string }) {
+  const cfg = TYPE_CONFIG[type] ?? { color: "#4f46e5", bg: "#eef2ff", border: "#c7d2fe", dot: "#6366f1" };
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+      style={{ color: cfg.color, background: cfg.bg, borderColor: cfg.border }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
+      {type}
+    </span>
+  );
+}
+
+function StatPill({
+  label,
+  value,
+  icon: Icon,
+  gradient,
+  shadow,
+}: {
+  label: string;
+  value: string;
+  icon: React.ElementType;
+  gradient: string;
+  shadow: string;
+}) {
+  return (
+    <div
+      className={`relative flex items-center gap-4 p-5 rounded-[28px] overflow-hidden hover:scale-[1.02] transition-transform cursor-default shadow-xl ${shadow}`}
+      style={{ background: gradient }}
+    >
+      {/* Decorative glow blob */}
+      <div className="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/30 shadow-sm">
+        <Icon size={20} className="text-white" />
+      </div>
+      <div className="relative z-10">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/70">{label}</p>
+        <p className="text-2xl font-black text-white leading-tight mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function ReportsPage() {
   const { addLog } = useActivityLog();
@@ -308,430 +351,558 @@ export default function ReportsPage() {
           { name: "Expenses", value: 1, color: "#f43f5e" },
         ];
 
+  const totalReports = reports.length;
+  const salesCount = reports.filter((r) => r.type === "Sales").length;
+  const inventoryCount = reports.filter((r) => r.type === "Inventory").length;
+
   return (
-    <div className="min-h-screen bg-[#0d0f14] text-white px-5 md:px-8 py-8 relative overflow-hidden font-sans">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(99,102,241,0.06),transparent)] pointer-events-none" />
+    <div className="flex flex-col min-h-full p-4 md:p-8 gap-6 bg-[#f4f7fe] dark:bg-background">
 
-      <div className="max-w-[1380px] mx-auto space-y-6 relative z-10">
-
-        {/* ── Page Header ────────────────────────────────────── */}
-        <div className="flex items-end justify-between">
-          <div>
-            <p className="text-[10px] font-bold tracking-[0.25em] uppercase text-indigo-400 mb-2">Emexa · Reports Engine</p>
-            <h1 className="text-[28px] font-black tracking-tight text-white leading-none">Financial Reports</h1>
-            <p className="text-sm text-white/30 mt-1.5 font-medium">Generate, review, and export reports from real transaction data</p>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+      {/* ── Page Header ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+      >
+        <div>
+          <p className="text-[11px] font-bold tracking-[0.2em] uppercase text-primary/60 mb-1">
+            Dashboard › Reports
+          </p>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">
+            Reports &amp; Analytics
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 font-medium">
+            Generate, review, and export reports from real transaction data
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-2 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-full">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Live data
+          </span>
+          <button
+            disabled={loading || (dateMode === "custom" && (!customStart || !customEnd))}
+            onClick={handleGenerateReport}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm text-white btn-gradient shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+          >
+            {loading ? <Loader2 size={15} className="animate-spin" /> : <Plus size={15} />}
+            Generate Report
+          </button>
+        </div>
+      </motion.div>
+
+      {/* ── Summary stat pills ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-3"
+      >
+        <StatPill
+          label="Total Reports"
+          value={String(totalReports)}
+          icon={FileText}
+          gradient="linear-gradient(135deg,#6366f1 0%,#818cf8 100%)"
+          shadow="shadow-indigo-500/30"
+        />
+        <StatPill
+          label="Sales Reports"
+          value={String(salesCount)}
+          icon={BarChart3}
+          gradient="linear-gradient(135deg,#22c55e 0%,#4ade80 100%)"
+          shadow="shadow-green-500/30"
+        />
+        <StatPill
+          label="Inventory"
+          value={String(inventoryCount)}
+          icon={Tag}
+          gradient="linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%)"
+          shadow="shadow-blue-500/30"
+        />
+        <StatPill
+          label="Net Profit"
+          value={activeStats?.revenue ? `${netProfit.toLocaleString("en-US", { minimumFractionDigits: 0 })} DH` : "—"}
+          icon={TrendingUp}
+          gradient="linear-gradient(135deg,#f59e0b 0%,#fbbf24 100%)"
+          shadow="shadow-amber-500/30"
+        />
+      </motion.div>
+
+      {/* ── Report Generator ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white dark:bg-card/90 rounded-3xl border border-border/40 shadow-sm shadow-black/5 overflow-hidden"
+      >
+        <div className="px-6 py-4 border-b border-border/40 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+            <BarChart3 size={15} className="text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-black text-foreground">Report Generator</p>
+            <p className="text-[10px] text-muted-foreground font-medium">Configure and generate a new report</p>
           </div>
         </div>
-
-        {/* ── Command Strip ────────────────────────────────────── */}
-        <div className="relative border border-white/[0.07] rounded-2xl overflow-hidden bg-[#13151d]">
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-          <div className="px-6 py-4 border-b border-white/[0.05] flex items-center gap-3">
-            <BarChart3 size={13} className="text-indigo-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Report Generator</span>
-          </div>
-          <div className="p-6 flex flex-wrap items-end gap-5">
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-1.5">
-                <Calendar size={9} /> Date Range
-              </label>
-              <select
-                value={dateMode}
-                onChange={(e) => setDateMode(e.target.value as any)}
-                className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none cursor-pointer focus:border-indigo-500/50 transition-colors appearance-none pr-8"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-              >
-                <option value="today">Today</option>
-                <option value="this-week">This Week</option>
-                <option value="this-month">This Month</option>
-                <option value="this-year">This Year</option>
-                <option value="custom">Custom Range</option>
-              </select>
-            </div>
-
-            <AnimatePresence>
-              {dateMode === "custom" && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="flex items-end gap-3"
-                >
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">From</label>
-                    <input
-                      type="date"
-                      value={customStart}
-                      onChange={(e) => setCustomStart(e.target.value)}
-                      className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none focus:border-indigo-500/50 transition-colors"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">To</label>
-                    <input
-                      type="date"
-                      value={customEnd}
-                      onChange={(e) => setCustomEnd(e.target.value)}
-                      className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none focus:border-indigo-500/50 transition-colors"
-                    />
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-1.5">
-                <Filter size={9} /> Category
-              </label>
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="h-10 px-3 rounded-xl border border-white/[0.08] bg-white/[0.04] text-xs font-bold text-white outline-none cursor-pointer focus:border-indigo-500/50 transition-colors appearance-none pr-8"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.3)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
-              >
-                <option value="Sales">Sales Report</option>
-                <option value="Inventory">Inventory Report</option>
-                <option value="Financial">Financial Overview</option>
-              </select>
-            </div>
-
-            <div className="h-10 w-px bg-white/[0.06] self-end" />
-
-            <button
-              disabled={loading || (dateMode === "custom" && (!customStart || !customEnd))}
-              onClick={handleGenerateReport}
-              className="h-10 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black tracking-wide transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 self-end"
+        <div className="p-6 flex flex-wrap items-end gap-5">
+          {/* Date Range */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-1.5">
+              <Calendar size={10} /> Date Range
+            </label>
+            <select
+              value={dateMode}
+              onChange={(e) => setDateMode(e.target.value as any)}
+              className="h-10 px-3 rounded-xl border border-border bg-background text-sm font-semibold text-foreground outline-none cursor-pointer focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all appearance-none pr-8"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 10px center",
+              }}
             >
-              {loading ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-              Generate
-            </button>
+              <option value="today">Today</option>
+              <option value="this-week">This Week</option>
+              <option value="this-month">This Month</option>
+              <option value="this-year">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
           </div>
-        </div>
 
-        {/* ── Main Grid ────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
-
-          {/* LEFT: Table */}
-          <div className="border border-white/[0.07] rounded-2xl overflow-hidden bg-[#13151d] flex flex-col">
-
-            {/* Table toolbar */}
-            <div className="px-5 py-4 border-b border-white/[0.05] flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/25" />
+          <AnimatePresence>
+            {dateMode === "custom" && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="flex items-end gap-3"
+              >
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">From</label>
                   <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search reports…"
-                    className="h-9 pl-9 pr-4 w-52 rounded-xl border border-white/[0.07] bg-white/[0.03] text-xs text-white placeholder:text-white/20 outline-none focus:border-indigo-500/40 transition-colors font-medium"
+                    type="date"
+                    value={customStart}
+                    onChange={(e) => setCustomStart(e.target.value)}
+                    className="h-10 px-3 rounded-xl border border-border bg-background text-sm font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
                   />
                 </div>
-                <div className="flex items-center h-9 rounded-xl border border-white/[0.07] bg-white/[0.03] overflow-hidden">
-                  {(["all", "Sales", "Inventory", "Financial"] as const).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setTypeFilter(t)}
-                      className={`px-3 h-full text-[10px] font-black uppercase tracking-wider transition-colors ${
-                        typeFilter === t
-                          ? "bg-indigo-600 text-white"
-                          : "text-white/30 hover:text-white/60"
-                      }`}
-                    >
-                      {t === "all" ? "All" : t}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">To</label>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={(e) => setCustomEnd(e.target.value)}
+                    className="h-10 px-3 rounded-xl border border-border bg-background text-sm font-semibold text-foreground outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all"
+                  />
                 </div>
-              </div>
-              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">
-                {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-white/[0.05]">
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Report</th>
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Type</th>
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Period</th>
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">Revenue</th>
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">By</th>
-                    <th className="py-3 px-5 text-[9px] font-black uppercase tracking-[0.2em] text-white/25 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedReports.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-20 text-center">
-                        {loading ? (
-                          <div className="flex items-center justify-center gap-2 text-white/30 text-xs font-bold">
-                            <Loader2 size={15} className="animate-spin" /> Pulling transaction data…
-                          </div>
-                        ) : reports.length === 0 ? (
-                          <div>
-                            <FileText size={28} className="mx-auto text-white/10 mb-3" />
-                            <p className="text-white/30 text-sm font-bold">No reports yet</p>
-                            <p className="text-white/15 text-xs mt-1">Use the generator above to create your first report</p>
-                          </div>
-                        ) : (
-                          <p className="text-white/25 text-xs font-bold">No reports match your filters</p>
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedReports.map((report, i) => (
-                      <motion.tr
-                        key={report.id}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors group"
-                      >
-                        <td className="py-4 px-5">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ background: TYPE_BG[report.type] || "rgba(99,102,241,0.08)" }}
-                            >
-                              <FileText size={13} style={{ color: TYPE_COLORS[report.type] || "#6366f1" }} />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-white truncate max-w-[220px]">{report.name}</p>
-                              <p className="text-[10px] text-white/25 truncate max-w-[220px] mt-0.5">{report.summary}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-5">
-                          <span
-                            className="text-[9px] font-black uppercase tracking-wider px-2 py-1 rounded border-l-2"
-                            style={{
-                              color: TYPE_COLORS[report.type] || "#6366f1",
-                              background: TYPE_BG[report.type] || "rgba(99,102,241,0.08)",
-                              borderColor: TYPE_COLORS[report.type] || "#6366f1",
-                            }}
-                          >
-                            {report.type}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 text-xs text-white/40 font-medium">{report.dateRange}</td>
-                        <td className="py-4 px-5">
-                          <span className="text-sm font-black text-white tabular-nums">
-                            {report.totalRevenue != null
-                              ? report.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
-                              : "—"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 text-xs font-semibold text-white/40">{report.generatedBy}</td>
-                        <td className="py-4 px-5">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => printReport(report)}
-                              title="Print / PDF"
-                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-indigo-500/15 text-white/30 hover:text-indigo-400 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Printer size={13} />
-                            </button>
-                            <button
-                              onClick={() => exportCSV(report)}
-                              title="Export CSV"
-                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-emerald-500/15 text-white/30 hover:text-emerald-400 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <FileSpreadsheet size={13} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReport(report.id, report.name)}
-                              title="Delete"
-                              className="w-8 h-8 rounded-lg bg-white/[0.03] hover:bg-rose-500/15 text-white/30 hover:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="px-5 py-3 border-t border-white/[0.05] flex items-center justify-between bg-white/[0.01]">
-                <span className="text-[9px] font-bold uppercase tracking-widest text-white/20">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <div className="flex gap-1.5">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="w-7 h-7 rounded-lg border border-white/[0.07] flex items-center justify-center disabled:opacity-20 hover:bg-white/[0.05] cursor-pointer transition-colors"
-                  >
-                    <ChevronLeft size={13} className="text-white/50" />
-                  </button>
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="w-7 h-7 rounded-lg border border-white/[0.07] flex items-center justify-center disabled:opacity-20 hover:bg-white/[0.05] cursor-pointer transition-colors"
-                  >
-                    <ChevronRight size={13} className="text-white/50" />
-                  </button>
-                </div>
-              </div>
+              </motion.div>
             )}
+          </AnimatePresence>
+
+          {/* Category */}
+          <div className="flex flex-col gap-2">
+            <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-1.5">
+              <Filter size={10} /> Category
+            </label>
+            <select
+              value={reportType}
+              onChange={(e) => setReportType(e.target.value as any)}
+              className="h-10 px-3 rounded-xl border border-border bg-background text-sm font-semibold text-foreground outline-none cursor-pointer focus:border-primary/50 focus:ring-2 focus:ring-primary/10 transition-all appearance-none pr-8"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 10px center",
+              }}
+            >
+              <option value="Sales">Sales Report</option>
+              <option value="Inventory">Inventory Report</option>
+              <option value="Financial">Financial Overview</option>
+            </select>
           </div>
 
-          {/* RIGHT: Sidebar */}
-          <div className="flex flex-col gap-5">
+          <div className="h-10 w-px bg-border self-end" />
 
-            {/* Financial Summary */}
-            <div className="border border-white/[0.07] rounded-2xl bg-[#13151d] p-5 relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-2">
-                  <DollarSign size={12} className="text-white/30" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white/30">Financial Summary</span>
-                </div>
-                {DEMO_MODE && (
-                  <span className="text-[8px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded">Demo</span>
-                )}
-              </div>
+          <button
+            disabled={loading || (dateMode === "custom" && (!customStart || !customEnd))}
+            onClick={handleGenerateReport}
+            className="h-10 px-6 rounded-xl btn-gradient text-white text-sm font-black tracking-wide flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed self-end shadow-lg shadow-primary/25"
+          >
+            {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Generate
+          </button>
+        </div>
+      </motion.div>
 
-              <div className="h-36 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={donutData}
-                      innerRadius={42}
-                      outerRadius={58}
-                      paddingAngle={3}
-                      dataKey="value"
-                      stroke="none"
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {donutData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value: any) =>
-                        activeStats && (activeStats.revenue > 0 || activeStats.expenses > 0)
-                          ? `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH`
-                          : "No data"
-                      }
-                      contentStyle={{
-                        borderRadius: "10px",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        background: "#1a1d28",
-                        color: "#fff",
-                        fontSize: "11px",
-                        fontWeight: "bold",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+      {/* ── Main Grid ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
 
-              <div className="space-y-2.5 mt-2 pt-4 border-t border-white/[0.05]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp size={11} className="text-emerald-500" />
-                    <span className="text-[10px] font-bold text-white/40">Revenue</span>
-                  </div>
-                  <span className="text-sm font-black text-emerald-400 tabular-nums">
-                    {activeStats?.revenue
-                      ? activeStats.revenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
-                      : "—"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TrendingDown size={11} className="text-rose-500" />
-                    <span className="text-[10px] font-bold text-white/40">Expenses</span>
-                  </div>
-                  <span className="text-sm font-black text-rose-400 tabular-nums">
-                    {activeStats?.expenses
-                      ? activeStats.expenses.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
-                      : "—"}
-                  </span>
-                </div>
-                <div className="h-px bg-white/[0.05]" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-white/60">Net Profit</span>
-                  <span className="text-base font-black text-white tabular-nums">
-                    {activeStats?.revenue
-                      ? netProfit.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Emexa AI */}
-            <div className="border border-indigo-500/20 rounded-2xl bg-gradient-to-b from-indigo-950/60 to-[#13151d] p-5 relative overflow-hidden">
-              <div className="absolute -right-6 -top-6 w-28 h-28 bg-indigo-600/15 rounded-full blur-2xl pointer-events-none" />
-              <div className="flex items-center gap-3 mb-4 relative z-10">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
-                  <Sparkles size={15} className="text-white" />
-                </div>
-                <div>
-                  <p className="font-black text-sm text-white leading-none">Ask Emexa</p>
-                  <p className="text-[9px] uppercase tracking-[0.2em] text-indigo-400 font-bold mt-0.5">AI Assistant</p>
-                </div>
-              </div>
-              <p className="text-[11px] text-white/35 leading-relaxed mb-4 relative z-10">
-                Analyze these reports, spot anomalies, or get cost-cutting recommendations.
-              </p>
-              <div className="relative z-10">
+        {/* LEFT: Reports Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white dark:bg-card/90 rounded-3xl border border-border/40 shadow-sm shadow-black/5 overflow-hidden flex flex-col"
+        >
+          {/* Toolbar */}
+          <div className="px-6 py-4 border-b border-border/40 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {/* Search */}
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="text"
-                  value={aiQuery}
-                  onChange={(e) => setAiQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && aiQuery.trim()) {
-                      router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
-                    }
-                  }}
-                  placeholder="Ask something…"
-                  className="w-full h-10 pl-3.5 pr-11 rounded-xl bg-white/[0.05] border border-white/[0.08] text-xs text-white placeholder:text-white/20 outline-none focus:border-indigo-500/50 transition-colors font-medium"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search reports…"
+                  className="h-9 pl-9 pr-4 w-52 rounded-xl border border-border bg-[#f8f9fc] dark:bg-muted/30 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-primary/40 focus:ring-2 focus:ring-primary/10 transition-all font-medium"
                 />
+              </div>
+
+              {/* Type Filter tabs */}
+              <div className="flex items-center h-9 rounded-xl border border-border bg-[#f8f9fc] dark:bg-muted/20 overflow-hidden p-0.5 gap-0.5">
+                {(["all", "Sales", "Inventory", "Financial"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTypeFilter(t)}
+                    className={`px-3 h-full text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                      typeFilter === t
+                        ? "bg-primary text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background"
+                    }`}
+                  >
+                    {t === "all" ? "All" : t}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-muted-foreground">
+              {filteredReports.length} report{filteredReports.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-border/40">
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">Report</th>
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">Type</th>
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">Period</th>
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">Revenue</th>
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">By</th>
+                  <th className="py-3 px-5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedReports.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-20 text-center">
+                      {loading ? (
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm font-bold">
+                          <Loader2 size={16} className="animate-spin" /> Loading reports…
+                        </div>
+                      ) : reports.length === 0 ? (
+                        <div>
+                          <div className="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center mx-auto mb-3">
+                            <FileText size={24} className="text-primary/40" />
+                          </div>
+                          <p className="text-foreground font-black text-sm">No reports yet</p>
+                          <p className="text-muted-foreground text-xs mt-1">Use the generator above to create your first report</p>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground text-sm font-bold">No reports match your filters</p>
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedReports.map((report, i) => (
+                    <motion.tr
+                      key={report.id}
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.04 }}
+                      className="border-b border-border/30 hover:bg-[#f8f9fc] dark:hover:bg-muted/20 transition-colors group"
+                    >
+                      {/* Report name + summary */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                            style={{
+                              background: (TYPE_CONFIG[report.type]?.bg) ?? "#eef2ff",
+                            }}
+                          >
+                            <FileText
+                              size={14}
+                              style={{ color: TYPE_CONFIG[report.type]?.color ?? "#4f46e5" }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-foreground truncate max-w-[200px]">{report.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate max-w-[200px] mt-0.5">{report.summary}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Type badge */}
+                      <td className="py-4 px-5">
+                        <TypeBadge type={report.type} />
+                      </td>
+
+                      {/* Period */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-1.5">
+                          <Clock size={11} className="text-muted-foreground shrink-0" />
+                          <span className="text-xs font-medium text-muted-foreground">{report.dateRange}</span>
+                        </div>
+                      </td>
+
+                      {/* Revenue */}
+                      <td className="py-4 px-5">
+                        <span className="text-sm font-black text-foreground tabular-nums">
+                          {report.totalRevenue != null
+                            ? report.totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                            : "—"}
+                        </span>
+                      </td>
+
+                      {/* Generated by */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <User size={10} className="text-primary" />
+                          </div>
+                          <span className="text-xs font-semibold text-muted-foreground">{report.generatedBy}</span>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-5">
+                        <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => printReport(report)}
+                            title="Print / PDF"
+                            className="w-8 h-8 rounded-xl bg-[#f4f7fe] hover:bg-primary/10 text-muted-foreground hover:text-primary flex items-center justify-center transition-all cursor-pointer border border-transparent hover:border-primary/20"
+                          >
+                            <Printer size={13} />
+                          </button>
+                          <button
+                            onClick={() => exportCSV(report)}
+                            title="Export CSV"
+                            className="w-8 h-8 rounded-xl bg-[#f4f7fe] hover:bg-emerald-50 text-muted-foreground hover:text-emerald-600 flex items-center justify-center transition-all cursor-pointer border border-transparent hover:border-emerald-200"
+                          >
+                            <Download size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReport(report.id, report.name)}
+                            title="Delete"
+                            className="w-8 h-8 rounded-xl bg-[#f4f7fe] hover:bg-rose-50 text-muted-foreground hover:text-rose-500 flex items-center justify-center transition-all cursor-pointer border border-transparent hover:border-rose-200"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-3 border-t border-border/40 flex items-center justify-between bg-[#fafbff] dark:bg-muted/10">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex gap-1.5">
                 <button
-                  onClick={() => {
-                    if (aiQuery.trim()) router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
-                  }}
-                  disabled={!aiQuery.trim()}
-                  className="absolute right-1.5 top-1.5 w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="w-8 h-8 rounded-xl border border-border flex items-center justify-center disabled:opacity-30 hover:bg-muted/40 cursor-pointer transition-colors"
                 >
-                  <ArrowRight size={13} className="text-white" />
+                  <ChevronLeft size={13} className="text-muted-foreground" />
+                </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="w-8 h-8 rounded-xl border border-border flex items-center justify-center disabled:opacity-30 hover:bg-muted/40 cursor-pointer transition-colors"
+                >
+                  <ChevronRight size={13} className="text-muted-foreground" />
                 </button>
               </div>
             </div>
+          )}
+        </motion.div>
 
-          </div>
+        {/* RIGHT Sidebar */}
+        <div className="flex flex-col gap-5">
+
+          {/* Financial Summary Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white dark:bg-card/90 rounded-3xl border border-border/40 shadow-sm shadow-black/5 p-5 relative overflow-hidden"
+          >
+            {/* Top accent bar */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 via-green-500 to-teal-400 rounded-t-3xl" />
+
+            <div className="flex items-center justify-between mb-5 mt-1">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <DollarSign size={14} className="text-emerald-600" />
+                </div>
+                <span className="text-sm font-black text-foreground">Financial Summary</span>
+              </div>
+              {DEMO_MODE && (
+                <span className="text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-200 px-2 py-0.5 rounded-full">
+                  Demo
+                </span>
+              )}
+            </div>
+
+            {/* Donut chart */}
+            <div className="h-36 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={donutData}
+                    innerRadius={42}
+                    outerRadius={58}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {donutData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: any) =>
+                      activeStats && (activeStats.revenue > 0 || activeStats.expenses > 0)
+                        ? `${Number(value).toLocaleString("en-US", { minimumFractionDigits: 2 })} DH`
+                        : "No data"
+                    }
+                    contentStyle={{
+                      borderRadius: "12px",
+                      border: "1px solid #e5e7eb",
+                      background: "#ffffff",
+                      color: "#111827",
+                      fontSize: "11px",
+                      fontWeight: "bold",
+                      boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Metrics */}
+            <div className="space-y-3 mt-2 pt-4 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp size={12} className="text-emerald-500" />
+                  <span className="text-xs font-semibold text-muted-foreground">Revenue</span>
+                </div>
+                <span className="text-sm font-black text-emerald-600 tabular-nums">
+                  {activeStats?.revenue
+                    ? activeStats.revenue.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingDown size={12} className="text-rose-500" />
+                  <span className="text-xs font-semibold text-muted-foreground">Expenses</span>
+                </div>
+                <span className="text-sm font-black text-rose-500 tabular-nums">
+                  {activeStats?.expenses
+                    ? activeStats.expenses.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                    : "—"}
+                </span>
+              </div>
+              <div className="h-px bg-border/40" />
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-foreground">Net Profit</span>
+                <span className="text-base font-black text-foreground tabular-nums">
+                  {activeStats?.revenue
+                    ? netProfit.toLocaleString("en-US", { minimumFractionDigits: 2 }) + " DH"
+                    : "—"}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Emexa AI card */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="rounded-3xl bg-linear-to-br from-[#1e3a8a] via-[#3b82f6] to-[#60a5fa] text-white p-5 relative overflow-hidden shadow-xl shadow-blue-500/20"
+          >
+            {/* Decorative blobs */}
+            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+            <div className="flex items-center gap-3 mb-3 relative z-10">
+              <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/30">
+                <Sparkles size={16} className="text-white" />
+              </div>
+              <div>
+                <p className="font-black text-sm text-white leading-none">Ask Emexa</p>
+                <p className="text-[10px] uppercase tracking-[0.15em] text-blue-200 font-bold mt-0.5">AI Assistant</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-white/70 leading-relaxed mb-4 relative z-10">
+              Analyze these reports, spot anomalies, or get cost-cutting recommendations.
+            </p>
+            <div className="relative z-10">
+              <input
+                type="text"
+                value={aiQuery}
+                onChange={(e) => setAiQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && aiQuery.trim()) {
+                    router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
+                  }
+                }}
+                placeholder="Ask something…"
+                className="w-full h-10 pl-3.5 pr-11 rounded-xl bg-white/15 border border-white/25 backdrop-blur-sm text-xs text-white placeholder:text-white/40 outline-none focus:border-white/50 focus:bg-white/20 transition-all font-medium"
+              />
+              <button
+                onClick={() => {
+                  if (aiQuery.trim()) router.push(`/dashboard/EmexaAssistant?query=${encodeURIComponent(aiQuery.trim())}`);
+                }}
+                disabled={!aiQuery.trim()}
+                className="absolute right-1.5 top-1.5 w-7 h-7 rounded-lg bg-white text-primary hover:bg-white/90 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-30 shadow-sm"
+              >
+                <ArrowRight size={13} />
+              </button>
+            </div>
+          </motion.div>
+
         </div>
       </div>
 
-      {/* Toast */}
+      {/* ── Toast Notifications ── */}
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 border shadow-2xl ${
+            initial={{ opacity: 0, y: 16, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-2 border shadow-2xl ${
               toast.type === "success"
-                ? "bg-emerald-950 text-emerald-300 border-emerald-800"
+                ? "bg-white text-emerald-700 border-emerald-200 shadow-emerald-100"
                 : toast.type === "error"
-                ? "bg-rose-950 text-rose-300 border-rose-800"
-                : "bg-[#1a1d28] text-white/70 border-white/10"
+                ? "bg-white text-rose-600 border-rose-200 shadow-rose-100"
+                : "bg-white text-foreground border-border shadow-black/5"
             }`}
           >
-            {toast.type === "success" && <CheckCircle2 size={13} />}
-            {toast.type === "error" && <AlertCircle size={13} />}
+            {toast.type === "success" && <CheckCircle2 size={15} className="text-emerald-500" />}
+            {toast.type === "error" && <AlertCircle size={15} className="text-rose-500" />}
             {toast.message}
           </motion.div>
         )}

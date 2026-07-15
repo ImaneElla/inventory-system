@@ -24,8 +24,9 @@ import {
 } from "@/components/dashboard/DashboardCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchDashboardStats, fetchSalesDashboardAnalytics, resolveImageUrl } from "@/lib/api";
+import { useAppPrefs } from "@/lib/appPrefs";
 
-//  Toggle this to always show impressive demo chart data instead of real API data , Temp for presentation purposes HAHA
+
 const DEMO_MODE = true;
 
 //  Demo fallback data 
@@ -170,6 +171,7 @@ export default function DashboardPage() {
   const [authorized, setAuthorized] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
+  const { t } = useAppPrefs();
 
   useEffect(() => {
     setMounted(true);
@@ -246,9 +248,9 @@ export default function DashboardPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">{t("dashboard.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1 font-medium">
-            Real-time inventory &amp; sales overview
+            {t("dashboard.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -260,47 +262,47 @@ export default function DashboardPage() {
             className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-sm text-white btn-gradient shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform"
           >
             <Sparkles size={16} />
-            AI Assistant
+            {t("dashboard.aiAssistant")}
           </Link>
         </div>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Total Products"
+          label={t("dashboard.totalProducts")}
           value={(DEMO_MODE ? DEMO_PRODUCT_STATS.totalProducts : productStats?.totalProducts)?.toLocaleString() ?? "—"}
-          sub={`${(DEMO_MODE ? DEMO_PRODUCT_STATS.totalStock : productStats?.totalStock)?.toLocaleString() ?? 0} units in stock`}
+          sub={`${(DEMO_MODE ? DEMO_PRODUCT_STATS.totalStock : productStats?.totalStock)?.toLocaleString() ?? 0} ${t("dashboard.unitsInStock")}`}
           trend="up"
           icon={Box}
-          color="bg-blue-500"
-          shadow="shadow-blue-500/20"
+          gradient="linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%)"
+          shadow="shadow-blue-500/30"
         />
         <StatCard
-          label="Total Revenue"
+          label={t("dashboard.totalRevenue")}
           value={`${totalRevenue.toLocaleString()} DH`}
-          sub={`${totalOrders} completed orders`}
+          sub={`${totalOrders} ${t("dashboard.completedOrders")}`}
           trend="up"
           icon={DollarSign}
-          color="bg-green-500"
-          shadow="shadow-green-500/20"
+          gradient="linear-gradient(135deg,#22c55e 0%,#4ade80 100%)"
+          shadow="shadow-green-500/30"
         />
         <StatCard
-          label="Inventory Value"
+          label={t("dashboard.inventoryValue")}
           value={`${(DEMO_MODE ? DEMO_PRODUCT_STATS.inventoryValue : productStats?.inventoryValue)?.toLocaleString() ?? "0"} DH`}
-          sub="Purchase value in stock"
+          sub={t("dashboard.purchaseValue")}
           trend="up"
           icon={ShoppingCart}
-          color="bg-indigo-500"
-          shadow="shadow-indigo-500/20"
+          gradient="linear-gradient(135deg,#6366f1 0%,#818cf8 100%)"
+          shadow="shadow-indigo-500/30"
         />
         <StatCard
-          label="Critical Alerts"
+          label={t("dashboard.criticalAlerts")}
           value={`${DEMO_MODE ? DEMO_PRODUCT_STATS.lowStockCount : productStats?.lowStockCount ?? 0}`}
-          sub="Low stock items"
+          sub={t("dashboard.lowStockItems")}
           trend={(DEMO_MODE ? DEMO_PRODUCT_STATS.lowStockCount : productStats?.lowStockCount ?? 0) > 0 ? "warn" : "up"}
           icon={AlertTriangle}
-          color="bg-red-500"
-          shadow="shadow-red-500/20"
+          gradient="linear-gradient(135deg,#f43f5e 0%,#fb7185 100%)"
+          shadow="shadow-rose-500/30"
         />
       </div>
 
@@ -308,15 +310,15 @@ export default function DashboardPage() {
         <Card className="xl:col-span-2 rounded-3xl border-0 shadow-sm bg-white/90 dark:bg-card/90 backdrop-blur-xl">
             <CardHeader className="flex flex-col gap-4 pb-2 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <CardTitle className="text-lg font-black">Inventory &amp; Profit Trend</CardTitle>
-                <p className="text-xs text-muted-foreground font-medium mt-0.5">Monthly inventory value and profit overview</p>
+                <CardTitle className="text-lg font-black">{t("dashboard.trendTitle")}</CardTitle>
+                <p className="text-xs text-muted-foreground font-medium mt-0.5">{t("dashboard.trendSubtitle")}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-black text-blue-600">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" /> Inventory value
+                  <span className="w-2 h-2 rounded-full bg-blue-500" /> {t("dashboard.inventoryValue")}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-black text-emerald-600">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> Profit
+                  <span className="w-2 h-2 rounded-full bg-emerald-500" /> {t("dashboard.expectedProfit")}
                 </span>
               </div>
             </CardHeader>
@@ -328,7 +330,7 @@ export default function DashboardPage() {
                   transition={{ delay: 0.1 }}
                   className="rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-5 pt-7 hover:shadow-lg hover:shadow-blue-200/40 transition-all"
                 >
-                  <p className="text-xs uppercase tracking-[0.15em] text-blue-600 font-black mb-1.5">Inventory value</p>
+                  <p className="text-xs uppercase tracking-[0.15em] text-blue-600 font-black mb-1.5">{t("dashboard.inventoryValue")}</p>
                   <p className="text-3xl font-black text-blue-700">{(revenueTrend[revenueTrend.length - 1]?.inventoryValue || inventoryValue).toLocaleString()} DH</p>
         
                 </motion.div>
@@ -340,12 +342,12 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.15em] text-emerald-600 font-black mb-1.5">Expected profit</p>
+                      <p className="text-xs uppercase tracking-[0.15em] text-emerald-600 font-black mb-1.5">{t("dashboard.expectedProfit")}</p>
                       <p className="text-3xl font-black text-emerald-700">{(revenueTrend[revenueTrend.length - 1]?.expectedProfit || expectedProfit).toLocaleString()} DH</p>
                     </div>
                     <div className="flex items-center gap-1 bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded-full text-[10px] font-black border border-emerald-500/20">
                       <TrendingUp size={12} />
-                      +12% vs last month
+                      +12% {t("dashboard.expectedProfitDesc")}
                     </div>
                   </div>
                 </motion.div>
@@ -358,8 +360,8 @@ export default function DashboardPage() {
 
         <Card className="rounded-3xl border-0 shadow-sm bg-white/90 dark:bg-card/90 overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-lg font-black">Most Sellers</CardTitle>
-            <p className="text-xs text-muted-foreground font-medium">Top products</p>
+            <CardTitle className="text-lg font-black">{t("dashboard.mostSellers")}</CardTitle>
+            <p className="text-xs text-muted-foreground font-medium">{t("dashboard.topProducts")}</p>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -440,8 +442,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <Card className="lg:col-span-5 rounded-3xl border-0 shadow-sm bg-white/90 dark:bg-card/90 backdrop-blur-xl">
           <CardHeader>
-            <CardTitle className="text-lg font-black">Most Day Active</CardTitle>
-            <p className="text-xs text-muted-foreground font-medium">Sales by weekday</p>
+            <CardTitle className="text-lg font-black">{t("dashboard.mostActiveDay")}</CardTitle>
+            <p className="text-xs text-muted-foreground font-medium">{t("dashboard.salesByWeekday")}</p>
           </CardHeader>
           <CardContent>
             {activityByDay.length > 0 ? (
@@ -456,20 +458,20 @@ export default function DashboardPage() {
 
         <Card className="lg:col-span-3 rounded-3xl border-0 shadow-sm bg-white/90 dark:bg-card/90">
           <CardHeader>
-            <CardTitle className="text-lg font-black">Repeat Customer Rate</CardTitle>
-            <p className="text-xs text-muted-foreground font-medium">Returning clients</p>
+            <CardTitle className="text-lg font-black">{t("dashboard.repeatCustomer")}</CardTitle>
+            <p className="text-xs text-muted-foreground font-medium">{t("dashboard.returningClients")}</p>
           </CardHeader>
           <CardContent>
             <RepeatCustomerGauge rate={repeatRate} />
             <p className="text-center text-[11px] text-muted-foreground font-medium mt-2">
-              {repeatRate >= 50 ? "On track for strong retention" : "Encourage repeat purchases"}
+              {repeatRate >= 50 ? t("dashboard.retentionOnTrack") : t("dashboard.retentionEncourage")}
             </p>
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-4 rounded-3xl border-0 shadow-sm overflow-hidden relative min-h-70 bg-linear-to-br from-[#1e3a8a] via-[#3b82f6] to-[#60a5fa] text-white">
           <CardHeader className="relative z-10 flex flex-row items-start justify-between">
-            <CardTitle className="text-lg font-black text-white">AI Assistant</CardTitle>
+            <CardTitle className="text-lg font-black text-white">{t("dashboard.aiAssistant")}</CardTitle>
             <Link
             href="/dashboard/EmexaAssistant"
               className="p-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
@@ -479,13 +481,13 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="relative z-10 flex flex-col justify-end pb-8">
             <p className="text-sm text-white/80 font-medium mb-6 max-w-55">
-             Get smart restock tips and sales insights powered by your live inventory data.
+             {t("dashboard.aiAssistantDesc")}
             </p>
             <Link
             href="/dashboard/EmexaAssistant"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-primary rounded-2xl text-sm font-black w-fit hover:bg-white/90 transition-colors"
             >
-              Open Emexa
+              {t("dashboard.openEmexa")}
               <ArrowUpRight size={16} />
             </Link>
           </CardContent>
@@ -510,11 +512,11 @@ export default function DashboardPage() {
             >
               <a href="/dashboard/products" className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-card border border-border shadow-lg rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-colors cursor-pointer whitespace-nowrap">
                 <Box size={16} className="text-primary" />
-                Quick Add Product
+                {t("dashboard.addProduct")}
               </a>
               <a href="/dashboard/sales" className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-card border border-border shadow-lg rounded-2xl text-sm font-bold text-foreground hover:bg-muted transition-colors cursor-pointer whitespace-nowrap">
                 <DollarSign size={16} className="text-emerald-500" />
-                New Sale
+                {t("dashboard.newSale")}
               </a>
             </motion.div>
           )}

@@ -125,15 +125,22 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
   );
 }
 
-function StatCard({ icon, label, value, iconBg, iconColor, valueColor, primary = false }: {
+function StatCard({ icon, label, value, gradient, shadow }: {
   icon: React.ReactNode; label: string; value: number;
-  iconBg: string; iconColor: string; valueColor: string; primary?: boolean;
+  gradient: string; shadow: string;
 }) {
   return (
-    <div className={`bg-card/40 backdrop-blur-md rounded-3xl p-6 flex flex-col items-center justify-center gap-3 text-center border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 select-none ${primary ? "border-primary/30 ring-1 ring-primary/5" : "border-border"}`} style={{ minHeight: 140 }}>
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${iconBg} ${iconColor} shadow-inner`}>{icon}</div>
-      <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">{label}</p>
-      <p className={`text-4xl font-black tabular-nums tracking-tight ${valueColor}`}>{value}</p>
+    <div
+      className={`relative rounded-[28px] overflow-hidden p-6 flex flex-col items-center justify-center gap-3 text-center group hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 shadow-xl cursor-default select-none ${shadow}`}
+      style={{ background: gradient, minHeight: 140 }}
+    >
+      {/* Decorative glow blob */}
+      <div className="absolute -right-5 -top-5 w-24 h-24 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3 duration-300 text-white">
+        {icon}
+      </div>
+      <p className="text-[10px] font-black tracking-widest uppercase text-white/70">{label}</p>
+      <p className="text-4xl font-black tabular-nums tracking-tight text-white">{value}</p>
     </div>
   );
 }
@@ -267,6 +274,15 @@ function ColorPicker({
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
+const DEMO_MODE = true; // temp
+
+const DEMO_STATS = {
+  totalProducts: 50,
+  availableCount: 42,
+  deactivatedCount: 5,
+  outOfStockCount: 3,
+};
+
 export default function ProductsPage() {
   const { addLog } = useActivityLog();
   const qc = useQueryClient();
@@ -302,6 +318,8 @@ export default function ProductsPage() {
     queryKey: ["dashboardStats"],
     queryFn: fetchDashboardStats,
   });
+
+  const stats = DEMO_MODE ? DEMO_STATS : statsData;
 
   const { data: categories = [] } = useQuery<any[]>({
     queryKey: ["categories"],
@@ -415,10 +433,10 @@ export default function ProductsPage() {
       <main className="relative z-10 w-full max-w-[1400px] mx-auto px-4 py-8 md:px-8 lg:px-12 space-y-10">
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          <StatCard icon={<Package2 size={24} />} label="Total" value={statsData?.totalProducts || 0} iconBg="bg-primary/10" iconColor="text-primary" valueColor="text-blue-500"  />
-          <StatCard icon={<Check size={24} />} label="Available" value={statsData?.availableCount || 0} iconBg="bg-emerald-500/10" iconColor="text-emerald-500" valueColor="text-emerald-500" />
-          <StatCard icon={<PowerOff size={24} />} label="Deactivated" value={statsData?.deactivatedCount || 0} iconBg="bg-slate-500/10" iconColor="text-slate-500" valueColor="text-slate-500" />
-          <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={statsData?.outOfStockCount || 0} iconBg="bg-rose-500/10" iconColor="text-rose-500" valueColor="text-rose-500" />
+          <StatCard icon={<Package2 size={24} />} label="Total"        value={stats?.totalProducts || 0}    gradient="linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%)" shadow="shadow-blue-500/30" />
+          <StatCard icon={<Check size={24} />}    label="Available"    value={stats?.availableCount || 0}   gradient="linear-gradient(135deg,#22c55e 0%,#4ade80 100%)" shadow="shadow-green-500/30" />
+          <StatCard icon={<PowerOff size={24} />} label="Deactivated"  value={stats?.deactivatedCount || 0} gradient="linear-gradient(135deg,#6366f1 0%,#818cf8 100%)" shadow="shadow-indigo-500/30" />
+          <StatCard icon={<CircleSlash size={24} />} label="Out of Stock" value={stats?.outOfStockCount || 0} gradient="linear-gradient(135deg,#f43f5e 0%,#fb7185 100%)" shadow="shadow-rose-500/30" />
         </div>
 
         <div className="flex flex-col gap-6">

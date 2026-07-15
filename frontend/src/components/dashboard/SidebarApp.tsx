@@ -29,23 +29,23 @@ import {
 import Link from "next/link";
 import { Logo } from "../logo/logo";
 import { cn } from "@/lib/utils";
+import { useAppPrefs } from "@/lib/appPrefs";
 
-// Each item gets a distinctive iOS-style icon color
+// Nav key → translation key mapping
 const mainMenuItems = [
-  { name: "Dashboard",       icon: LayoutDashboard, path: "/dashboard",                color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Products",        icon: Box,             path: "/dashboard/products",       color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Categories",      icon: Tags,            path: "/dashboard/categories",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Sales",           icon: ShoppingCart,    path: "/dashboard/sales",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Users",           icon: Users,           path: "/dashboard/users",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "AI Assistant",    icon: Sparkles,        path: "/dashboard/EmexaAssistant", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Reports",         icon: BarChart2,       path: "/dashboard/reports",        color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.dashboard",    icon: LayoutDashboard, path: "/dashboard",                color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.products",     icon: Box,             path: "/dashboard/products",       color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.categories",   icon: Tags,            path: "/dashboard/categories",     color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.sales",        icon: ShoppingCart,    path: "/dashboard/sales",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.users",        icon: Users,           path: "/dashboard/users",          color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.aiAssistant",  icon: Sparkles,        path: "/dashboard/EmexaAssistant", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
+  { key: "nav.reports",      icon: BarChart2,       path: "/dashboard/reports",        color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
 ];
 
 const generalMenuItems = [
-  { name: "Activity Logs", icon: Activity, path: "/dashboard/activity-logs", color: "bg-blue-500",   shadow: "shadow-blue-500/30" },
-  { name: "Settings", icon: Settings,   path: "/dashboard/settings", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
-  { name: "Help",     icon: HelpCircle, path: "/dashboard/help",     color: "bg-blue-500",  shadow: "shadow-blue-500/30" },
-
+  { key: "nav.activityLogs", icon: Activity,   path: "/dashboard/activity-logs", color: "bg-blue-500", shadow: "shadow-blue-500/30" },
+  { key: "nav.settings",     icon: Settings,   path: "/dashboard/settings",      color: "bg-blue-500", shadow: "shadow-blue-500/30" },
+  { key: "nav.help",         icon: HelpCircle, path: "/dashboard/help",          color: "bg-blue-500", shadow: "shadow-blue-500/30" },
 ];
 
 interface NavItemProps {
@@ -98,6 +98,7 @@ export default function SidebarApp() {
   const router = useRouter();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { t } = useAppPrefs();
 
   const [userRole, setUserRole] = useState("Manager");
 
@@ -120,11 +121,13 @@ export default function SidebarApp() {
   if (!mounted) return null;
 
   const filteredMainMenuItems = mainMenuItems.filter(item => {
-    if (item.name === "Users" && userRole !== "ADMIN") return false;
-    if (item.name === "Reports" && userRole !== "ADMIN") return false;
-    if (item.name === "Activity Logs" && userRole !== "ADMIN") return false;
+    if (item.key === "nav.users" && userRole !== "ADMIN") return false;
+    if (item.key === "nav.reports" && userRole !== "ADMIN") return false;
+    if (item.key === "nav.activityLogs" && userRole !== "ADMIN") return false;
     return true;
-  });
+  }).map(item => ({ ...item, name: t(item.key) }));
+
+  const translatedGeneralItems = generalMenuItems.map(item => ({ ...item, name: t(item.key) }));
 
   return (
     <Sidebar
@@ -181,7 +184,7 @@ export default function SidebarApp() {
             </p>
           )}
           <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
-            {filteredMainMenuItems.map((item) => (
+            {filteredMainMenuItems.map(({ key: _key, ...item }) => (
               <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
                 <NavItem
                   {...item}
@@ -202,7 +205,7 @@ export default function SidebarApp() {
           )}
           {isCollapsed && <div className="h-3" />}
           <SidebarMenu className={cn("gap-0.5", isCollapsed && "items-center")}>
-            {generalMenuItems.map((item) => (
+            {translatedGeneralItems.map(({ key: _key, ...item }) => (
               <SidebarMenuItem key={item.name} className={isCollapsed ? "w-full flex justify-center" : ""}>
                 <NavItem
                   {...item}
