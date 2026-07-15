@@ -274,7 +274,7 @@ function ColorPicker({
 }
 // ──────────────────────────────────────────────────────────────────────────────
 
-const DEMO_MODE = true; // temp
+const DEMO_MODE = true; // temporary demo mode for presentation purposes, i will remove this later and use real stats 
 
 const DEMO_STATS = {
   totalProducts: 50,

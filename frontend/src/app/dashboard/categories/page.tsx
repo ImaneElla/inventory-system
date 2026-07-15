@@ -351,7 +351,7 @@ export default function CategoriesPage() {
       />
 
       {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 bg-emerald-600 text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 btn-gradient text-white px-6 py-2.5 rounded-full shadow-2xl text-sm font-bold">
           {toast}
         </div>
       )}

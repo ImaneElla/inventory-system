@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 // React 19 / Next.js 16 error interceptor
@@ -17,12 +17,26 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
 }
 
 export function ThemeProvider({ children, ...props }: any) {
+  const [storageKey, setStorageKey] = useState("theme_guest");
+
+  useEffect(() => {
+    const checkUser = () => {
+      const activeId = sessionStorage.getItem("userId") || "guest";
+      setStorageKey(`theme_${activeId}`);
+    };
+    checkUser();
+    const interval = setInterval(checkUser, 500);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <NextThemesProvider
+      key={storageKey}
       attribute="class"
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      storageKey={storageKey}
       {...props}
     >
       {children}

@@ -295,21 +295,46 @@ export function useAppPrefs() {
 }
 
 export function AppPrefsProvider({ children }: { children: React.ReactNode }) {
+  const [currentUserId, setCurrentUserId] = useState<string>("guest");
   const [lang, setLangState] = useState<Lang>("en");
   const [accent, setAccentState] = useState<AccentColor>("indigo");
 
-  // Load from localStorage on mount
+  // Keep currentUserId updated from sessionStorage
   useEffect(() => {
-    const storedLang = localStorage.getItem("imn_lang") as Lang | null;
-    const storedAccent = localStorage.getItem("imn_accent") as AccentColor | null;
+    const checkUser = () => {
+      const activeId = sessionStorage.getItem("userId") || "guest";
+      if (activeId !== currentUserId) {
+        setCurrentUserId(activeId);
+      }
+    };
+    checkUser();
+    const interval = setInterval(checkUser, 500);
+    
+    // Also listen to storage events (useful if switching tabs)
+    window.addEventListener("storage", checkUser);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("storage", checkUser);
+    };
+  }, [currentUserId]);
+
+  // Load preferences whenever currentUserId changes
+  useEffect(() => {
+    const storedLang = localStorage.getItem(`imn_lang_${currentUserId}`) as Lang | null;
+    const storedAccent = localStorage.getItem(`imn_accent_${currentUserId}`) as AccentColor | null;
     if (storedLang && (storedLang === "en" || storedLang === "fr")) {
       setLangState(storedLang);
+    } else {
+      setLangState("en"); // default
     }
     if (storedAccent && storedAccent in accentPalettes) {
       setAccentState(storedAccent);
       applyAccent(storedAccent);
+    } else {
+      setAccentState("indigo"); // default
+      applyAccent("indigo");
     }
-  }, []);
+  }, [currentUserId]);
 
   // Observe class changes on html to re-apply the correct light/dark accent variant dynamically
   useEffect(() => {
@@ -330,12 +355,12 @@ export function AppPrefsProvider({ children }: { children: React.ReactNode }) {
 
   const setLang = (l: Lang) => {
     setLangState(l);
-    localStorage.setItem("imn_lang", l);
+    localStorage.setItem(`imn_lang_${currentUserId}`, l);
   };
 
   const setAccent = (a: AccentColor) => {
     setAccentState(a);
-    localStorage.setItem("imn_accent", a);
+    localStorage.setItem(`imn_accent_${currentUserId}`, a);
     applyAccent(a);
   };
 
