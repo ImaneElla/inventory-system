@@ -242,6 +242,7 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col min-h-full p-4 md:p-8 gap-6 bg-[#f4f7fe] dark:bg-background">
+      <div className="w-full h-2 opacity-90 blur-2xl bg-blue-600 rounded-full mb-[-20px] "/>
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -416,13 +417,13 @@ export default function DashboardPage() {
                                     alt=""
                                     className="w-full h-full object-cover"
                                   />
-                                ) : (
-                           <div className="w-full h-full flex items-center justify-center text-sm font-black text-primary">             
+                                ) : ( 
+                                <div className="w-full h-full flex items-center justify-center text-sm font-black text-primary">             
                                 {p.name?.charAt(0)}
                                   </div>
                                 )}
                               </div>
-       <span className="font-bold truncate max-w-[90px] text-sm">{p.name}</span>                            </div>
+      <span className="font-bold truncate max-w-[90px] text-sm">{p.name}</span>                            </div>
                           </td>
         <td className="text-right py-4 px-3 font-bold text-sm">{p.sold}</td>
                           <td className="text-right py-4 px-4 font-black text-emerald-600 text-sm">
@@ -481,7 +482,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="relative z-10 flex flex-col justify-end pb-8">
             <p className="text-sm text-white/80 font-medium mb-6 max-w-55">
-             {t("dashboard.aiAssistantDesc")}
+          {t("dashboard.aiAssistantDesc")}
             </p>
             <Link
             href="/dashboard/EmexaAssistant"

@@ -90,9 +90,9 @@ export default function EmexaAssistant() {
   const queryProcessed = useRef(false);
 
   const suggestions = [
-    { text: t("emexa.suggestion1"), icon: <AlertTriangle size={14} className="text-amber-400" /> },
-    { text: t("emexa.suggestion2"), icon: <BarChart2 size={14} className="text-blue-400" /> },
-    { text: t("emexa.suggestion3"), icon: <Activity size={14} className="text-emerald-400" /> },
+    { text: t("emexa.suggestion1"), icon: <AlertTriangle size={20} className="text-amber-400" /> },
+    { text: t("emexa.suggestion2"), icon: <BarChart2 size={20} className="text-blue-400" /> },
+    { text: t("emexa.suggestion3"), icon: <Activity size={20} className="text-emerald-400" /> },
   ];
 
   useEffect(() => {
@@ -393,7 +393,31 @@ export default function EmexaAssistant() {
         </AnimatePresence>
       </div>
 
-      <div className="w-full max-w-2xl backdrop-blur-xl rounded-3xl p-4 space-y-3 mx-auto z-10">
+          {messages.length === 0 && !isLoadingMessages && (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="show"
+              className="flex flex-wrap gap-2 pb-8 border-b border-slate-200 dark:border-slate-800/50 justify-center"
+            >
+              {suggestions.map((s, i) => (
+                <motion.button
+                  key={i}
+                  variants={itemVariants}
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.98 }}
+                  type="button"
+                  id={`emexa-suggestion-${i}`}
+                  onClick={() => handleSendMessage(s.text)}
+                  className=" grid grid-rows-1 justify-center text-center items-center gap-2 px-3 py-4 text-[12px] font-medium rounded-xl dark:bg-[#212121] bg-white border border-slate-200 dark:border-slate-800 text-foreground shadow-sm shadow-blue-400/40 hover:border-[#007AFF]/40 hover:text-[#007AFF] transition-all cursor-pointer whitespace-nowrap "
+                >
+                  {s.icon && <div className="text-[#007AFF] mx-auto ">{s.icon}</div>}
+                  {s.text}
+                </motion.button>
+              ))}
+            </motion.div>
+          )}
+      <div className="w-full max-w-2xl backdrop-blur-xl rounded-3xl p-4 mt-10 space-y-3 mx-auto z-10">
         <form onSubmit={handleFormSubmit} className="relative">
           <textarea
             ref={inputRef}
@@ -402,7 +426,7 @@ export default function EmexaAssistant() {
             onChange={(e) => setInputText(e.target.value)}
             rows={1}
             placeholder={t("emexa.placeholder")}
-            className="w-full dark:bg-[#212121] bg-white border border-slate-200 dark:border-slate-800 rounded-3xl py-3.5 pl-5 pr-14 text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:border-[#007AFF]/50 resize-none transition-all shadow-sm"
+            className="w-full dark:bg-[#212121] bg-white border border-slate-200 dark:border-slate-800 rounded-3xl py-3.5 pl-5 pr-14 text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:border-[#007AFF]/50 resize-none transition-all shadow-sm mb-20 "
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -422,30 +446,6 @@ export default function EmexaAssistant() {
           </motion.button>
         </form>
 
-        {messages.length === 0 && !isLoadingMessages && (
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            className="flex flex-wrap gap-2 pt-3 border-t border-slate-200 dark:border-slate-800/50 justify-center"
-          >
-            {suggestions.map((s, i) => (
-              <motion.button
-                key={i}
-                variants={itemVariants}
-                whileHover={{ scale: 1.03, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                type="button"
-                id={`emexa-suggestion-${i}`}
-                onClick={() => handleSendMessage(s.text)}
-                className="flex items-center gap-2 px-3 py-1.5 text-[12px] font-medium rounded-xl dark:bg-[#212121] bg-white border border-slate-200 dark:border-slate-800 text-foreground shadow-sm hover:border-[#007AFF]/40 hover:text-[#007AFF] transition-all cursor-pointer whitespace-nowrap"
-              >
-                {s.icon}
-                {s.text}
-              </motion.button>
-            ))}
-          </motion.div>
-        )}
       </div>
 
       {/* Drawer & Overlays */}
